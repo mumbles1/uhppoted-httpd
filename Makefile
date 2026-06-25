@@ -152,7 +152,7 @@ help: build
 	$(CMD) help help
 
 run: build
-	$(CMD) --debug --console
+	$(CMD) --debug --console --config ./workdir/uhppoted.conf
 
 monitor: build
 	$(CMD) --debug --console --mode monitor

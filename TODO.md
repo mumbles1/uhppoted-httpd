@@ -1,30 +1,13 @@
 # TODO
 
-- [x] anti-passback (cf. https://github.com/uhppoted/uhppoted/issues/60)
-- [x] _sass_ deprecation warnings (cf. https://github.com/uhppoted/uhppoted-httpd/issues/50)
-      - [x] themes
-      - [x] github workflow
-      - [x] login
-      - [x] overview
-      - [x] controllers
-      - [x] doors
-      - [x] cards
-      - [x] groups
-      - [x] events
-      - [x] logs
-      - [x] users
-      - [x] other
-      - [x] password
-      - [x] setup
-      - [x] unauthorized
-      - [x] online/disconnected
-      - [x] tooltips
-      - [x] windmill
-      - [x] loading
-      - [x] trim light and dark styles to overrides only
-      - [x] CHANGELOG
-      - [x] README
-      - [x] Merge into _main_
+- [ ] 'first card' API (cf. https://github.com/uhppoted/uhppoted/issues/82)
+    - [x] column
+    - [ ] popover
+    - [ ] display/update
+    - [ ] store
+    - [ ] set/clear button
+
+- [ ] fix light/dark themes
 
 - [ ] doors: https://developer.chrome.com/blog/a-customizable-select
 
@@ -47,7 +30,8 @@
 - (?) https://www.pgrs.net/2024/03/21/duckdb-as-the-new-jq/
 - (?) https://bugs.rocicorp.dev/issue/0
 - [ ] Rationalise SASS styles
-      - [ ] Everything everywhere should import _uhppoted first
+      - [ ] Everything everywhere should import _uhppoted_ first.
+      - [ ] Redo as plain CSS
 
 - (?) https://www.gnu.org/software/recutils/
       -  https://git.sr.ht/~timetoplatypus/recfile

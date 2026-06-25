@@ -665,6 +665,68 @@ html.doors td label.keypad input[type=checkbox]:checked ~ img.no {
 }
 html.doors tr.door td input.passcodes {
   width: 224px;
+  background: rgba(192, 192, 192, 0.1254901961);
+}
+html.doors tr.door td button.firstcard {
+  margin: 0;
+  padding: 0;
+  border: none;
+  outline: none;
+}
+html.doors tr.door td button.firstcard img {
+  height: 24px;
+}
+html.doors #firstcard {
+  top: calc(anchor(bottom) + 8px);
+  left: calc(anchor(left) + 12px);
+  background: #fefefe;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  padding-left: 8px;
+  padding-right: 8px;
+  border: none;
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto;
+  row-gap: 4px;
+  column-gap: 4px;
+}
+html.doors #firstcard label {
+  font-size: 0.8em;
+  font-family: sans-serif;
+  white-space: nowrap;
+}
+html.doors #firstcard input {
+  border: none;
+  outline: none;
+}
+html.doors #firstcard input[type=time] {
+  width: 72px;
+  font-size: 0.8em;
+  border: none;
+  outline: none;
+}
+html.doors #firstcard div.weekdays {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  column-gap: 4px;
+}
+html.doors #firstcard div.weekdays label {
+  color: #ccc;
+  font-size: 0.75em;
+  font-style: italic;
+  font-weight: normal;
+  cursor: pointer;
+}
+html.doors #firstcard div.weekdays input {
+  display: none;
+}
+html.doors #firstcard div.weekdays input[type=checkbox]:checked + label {
+  color: #000;
+  font-style: normal;
+  font-weight: bold;
 }
 html.doors input.apple {
   font-size: 13.333px;

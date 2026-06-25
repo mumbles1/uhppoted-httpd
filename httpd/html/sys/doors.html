@@ -42,6 +42,7 @@
                   <th class="delay colheader">Delay</th>
                   <th class="keypad colheader">Keypad</th>
                   <th class="passcodes colheader">Passcodes</th>
+                  <th class="passcodes colheader">First&nbsp;Card</th>
                   <th class="padding colheader"></th>
                 </tr>
               </thead>
@@ -170,6 +171,11 @@
                          data-value="" 
                          {{if .readonly}}readonly{{end}} />
                 </td>
+                <td>
+                  <button class="firstcard" popovertarget="firstcard">
+                    <img src="/images/{{$.context.Theme}}/card.svg" draggable="false" />
+                  </button>
+                </td>
 
                 <!-- 'padding' column (CSS: tr::last-child) -->
                 <td class="padding"></td>
@@ -177,6 +183,36 @@
 
           </div>
         </div>
+
+        <div id="firstcard" popover>
+          <label for="firstcard-start">Start time</label>
+          <input id="firstcard-start" type="time" title="start time" />
+          <label for="firstcard-end">End time</label>
+          <input id="firstcard-end" type="time" title="end time" />
+          <label for="firstcard-active">Active mode</label>
+          <input id="firstcard-active" type="text" title="active door control mode" />
+          <label for="firstcard-inactive">Inactive mode</label>
+          <input id="firstcard-inactive" type="text" title="inactive door control mode" />
+
+          <label for="firstcard-weekdays">Weekdays</label>
+          <div id="firstcard-weekdays" class="weekdays">
+            <input id="firstcard-monday" type="checkbox" value="monday"/>
+            <label for="firstcard-monday">Mon</label>
+            <input id="firstcard-tuesday" type="checkbox" value="tuesday"/>
+            <label for="firstcard-tuesday">Tue</label>
+            <input id="firstcard-wednesday" type="checkbox" value="wednesday"/>
+            <label for="firstcard-wednesday">Wed</label>
+            <input id="firstcard-thursday" type="checkbox" value="thursday"/>
+            <label for="firstcard-thursday">Thu</label>
+            <input id="firstcard-friday" type="checkbox" value="friday"/>
+            <label for="firstcard-friday">Fri</label>
+            <input id="firstcard-saturday" type="checkbox" value="saturday"/>
+            <label for="firstcard-saturday">Sat</label>
+            <input id="firstcard-sunday" type="checkbox" value="sunday"/>
+            <label for="firstcard-sunday">Sun</label>
+          </div>
+        </div>
+
       </main>
 
       {{template "footer" .}}
