@@ -667,16 +667,16 @@ html.doors tr.door td input.passcodes {
   width: 224px;
   background: rgba(192, 192, 192, 0.1254901961);
 }
-html.doors tr.door td button.firstcard {
+html.doors tr.door td.firstcard button {
   margin: 0;
   padding: 0;
   border: none;
   outline: none;
 }
-html.doors tr.door td button.firstcard img {
+html.doors tr.door td.firstcard button img {
   height: 24px;
 }
-html.doors #firstcard {
+html.doors tr.door td.firstcard div[popover] {
   top: calc(anchor(bottom) + 8px);
   left: calc(anchor(left) + 12px);
   background: #fefefe;
@@ -692,38 +692,38 @@ html.doors #firstcard {
   row-gap: 4px;
   column-gap: 4px;
 }
-html.doors #firstcard label {
+html.doors tr.door td.firstcard div[popover] label {
   font-size: 0.8em;
   font-family: sans-serif;
   white-space: nowrap;
 }
-html.doors #firstcard input {
+html.doors tr.door td.firstcard div[popover] input {
   border: none;
   outline: none;
 }
-html.doors #firstcard input[type=time] {
+html.doors tr.door td.firstcard div[popover] input[type=time] {
   width: 72px;
   font-size: 0.8em;
   border: none;
   outline: none;
 }
-html.doors #firstcard div.weekdays {
+html.doors tr.door td.firstcard div[popover] div.weekdays {
   display: flex;
   flex-direction: row;
   align-items: center;
   column-gap: 4px;
 }
-html.doors #firstcard div.weekdays label {
+html.doors tr.door td.firstcard div[popover] div.weekdays label {
   color: #ccc;
   font-size: 0.75em;
   font-style: italic;
   font-weight: normal;
   cursor: pointer;
 }
-html.doors #firstcard div.weekdays input {
+html.doors tr.door td.firstcard div[popover] div.weekdays input {
   display: none;
 }
-html.doors #firstcard div.weekdays input[type=checkbox]:checked + label {
+html.doors tr.door td.firstcard div[popover] div.weekdays input[type=checkbox]:checked + label {
   color: #000;
   font-style: normal;
   font-weight: bold;

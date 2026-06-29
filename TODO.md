@@ -2,7 +2,7 @@
 
 - [ ] 'first card' API (cf. https://github.com/uhppoted/uhppoted/issues/82)
     - [x] column
-    - [ ] popover
+    - [x] popover
     - [ ] display/update
     - [ ] store
     - [ ] set/clear button

@@ -72,6 +72,13 @@ function add(oid) {
     rollback.id = uuid + '_rollback'
     rollback.dataset.record = uuid
 
+    const popover = row.querySelector(`td.firstcard div[popover]`)
+    const button = row.querySelector(`td.firstcard button`)
+
+    // button.popoverTargetElement = popover
+    popover.id = `${uuid}_popover`
+    button.setAttribute('popovertarget', `${uuid}_popover`)
+
     const fields = [
       { suffix: 'name', oid: `${oid}.1`, selector: 'td input.name' },
       {

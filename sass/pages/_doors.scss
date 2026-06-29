@@ -91,7 +91,7 @@ html.doors {
     background: #c0c0c020;
   }
 
-  tr.door td button.firstcard {
+  tr.door td.firstcard button {
     margin: 0;
     padding: 0;
     border: none;
@@ -103,7 +103,7 @@ html.doors {
 
   }
 
-  #firstcard {
+  tr.door td.firstcard div[popover] {
     top: calc(anchor(bottom) + 8px);
     left: calc(anchor(left) + 12px);
 

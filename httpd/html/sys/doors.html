@@ -171,10 +171,38 @@
                          data-value="" 
                          {{if .readonly}}readonly{{end}} />
                 </td>
-                <td>
-                  <button class="firstcard" popovertarget="firstcard">
+                <td class="firstcard">
+                  <button>
                     <img src="/images/{{$.context.Theme}}/card.svg" draggable="false" />
                   </button>
+                  <div popover>
+                    <label>Start time</label>
+                    <input type="time" title="start time" />
+                    <label>End time</label>
+                    <input type="time" title="end time" />
+                    <label>Active mode</label>
+                    <input type="text" title="active door control mode" />
+                    <label>Inactive mode</label>
+                    <input type="text" title="inactive door control mode" />
+
+                    <label>Weekdays</label>
+                    <div class="weekdays">
+                      <input type="checkbox" value="monday"/>
+                      <label>Mon</label>
+                      <input type="checkbox" value="tuesday"/>
+                      <label>Tue</label>
+                      <input type="checkbox" value="wednesday"/>
+                      <label>Wed</label>
+                      <input type="checkbox" value="thursday"/>
+                      <label>Thu</label>
+                      <input type="checkbox" value="friday"/>
+                      <label>Fri</label>
+                      <input type="checkbox" value="saturday"/>
+                      <label>Sat</label>
+                      <input type="checkbox" value="sunday"/>
+                      <label>Sun</label>
+                    </div>
+                  </div>
                 </td>
 
                 <!-- 'padding' column (CSS: tr::last-child) -->
@@ -183,36 +211,6 @@
 
           </div>
         </div>
-
-        <div id="firstcard" popover>
-          <label for="firstcard-start">Start time</label>
-          <input id="firstcard-start" type="time" title="start time" />
-          <label for="firstcard-end">End time</label>
-          <input id="firstcard-end" type="time" title="end time" />
-          <label for="firstcard-active">Active mode</label>
-          <input id="firstcard-active" type="text" title="active door control mode" />
-          <label for="firstcard-inactive">Inactive mode</label>
-          <input id="firstcard-inactive" type="text" title="inactive door control mode" />
-
-          <label for="firstcard-weekdays">Weekdays</label>
-          <div id="firstcard-weekdays" class="weekdays">
-            <input id="firstcard-monday" type="checkbox" value="monday"/>
-            <label for="firstcard-monday">Mon</label>
-            <input id="firstcard-tuesday" type="checkbox" value="tuesday"/>
-            <label for="firstcard-tuesday">Tue</label>
-            <input id="firstcard-wednesday" type="checkbox" value="wednesday"/>
-            <label for="firstcard-wednesday">Wed</label>
-            <input id="firstcard-thursday" type="checkbox" value="thursday"/>
-            <label for="firstcard-thursday">Thu</label>
-            <input id="firstcard-friday" type="checkbox" value="friday"/>
-            <label for="firstcard-friday">Fri</label>
-            <input id="firstcard-saturday" type="checkbox" value="saturday"/>
-            <label for="firstcard-saturday">Sat</label>
-            <input id="firstcard-sunday" type="checkbox" value="sunday"/>
-            <label for="firstcard-sunday">Sun</label>
-          </div>
-        </div>
-
       </main>
 
       {{template "footer" .}}
