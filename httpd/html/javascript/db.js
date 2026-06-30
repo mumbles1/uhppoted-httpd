@@ -574,6 +574,7 @@ function groups(o) {
       deleted: '',
       name: '',
       doors: new Map(),
+      firstcard: false,
       status: o.value,
       touched: new Date(),
     })
@@ -598,6 +599,10 @@ function groups(o) {
 
     case `${base}${schema.groups.name}`:
       v.name = o.value
+      break
+
+    case `${base}${schema.groups.firstcard}`:
+      v.firstcard = o.value
       break
 
     default: {

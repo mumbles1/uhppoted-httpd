@@ -17,8 +17,9 @@ import (
 
 type Group struct {
 	catalog.CatalogGroup
-	Name  string              `json:"name"`
-	Doors map[schema.OID]bool `json:"doors"`
+	Name      string              `json:"name"`
+	Doors     map[schema.OID]bool `json:"doors"`
+	FirstCard bool                `json:"firstcard"`
 
 	created  types.Timestamp
 	modified types.Timestamp
@@ -81,6 +82,8 @@ func (g *Group) AsObjects(a *auth.Authorizator) []schema.Object {
 				list = append(list, kv{GroupDoors.Append(did + ".1"), door})
 			}
 		}
+
+		list = append(list, kv{GroupFirstCard, g.FirstCard})
 	}
 
 	return g.toObjects(list, a)
@@ -88,11 +91,13 @@ func (g *Group) AsObjects(a *auth.Authorizator) []schema.Object {
 
 func (g Group) AsRuleEntity() (string, any) {
 	entity := struct {
-		Name  string
-		Doors map[string]bool
+		Name      string
+		Doors     map[string]bool
+		FirstCard bool
 	}{
-		Name:  fmt.Sprintf("%v", g.Name),
-		Doors: map[string]bool{},
+		Name:      fmt.Sprintf("%v", g.Name),
+		Doors:     map[string]bool{},
+		FirstCard: g.FirstCard,
 	}
 
 	doors := catalog.GetDoors()
@@ -167,6 +172,24 @@ func (g *Group) set(a *auth.Authorizator, oid schema.OID, value string, dbc db.D
 				list = append(list, kv{GroupDoors.Append(did), g.Doors[k]})
 			}
 		}
+
+	case oid == g.OID.Append(GroupFirstCard):
+		if err := CanUpdate(a, g, "firstcard", value); err != nil {
+			return nil, err
+		} else {
+			if value == "true" {
+				g.FirstCard = true
+			} else {
+				g.FirstCard = false
+			}
+
+			g.modified = types.TimestampNow()
+
+			g.log(dbc, uid, "update", "firstcard", g.Name, value, "Updated firstcard from %v to %v", original.FirstCard, g.FirstCard)
+			dbc.Updated(g.OID, GroupFirstCard, g.FirstCard)
+
+			list = append(list, kv{GroupFirstCard, g.FirstCard})
+		}
 	}
 
 	dbc.Updated(g.OID, "", g.Doors)
@@ -216,17 +239,19 @@ func (g Group) toObjects(list []kv, a *auth.Authorizator) []schema.Object {
 
 func (g Group) serialize() ([]byte, error) {
 	record := struct {
-		OID      schema.OID      `json:"OID"`
-		Name     string          `json:"name,omitempty"`
-		Doors    []schema.OID    `json:"doors"`
-		Created  types.Timestamp `json:"created"`
-		Modified types.Timestamp `json:"modified"`
+		OID       schema.OID      `json:"OID"`
+		Name      string          `json:"name,omitempty"`
+		Doors     []schema.OID    `json:"doors"`
+		FirstCard bool            `json:"firstcard"`
+		Created   types.Timestamp `json:"created"`
+		Modified  types.Timestamp `json:"modified"`
 	}{
-		OID:      g.OID,
-		Name:     g.Name,
-		Doors:    []schema.OID{},
-		Created:  g.created.UTC(),
-		Modified: g.modified.UTC(),
+		OID:       g.OID,
+		Name:      g.Name,
+		Doors:     []schema.OID{},
+		FirstCard: g.FirstCard,
+		Created:   g.created.UTC(),
+		Modified:  g.modified.UTC(),
 	}
 
 	doors := catalog.GetDoors()
@@ -244,11 +269,12 @@ func (g *Group) deserialize(bytes []byte) error {
 	created = created.Add(1 * time.Minute)
 
 	record := struct {
-		OID      string          `json:"OID"`
-		Name     string          `json:"name,omitempty"`
-		Doors    []schema.OID    `json:"doors"`
-		Created  types.Timestamp `json:"created"`
-		Modified types.Timestamp `json:"modified"`
+		OID       string          `json:"OID"`
+		Name      string          `json:"name,omitempty"`
+		Doors     []schema.OID    `json:"doors"`
+		FirstCard bool            `json:"firstcard"`
+		Created   types.Timestamp `json:"created"`
+		Modified  types.Timestamp `json:"modified"`
 	}{
 		Created: created,
 	}
@@ -260,6 +286,7 @@ func (g *Group) deserialize(bytes []byte) error {
 	g.OID = schema.OID(record.OID)
 	g.Name = record.Name
 	g.Doors = map[schema.OID]bool{}
+	g.FirstCard = record.FirstCard
 	g.created = record.Created
 	g.modified = record.Modified
 
@@ -275,11 +302,12 @@ func (g Group) clone() Group {
 		CatalogGroup: catalog.CatalogGroup{
 			OID: g.OID,
 		},
-		Name:     g.Name,
-		Doors:    map[schema.OID]bool{},
-		created:  g.created,
-		modified: g.modified,
-		deleted:  g.deleted,
+		Name:      g.Name,
+		Doors:     map[schema.OID]bool{},
+		FirstCard: g.FirstCard,
+		created:   g.created,
+		modified:  g.modified,
+		deleted:   g.deleted,
 	}
 
 	maps.Copy(group.Doors, g.Doors)

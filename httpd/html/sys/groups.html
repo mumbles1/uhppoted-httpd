@@ -34,8 +34,9 @@
             <table>
               <thead>
                 <tr>
-                  <th class="name    colheader rowheader">Group</th>
-                  <th class="padding colheader"></th>
+                  <th class="name      colheader rowheader">Group</th>
+                  <th class="firstcard colheader rowheader">FirstCard</th>
+                  <th class="padding   colheader"></th>
                 </tr>
               </thead>
               <tbody></tbody>
@@ -62,12 +63,27 @@
                   </span>
                 </td>
 
+                <!-- 'firstcard' column-->
+                <td>
+                  <label class="privilege">
+                    <input class="field firstcard"
+                           type="checkbox" 
+                           onclick="onTick('group', event)"
+                           data-record="" 
+                           data-original="" 
+                           data-value=""
+                           {{if .readonly}}disabled{{end}} />
+                    <img class="no"  src="/images/{{$.context.Theme}}/times-solid.svg" draggable="false" />
+                    <img class="yes" src="/images/{{$.context.Theme}}/check-solid.svg" draggable="false" />
+                  </label>                  
+                </td>
+
                 <!-- 'padding' column (CSS: tr::last-child) -->
                 <td class="padding"></td>
             </template>
 
             <template id="door">
-                <label class="door">
+                <label class="privilege">
                   <input class="field"
                          type="checkbox" 
                          onclick="onTick('group', event)"

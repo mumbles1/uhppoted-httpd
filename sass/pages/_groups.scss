@@ -25,36 +25,36 @@ html.groups {
   td.door {
   }
 
-  td label.door {
+  td label.privilege {
     cursor: pointer;
   }
 
-  td label.door input[type="checkbox"] {
+  td label.privilege input[type="checkbox"] {
     display: none;
   }
 
-  td label.door img {
+  td label.privilege img {
     width: 14px;
     height: 14px;
     padding: 2px;
     margin: auto;
   }
 
-  td label.door img.yes {
+  td label.privilege img.yes {
     display: none;
     filter: invert(42%) sepia(93%) saturate(703%) hue-rotate(35deg) brightness(101%) contrast(101%)
   }
 
-  td label.door img.no {
+  td label.privilege img.no {
     display: block;
     filter: invert(100%) sepia(30%) saturate(7%) hue-rotate(292deg) brightness(81%) contrast(103%);
   }
 
-  td label.door input[type="checkbox"]:checked ~ img.yes {
+  td label.privilege input[type="checkbox"]:checked ~ img.yes {
     display: block;
   }
 
-  td label.door input[type="checkbox"]:checked ~ img.no {
+  td label.privilege input[type="checkbox"]:checked ~ img.no {
     display: none;
   }
 

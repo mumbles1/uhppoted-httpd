@@ -116,8 +116,9 @@ type Cards struct {
 type Groups struct {
 	OID OID `json:"OID"`
 	Metadata
-	Name  Suffix `json:"name"`
-	Doors Suffix `json:"doors"`
+	Name      Suffix `json:"name"`
+	Doors     Suffix `json:"doors"`
+	FirstCard Suffix `json:"firstcard"`
 }
 
 type Events struct {
@@ -344,8 +345,9 @@ var schema = Schema{
 			Modified: Modified,
 			Type:     Type,
 		},
-		Name:  GroupName,
-		Doors: GroupDoors,
+		Name:      GroupName,
+		Doors:     GroupDoors,
+		FirstCard: GroupFirstCard,
 	},
 
 	Events: Events{
@@ -478,6 +480,7 @@ const CardPIN Suffix = ".6"
 
 const GroupName Suffix = ".1"
 const GroupDoors Suffix = ".2"
+const GroupFirstCard Suffix = ".3"
 
 const EventsStatus Suffix = ".0.0"
 const EventsFirst Suffix = ".0.1"

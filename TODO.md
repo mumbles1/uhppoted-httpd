@@ -1,13 +1,18 @@
 # TODO
 
 - [ ] 'first card' API (cf. https://github.com/uhppoted/uhppoted/issues/82)
+    - [ ] first-card privilege
+        - [x] first-card group
+        - [ ] include firstcard group in put-card
     - [x] column
     - [x] popover
     - [ ] display/update
     - [ ] store
     - [ ] set/clear button
-    - [ ] first-card privilege
+    - [ ] CHANGELOG
+    - [ ] README
 
+- [ ] `failed to put card`
 - [ ] fix light/dark themes
 
 - [ ] doors: https://developer.chrome.com/blog/a-customizable-select

@@ -84,7 +84,8 @@ func TestGroupAsObjects(t *testing.T) {
 			"0.3.3": true,
 			"0.3.7": true,
 		},
-		created: created,
+		FirstCard: true,
+		created:   created,
 	}
 
 	expected := []schema.Object{
@@ -93,6 +94,7 @@ func TestGroupAsObjects(t *testing.T) {
 		{OID: "0.5.3.0.1", Value: created},
 		{OID: "0.5.3.0.2", Value: types.Timestamp{}},
 		{OID: "0.5.3.1", Value: "Le Groupe"},
+		{OID: "0.5.3.3", Value: true},
 	}
 
 	objects := g.AsObjects(nil)
@@ -142,7 +144,8 @@ func TestGroupAsObjectsWithAuth(t *testing.T) {
 			"0.3.3": true,
 			"0.3.7": true,
 		},
-		created: created,
+		FirstCard: true,
+		created:   created,
 	}
 
 	expected := []schema.Object{
@@ -151,6 +154,7 @@ func TestGroupAsObjectsWithAuth(t *testing.T) {
 		{OID: "0.5.3.0.1", Value: created},
 		{OID: "0.5.3.0.2", Value: types.Timestamp{}},
 		//	{OID: "0.5.3.1", Value: "Le Groupe"},
+		{OID: "0.5.3.3", Value: true},
 	}
 
 	a := auth.Authorizator{

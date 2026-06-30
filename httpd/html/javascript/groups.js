@@ -52,15 +52,16 @@ function realize(groups) {
   const surplus = [...cols].filter(([k]) => !doors.has(k))
 
   missing.forEach((o) => {
-    const th = thead.rows[0].lastElementChild
-    const padding = thead.rows[0].appendChild(document.createElement('th'))
+    const padding = thead.rows[0].lastElementChild
+    const firstcard = padding.previousElementSibling
+    const th = document.createElement('th')
 
-    padding.classList.add('colheader')
-    padding.classList.add('padding')
-
-    th.classList.replace('padding', 'door')
+    th.classList.add('colheader')
+    th.classList.add('door')
     th.dataset.door = o.OID
-    th.innerHTML = o.name
+    th.innerText = o.name
+
+    thead.rows[0].insertBefore(th, firstcard)
   })
 
   surplus.forEach(([, v]) => {
@@ -84,25 +85,29 @@ function realize(groups) {
 
     missing.forEach((o) => {
       const door = o.OID.match(schema.doors.regex)[2]
+      const padding = row.lastElementChild
+      const firstcard = padding.previousElementSibling
       const template = document.querySelector('#door')
+      const clone = document.importNode(template.content, true)
 
       const uuid = row.id
       const oid = `${row.dataset.oid}${schema.groups.door}.${door}`
-      const ix = row.cells.length - 1
-      const cell = row.insertCell(ix)
+      const cell = document.createElement('td')
+      const field = clone.querySelector('.field')
 
       cell.classList.add('door')
       cell.dataset.door = o.OID
-      cell.innerHTML = template.innerHTML
-
-      const field = cell.querySelector('.field')
 
       field.id = uuid + '-' + `d${door}`
+      field.checked = false
+
       field.dataset.oid = oid
       field.dataset.record = uuid
       field.dataset.original = ''
       field.dataset.value = ''
-      field.checked = false
+
+      cell.appendChild(clone)
+      firstcard.insertAdjacentElement('beforebegin', cell)
     })
 
     surplus.forEach(([, v]) => {
@@ -118,26 +123,29 @@ function add(oid, _record) {
   if (tbody) {
     const template = document.querySelector('#group')
     const row = tbody.insertRow()
+    const clone = document.importNode(template.content, true)
+    const commit = clone.querySelector('td span.commit')
+    const rollback = clone.querySelector('td span.rollback')
 
     row.id = uuid
     row.classList.add('group')
     row.classList.add('new')
     row.dataset.oid = oid
     row.dataset.status = 'unknown'
-    row.innerHTML = template.innerHTML
 
-    const commit = row.querySelector('td span.commit')
     commit.id = uuid + '_commit'
     commit.dataset.record = uuid
 
-    const rollback = row.querySelector('td span.rollback')
     rollback.id = uuid + '_rollback'
     rollback.dataset.record = uuid
 
-    const fields = [{ suffix: 'name', oid: `${oid}.1`, selector: 'td input.name' }]
+    const fields = [
+      { suffix: 'name', oid: `${oid}.1`, selector: 'td input.name' },
+      { suffix: 'firstcard', oid: `${oid}.3`, selector: 'td input.firstcard' },
+    ]
 
     fields.forEach((f) => {
-      const field = row.querySelector(f.selector)
+      const field = clone.querySelector(f.selector)
       if (field) {
         field.id = uuid + '-' + f.suffix
         field.value = ''
@@ -155,6 +163,8 @@ function add(oid, _record) {
       }
     })
 
+    row.appendChild(clone)
+
     return row
   }
 }
@@ -163,11 +173,13 @@ function updateFromDB(oid, record) {
   const row = document.querySelector("div#groups tr[data-oid='" + oid + "']")
 
   const name = row.querySelector(`[data-oid="${oid}${schema.groups.name}"]`)
+  const firstcard = row.querySelector(`[data-oid="${oid}${schema.groups.firstcard}"]`)
   const doors = [...DB.doors.values()].filter((o) => o.status && o.status !== '<new>' && alive(o))
 
   row.dataset.status = record.status
 
   update(name, record.name)
+  update(firstcard, record.firstcard)
 
   doors.forEach((o) => {
     const td = row.querySelector(`td[data-door="${o.OID}"]`)
