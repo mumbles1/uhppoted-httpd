@@ -6,6 +6,7 @@
     - [ ] display/update
     - [ ] store
     - [ ] set/clear button
+    - [ ] first-card privilege
 
 - [ ] fix light/dark themes
 

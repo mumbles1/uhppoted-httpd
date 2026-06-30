@@ -56,28 +56,26 @@ function add(oid) {
   if (tbody) {
     const template = document.querySelector('#door')
     const row = tbody.insertRow()
+    const clone = document.importNode(template.content, true)
+    const commit = clone.querySelector('td span.commit')
+    const rollback = clone.querySelector('td span.rollback')
+    const popover = clone.querySelector(`td.firstcard div[popover]`)
+    const button = clone.querySelector(`td.firstcard button`)
 
     row.id = uuid
     row.classList.add('door')
     row.classList.add('new')
     row.dataset.oid = oid
     row.dataset.status = 'unknown'
-    row.innerHTML = template.innerHTML
 
-    const commit = row.querySelector('td span.commit')
     commit.id = uuid + '_commit'
     commit.dataset.record = uuid
 
-    const rollback = row.querySelector('td span.rollback')
     rollback.id = uuid + '_rollback'
     rollback.dataset.record = uuid
 
-    const popover = row.querySelector(`td.firstcard div[popover]`)
-    const button = row.querySelector(`td.firstcard button`)
-
-    // button.popoverTargetElement = popover
     popover.id = `${uuid}_popover`
-    button.setAttribute('popovertarget', `${uuid}_popover`)
+    button.popoverTargetElement = popover
 
     const fields = [
       { suffix: 'name', oid: `${oid}.1`, selector: 'td input.name' },
@@ -99,7 +97,7 @@ function add(oid) {
     ]
 
     fields.forEach((f) => {
-      const field = row.querySelector(f.selector)
+      const field = clone.querySelector(f.selector)
 
       if (field) {
         field.id = uuid + '-' + f.suffix
@@ -118,7 +116,8 @@ function add(oid) {
       }
     })
 
-    combobox(row.querySelector('td.combobox'))
+    combobox(clone.querySelector('td.combobox'))
+    row.appendChild(clone)
 
     return row
   }
