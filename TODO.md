@@ -1,9 +1,9 @@
 # TODO
 
 - [ ] 'first card' API (cf. https://github.com/uhppoted/uhppoted/issues/82)
-    - [ ] first-card privilege
+    - [x] first-card privilege
         - [x] first-card group
-        - [ ] include firstcard group in put-card
+        - [x] include firstcard group in put-card
     - [x] column
     - [x] popover
     - [ ] display/update
@@ -30,6 +30,7 @@
 - [ ] Occasional initialisation error: _./db.js does not provide an export named DB_
       - Browser load issue maybe? (fixes itself with a page reload)
       - Check load order in HTML
+
 
 ### To Be Done Sometime
 

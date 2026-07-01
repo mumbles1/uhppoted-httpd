@@ -124,6 +124,13 @@ func (s *system) updateCardPermissions(controller types.IController, cardID uint
 	PIN := uint32(0)
 	from := lib.Date{}
 	to := lib.Date{}
+	firstcard := map[uint8]bool{
+		1: false,
+		2: false,
+		3: false,
+		4: false,
+	}
+
 	card, unconfigured := s.cards.Lookup(cardID)
 
 	if card != nil {
@@ -137,6 +144,17 @@ func (s *system) updateCardPermissions(controller types.IController, cardID uint
 		// ... get base permissions from groups
 		groups := card.Groups()
 		doors := s.groups.Doors(groups...)
+
+		for _, g := range groups {
+			if group, ok := s.groups.Group(g); ok {
+				if group.FirstCard {
+					firstcard[1] = true
+					firstcard[2] = true
+					firstcard[3] = true
+					firstcard[4] = true
+				}
+			}
+		}
 
 		for _, door := range doors {
 			for _, d := range []uint8{1, 2, 3, 4} {
@@ -192,7 +210,7 @@ func (s *system) updateCardPermissions(controller types.IController, cardID uint
 			to = sys.acl.defaultEndDate
 		}
 
-		s.interfaces.PutCard(controller, cardID, PIN, from, to, acl)
+		s.interfaces.PutCard(controller, cardID, PIN, from, to, acl, firstcard)
 	}
 }
 

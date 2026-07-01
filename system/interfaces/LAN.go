@@ -514,7 +514,7 @@ func (l *LAN) setDoorPasscodes(c types.IController, door uint8, passcodes ...uin
 	}
 }
 
-func (l *LAN) putCard(c types.IController, cardID uint32, PIN uint32, from, to lib.Date, permissions map[uint8]uint8) {
+func (l *LAN) putCard(c types.IController, cardID uint32, PIN uint32, from, to lib.Date, permissions map[uint8]uint8, firstcard map[uint8]bool) {
 	lock(c.ID())
 	defer unlock(c.ID())
 
@@ -531,6 +531,12 @@ func (l *LAN) putCard(c types.IController, cardID uint32, PIN uint32, from, to l
 			2: permissions[2],
 			3: permissions[3],
 			4: permissions[4],
+		},
+		FirstCard: lib.FirstCardPrivileges{
+			Door1: firstcard[1],
+			Door2: firstcard[2],
+			Door3: firstcard[3],
+			Door4: firstcard[4],
 		},
 	}
 

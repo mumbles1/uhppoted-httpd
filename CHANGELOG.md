@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+## Added
+1. Added _first card_ privileges to ACL (groups and cards).
+
 ### Updated
 1. Updated to Go 1.26.
 2. Updated to _modern Go_ with `go fix`.
