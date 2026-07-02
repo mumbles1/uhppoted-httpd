@@ -6,6 +6,7 @@ import (
 	lib "github.com/uhppoted/uhppote-core/types"
 
 	"github.com/uhppoted/uhppoted-httpd/system/catalog"
+	"github.com/uhppoted/uhppoted-httpd/system/catalog/schema"
 	"github.com/uhppoted/uhppoted-httpd/types"
 	"github.com/uhppoted/uhppoted-lib/acl"
 )
@@ -114,6 +115,10 @@ func (s *system) updateCardPermissions(controller types.IController, cardID uint
 		return
 	}
 
+	PIN := uint32(0)
+	from := lib.Date{}
+	to := lib.Date{}
+
 	acl := map[uint8]uint8{
 		1: 0,
 		2: 0,
@@ -121,15 +126,19 @@ func (s *system) updateCardPermissions(controller types.IController, cardID uint
 		4: 0,
 	}
 
-	PIN := uint32(0)
-	from := lib.Date{}
-	to := lib.Date{}
 	firstcard := map[uint8]bool{
 		1: false,
 		2: false,
 		3: false,
 		4: false,
 	}
+
+	type permission struct {
+		allowed   bool
+		firstcard bool
+	}
+
+	permissions := map[schema.OID]permission{}
 
 	card, unconfigured := s.cards.Lookup(cardID)
 
@@ -143,24 +152,29 @@ func (s *system) updateCardPermissions(controller types.IController, cardID uint
 
 		// ... get base permissions from groups
 		groups := card.Groups()
-		doors := s.groups.Doors(groups...)
-
 		for _, g := range groups {
 			if group, ok := s.groups.Group(g); ok {
-				if group.FirstCard {
-					firstcard[1] = true
-					firstcard[2] = true
-					firstcard[3] = true
-					firstcard[4] = true
+				for oid, allowed := range group.Doors {
+					p := permissions[oid]
+					permissions[oid] = permission{
+						allowed:   p.allowed || allowed,
+						firstcard: p.firstcard || ((p.allowed || allowed) && group.FirstCard),
+					}
 				}
 			}
 		}
 
-		for _, door := range doors {
-			for _, d := range []uint8{1, 2, 3, 4} {
-				doorID := d
-				if oid, ok := controller.Door(d); ok && oid == door {
-					acl[doorID] = 1
+		for _, d := range []uint8{1, 2, 3, 4} {
+			if oid, ok := controller.Door(d); ok {
+				p, ok := permissions[oid]
+				if ok {
+					if p.allowed {
+						acl[d] = 1
+					}
+
+					if p.firstcard {
+						firstcard[d] = p.firstcard
+					}
 				}
 			}
 		}
@@ -175,18 +189,16 @@ func (s *system) updateCardPermissions(controller types.IController, cardID uint
 
 			for _, door := range allowed {
 				for _, d := range []uint8{1, 2, 3, 4} {
-					doorID := d
 					if oid, ok := controller.Door(d); ok && oid == door.OID {
-						acl[doorID] = 1
+						acl[d] = 1
 					}
 				}
 			}
 
 			for _, door := range forbidden {
 				for _, d := range []uint8{1, 2, 3, 4} {
-					doorID := d
 					if oid, ok := controller.Door(d); ok && oid == door.OID {
-						acl[doorID] = 0
+						acl[d] = 0
 					}
 				}
 			}

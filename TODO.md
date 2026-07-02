@@ -4,6 +4,9 @@
     - [x] first-card privilege
         - [x] first-card group
         - [x] include firstcard group in put-card
+        - [x] enable firstcard for group doors only
+        - [ ] update ACL synch and compare for firstcard
+        - [ ] fix doors page - not displaying door ID
     - [x] column
     - [x] popover
     - [ ] display/update
