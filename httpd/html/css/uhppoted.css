@@ -616,7 +616,7 @@ html.doors tr.door td input.deviceID {
   pointer-events: none;
 }
 html.doors tr.door td input.doorID {
-  width: 16px;
+  min-width: 20px;
   pointer-events: none;
 }
 html.doors tr.door td input.mode {
