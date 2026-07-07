@@ -400,6 +400,21 @@ function doors(o) {
       mode: { mode: '', configured: '', status: 'unknown', err: '' },
       keypad: false,
       passcodes: '',
+      firstcard: {
+        startTime: '',
+        endTime: '',
+        activeMode: '',
+        inactiveMode: '',
+        weekdays: {
+          monday: false,
+          tuesday: false,
+          wednesday: false,
+          thursday: false,
+          friday: false,
+          saturday: false,
+          sunday: false,
+        },
+      },
       status: o.value,
       touched: new Date(),
     })
@@ -464,6 +479,50 @@ function doors(o) {
 
     case `${base}.5`:
       v.passcodes = o.value
+      break
+
+    case `${base}.6.1`:
+      v.firstcard.startTime = o.value
+      break
+
+    case `${base}.6.2`:
+      v.firstcard.endTime = o.value
+      break
+
+    case `${base}.6.3`:
+      v.firstcard.activeMode = o.value
+      break
+
+    case `${base}.6.4`:
+      v.firstcard.inactiveMode = o.value
+      break
+
+    case `${base}.6.5.1`:
+      v.firstcard.weekdays.monday = o.value
+      break
+
+    case `${base}.6.5.2`:
+      v.firstcard.weekdays.tuesday = o.value
+      break
+
+    case `${base}.6.5.3`:
+      v.firstcard.weekdays.wednesday = o.value
+      break
+
+    case `${base}.6.5.4`:
+      v.firstcard.weekdays.thursday = o.value
+      break
+
+    case `${base}.6.5.5`:
+      v.firstcard.weekdays.friday = o.value
+      break
+
+    case `${base}.6.5.6`:
+      v.firstcard.weekdays.saturday = o.value
+      break
+
+    case `${base}.6.5.7`:
+      v.firstcard.weekdays.sunday = o.value
       break
   }
 }

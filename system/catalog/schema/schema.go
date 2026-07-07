@@ -100,6 +100,21 @@ type Doors struct {
 	} `json:"control"`
 	Keypad    Suffix `json:"keypad"`
 	Passcodes Suffix `json:"passcodes"`
+	FirstCard struct {
+		StartTime    Suffix `json:"start-time"`
+		EndTime      Suffix `json:"end-time"`
+		ActiveMode   Suffix `json:"active-mode"`
+		InactiveMode Suffix `json:"inactive-mode"`
+		Weekdays     struct {
+			Monday    Suffix `json:"monday"`
+			Tuesday   Suffix `json:"tuesday"`
+			Wednesday Suffix `json:"wednesday"`
+			Thursday  Suffix `json:"thursday"`
+			Friday    Suffix `json:"friday"`
+			Saturday  Suffix `json:"saturday"`
+			Sunday    Suffix `json:"sunday"`
+		} `json:"weekdays"`
+	} `json:"firstcard"`
 }
 
 type Cards struct {
@@ -317,6 +332,43 @@ var schema = Schema{
 		},
 		Keypad:    DoorKeypad,
 		Passcodes: DoorPasscodes,
+		FirstCard: struct {
+			StartTime    Suffix `json:"start-time"`
+			EndTime      Suffix `json:"end-time"`
+			ActiveMode   Suffix `json:"active-mode"`
+			InactiveMode Suffix `json:"inactive-mode"`
+			Weekdays     struct {
+				Monday    Suffix `json:"monday"`
+				Tuesday   Suffix `json:"tuesday"`
+				Wednesday Suffix `json:"wednesday"`
+				Thursday  Suffix `json:"thursday"`
+				Friday    Suffix `json:"friday"`
+				Saturday  Suffix `json:"saturday"`
+				Sunday    Suffix `json:"sunday"`
+			} `json:"weekdays"`
+		}{
+			StartTime:    DoorFirstCardStartTime,
+			EndTime:      DoorFirstCardEndTime,
+			ActiveMode:   DoorFirstCardActiveMode,
+			InactiveMode: DoorFirstCardInactiveMode,
+			Weekdays: struct {
+				Monday    Suffix `json:"monday"`
+				Tuesday   Suffix `json:"tuesday"`
+				Wednesday Suffix `json:"wednesday"`
+				Thursday  Suffix `json:"thursday"`
+				Friday    Suffix `json:"friday"`
+				Saturday  Suffix `json:"saturday"`
+				Sunday    Suffix `json:"sunday"`
+			}{
+				Monday:    DoorFirstCardMonday,
+				Tuesday:   DoorFirstCardTuesday,
+				Wednesday: DoorFirstCardWednesday,
+				Thursday:  DoorFirstCardThursday,
+				Friday:    DoorFirstCardFriday,
+				Saturday:  DoorFirstCardSaturday,
+				Sunday:    DoorFirstCardSunday,
+			},
+		},
 	},
 
 	Cards: Cards{
@@ -470,6 +522,17 @@ const DoorControlError Suffix = ".3.3"
 const DoorControlModified Suffix = ".3.4"
 const DoorKeypad Suffix = ".4"
 const DoorPasscodes Suffix = ".5"
+const DoorFirstCardStartTime Suffix = ".6.1"
+const DoorFirstCardEndTime Suffix = ".6.2"
+const DoorFirstCardActiveMode Suffix = ".6.3"
+const DoorFirstCardInactiveMode Suffix = ".6.4"
+const DoorFirstCardMonday Suffix = ".6.5.1"
+const DoorFirstCardTuesday Suffix = ".6.5.2"
+const DoorFirstCardWednesday Suffix = ".6.5.3"
+const DoorFirstCardThursday Suffix = ".6.5.4"
+const DoorFirstCardFriday Suffix = ".6.5.5"
+const DoorFirstCardSaturday Suffix = ".6.5.6"
+const DoorFirstCardSunday Suffix = ".6.5.7"
 
 const CardName Suffix = ".1"
 const CardNumber Suffix = ".2"

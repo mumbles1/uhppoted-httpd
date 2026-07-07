@@ -22,6 +22,18 @@ const DoorControlModified = schema.DoorControlModified
 const DoorKeypad = schema.DoorKeypad
 const DoorPasscodes = schema.DoorPasscodes
 
+const DoorFirstCardStartTime = schema.DoorFirstCardStartTime
+const DoorFirstCardEndTime = schema.DoorFirstCardEndTime
+const DoorFirstCardActiveMode = schema.DoorFirstCardActiveMode
+const DoorFirstCardInactiveMode = schema.DoorFirstCardInactiveMode
+const DoorFirstCardMonday = schema.DoorFirstCardMonday
+const DoorFirstCardTuesday = schema.DoorFirstCardTuesday
+const DoorFirstCardWednesday = schema.DoorFirstCardWednesday
+const DoorFirstCardThursday = schema.DoorFirstCardThursday
+const DoorFirstCardFriday = schema.DoorFirstCardFriday
+const DoorFirstCardSaturday = schema.DoorFirstCardSaturday
+const DoorFirstCardSunday = schema.DoorFirstCardSunday
+
 var lookup = map[schema.Suffix]string{
 	DoorStatus:            "door.status",
 	DoorCreated:           "door.created",
@@ -39,4 +51,16 @@ var lookup = map[schema.Suffix]string{
 	DoorControlModified:   "door.control.modified",
 	DoorKeypad:            "door.keypad",
 	DoorPasscodes:         "door.passcodes",
+
+	DoorFirstCardStartTime:    "door.firstcard.start-time",
+	DoorFirstCardEndTime:      "door.firstcard.end-time",
+	DoorFirstCardActiveMode:   "door.firstcard.active-mode",
+	DoorFirstCardInactiveMode: "door.firstcard.inactive-mode",
+	DoorFirstCardMonday:       "door.firstcard.weekdays.monday",
+	DoorFirstCardTuesday:      "door.firstcard.weekdays.tuesday",
+	DoorFirstCardWednesday:    "door.firstcard.weekdays.wednesday",
+	DoorFirstCardThursday:     "door.firstcard.weekdays.thursday",
+	DoorFirstCardFriday:       "door.firstcard.weekdays.friday",
+	DoorFirstCardSaturday:     "door.firstcard.weekdays.saturday",
+	DoorFirstCardSunday:       "door.firstcard.weekdays.sunday",
 }
