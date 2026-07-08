@@ -31,7 +31,19 @@ func TestDoorAsObjects(t *testing.T) {
 		mode:      core.NormallyOpen,
 		keypad:    true,
 		passcodes: []uint32{12345, 999999, 54321},
-		created:   created,
+		firstcard: core.FirstCard{
+			StartTime: core.MustParseHHmm("08:30"),
+			EndTime:   core.MustParseHHmm("16:45"),
+			Active:    core.NormallyOpen,
+			Inactive:  core.FirstCardOnly,
+			Weekdays: core.Weekdays{
+				time.Monday:   true,
+				time.Tuesday:  true,
+				time.Thursday: true,
+				time.Sunday:   true,
+			},
+		},
+		created: created,
 	}
 
 	expected := []schema.Object{
@@ -53,7 +65,7 @@ func TestDoorAsObjects(t *testing.T) {
 		{OID: "0.3.3.6.1", Value: "08:30"},
 		{OID: "0.3.3.6.2", Value: "16:45"},
 		{OID: "0.3.3.6.3", Value: "normally open"},
-		{OID: "0.3.3.6.4", Value: "firstcard only"},
+		{OID: "0.3.3.6.4", Value: "firstcard"},
 		{OID: "0.3.3.6.5.1", Value: true},
 		{OID: "0.3.3.6.5.2", Value: true},
 		{OID: "0.3.3.6.5.3", Value: false},
@@ -110,7 +122,19 @@ func TestDoorAsObjectsWithAuth(t *testing.T) {
 		mode:      core.NormallyOpen,
 		keypad:    true,
 		passcodes: []uint32{12345, 999999, 54321},
-		created:   created,
+		firstcard: core.FirstCard{
+			StartTime: core.MustParseHHmm("08:30"),
+			EndTime:   core.MustParseHHmm("16:45"),
+			Active:    core.NormallyOpen,
+			Inactive:  core.FirstCardOnly,
+			Weekdays: core.Weekdays{
+				time.Monday:   true,
+				time.Tuesday:  true,
+				time.Thursday: true,
+				time.Sunday:   true,
+			},
+		},
+		created: created,
 	}
 
 	expected := []schema.Object{
@@ -128,7 +152,7 @@ func TestDoorAsObjectsWithAuth(t *testing.T) {
 		{OID: "0.3.3.6.1", Value: "08:30"},
 		{OID: "0.3.3.6.2", Value: "16:45"},
 		{OID: "0.3.3.6.3", Value: "normally open"},
-		{OID: "0.3.3.6.4", Value: "firstcard only"},
+		{OID: "0.3.3.6.4", Value: "firstcard"},
 		{OID: "0.3.3.6.5.1", Value: true},
 		{OID: "0.3.3.6.5.2", Value: true},
 		{OID: "0.3.3.6.5.3", Value: false},

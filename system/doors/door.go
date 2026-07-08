@@ -25,6 +25,7 @@ type Door struct {
 	mode      core.ControlState
 	keypad    bool
 	passcodes []uint32
+	firstcard core.FirstCard
 
 	created  types.Timestamp
 	modified types.Timestamp
@@ -140,32 +141,6 @@ func (d *Door) AsObjects(a *auth.Authorizator) []schema.Object {
 			passcodes = "******"
 		}
 
-		firstcard := struct {
-			startTime    string
-			endTime      string
-			activeMode   string
-			inactiveMode string
-			monday       bool
-			tuesday      bool
-			wednesday    bool
-			thursday     bool
-			friday       bool
-			saturday     bool
-			sunday       bool
-		}{
-			startTime:    "08:30",
-			endTime:      "16:45",
-			activeMode:   "normally open",
-			inactiveMode: "firstcard only",
-			monday:       true,
-			tuesday:      true,
-			wednesday:    false,
-			thursday:     true,
-			friday:       false,
-			saturday:     false,
-			sunday:       true,
-		}
-
 		if v, ok := catalog.GetUint8(d.OID, DoorDelay); ok {
 			delay.delay = v
 			modified := false
@@ -222,17 +197,18 @@ func (d *Door) AsObjects(a *auth.Authorizator) []schema.Object {
 		list = append(list, kv{DoorControlError, control.err})
 		list = append(list, kv{DoorKeypad, d.keypad})
 		list = append(list, kv{DoorPasscodes, passcodes})
-		list = append(list, kv{DoorFirstCardStartTime, firstcard.startTime})
-		list = append(list, kv{DoorFirstCardEndTime, firstcard.endTime})
-		list = append(list, kv{DoorFirstCardActiveMode, firstcard.activeMode})
-		list = append(list, kv{DoorFirstCardInactiveMode, firstcard.inactiveMode})
-		list = append(list, kv{DoorFirstCardMonday, firstcard.monday})
-		list = append(list, kv{DoorFirstCardTuesday, firstcard.tuesday})
-		list = append(list, kv{DoorFirstCardWednesday, firstcard.wednesday})
-		list = append(list, kv{DoorFirstCardThursday, firstcard.thursday})
-		list = append(list, kv{DoorFirstCardFriday, firstcard.friday})
-		list = append(list, kv{DoorFirstCardSaturday, firstcard.saturday})
-		list = append(list, kv{DoorFirstCardSunday, firstcard.sunday})
+
+		list = append(list, kv{DoorFirstCardStartTime, fmt.Sprintf("%v", d.firstcard.StartTime)})
+		list = append(list, kv{DoorFirstCardEndTime, fmt.Sprintf("%v", d.firstcard.EndTime)})
+		list = append(list, kv{DoorFirstCardActiveMode, fmt.Sprintf("%v", d.firstcard.Active)})
+		list = append(list, kv{DoorFirstCardInactiveMode, fmt.Sprintf("%v", d.firstcard.Inactive)})
+		list = append(list, kv{DoorFirstCardMonday, d.firstcard.Weekdays[time.Monday]})
+		list = append(list, kv{DoorFirstCardTuesday, d.firstcard.Weekdays[time.Tuesday]})
+		list = append(list, kv{DoorFirstCardWednesday, d.firstcard.Weekdays[time.Wednesday]})
+		list = append(list, kv{DoorFirstCardThursday, d.firstcard.Weekdays[time.Thursday]})
+		list = append(list, kv{DoorFirstCardFriday, d.firstcard.Weekdays[time.Friday]})
+		list = append(list, kv{DoorFirstCardSaturday, d.firstcard.Weekdays[time.Saturday]})
+		list = append(list, kv{DoorFirstCardSunday, d.firstcard.Weekdays[time.Sunday]})
 	}
 
 	return d.toObjects(list, a)
@@ -372,6 +348,89 @@ func (d *Door) set(a *auth.Authorizator, oid schema.OID, value string, dbc db.DB
 			dbc.Updated(d.OID, DoorPasscodes, d.passcodes)
 
 			list = append(list, kv{DoorPasscodes, passcodes_})
+		}
+
+	case d.OID.Append(DoorFirstCardStartTime):
+		if err := CanUpdate(a, d, "firstcard", value); err != nil {
+			return nil, err
+		} else {
+			d.log(dbc, uid, "update", "firstcard", d.firstcard.StartTime, value, "Updated firstcard start-time")
+
+			if t, err := core.ParseHHmm(value); err == nil && t != nil {
+				d.firstcard.StartTime = *t
+				d.modified = types.TimestampNow()
+
+				dbc.Updated(d.OID, DoorFirstCardStartTime, d.firstcard.StartTime)
+			}
+
+			list = append(list, kv{DoorFirstCardStartTime, fmt.Sprintf("%v", d.firstcard.StartTime)})
+		}
+
+	case d.OID.Append(DoorFirstCardEndTime):
+		if err := CanUpdate(a, d, "firstcard", value); err != nil {
+			return nil, err
+		} else {
+			d.log(dbc, uid, "update", "firstcard", d.firstcard.EndTime, value, "Updated firstcard end-time")
+
+			if t, err := core.ParseHHmm(value); err == nil && t != nil {
+				d.firstcard.EndTime = *t
+				d.modified = types.TimestampNow()
+
+				dbc.Updated(d.OID, DoorFirstCardEndTime, d.firstcard.EndTime)
+			}
+
+			list = append(list, kv{DoorFirstCardEndTime, fmt.Sprintf("%v", d.firstcard.EndTime)})
+		}
+
+	case d.OID.Append(DoorFirstCardActiveMode):
+		if err := CanUpdate(a, d, "firstcard", value); err != nil {
+			return nil, err
+		} else {
+			d.log(dbc, uid, "update", "firstcard", d.firstcard.Active, value, "Updated firstcard active mode")
+
+			switch value {
+			case "controlled":
+				d.firstcard.Active = core.Controlled
+
+			case "normally open":
+				d.firstcard.Active = core.NormallyOpen
+
+			case "normally closed":
+				d.firstcard.Active = core.NormallyClosed
+			}
+
+			d.modified = types.TimestampNow()
+
+			dbc.Updated(d.OID, DoorFirstCardActiveMode, d.firstcard.Active)
+
+			list = append(list, kv{DoorFirstCardActiveMode, fmt.Sprintf("%v", d.firstcard.Active)})
+		}
+
+	case d.OID.Append(DoorFirstCardInactiveMode):
+		if err := CanUpdate(a, d, "firstcard", value); err != nil {
+			return nil, err
+		} else {
+			d.log(dbc, uid, "update", "firstcard", d.firstcard.Active, value, "Updated firstcard inactive mode")
+
+			switch value {
+			case "controlled":
+				d.firstcard.Inactive = core.Controlled
+
+			case "normally open":
+				d.firstcard.Inactive = core.NormallyOpen
+
+			case "normally closed":
+				d.firstcard.Inactive = core.NormallyClosed
+
+			case "firstcard only":
+				d.firstcard.Inactive = core.FirstCardOnly
+			}
+
+			d.modified = types.TimestampNow()
+
+			dbc.Updated(d.OID, DoorFirstCardInactiveMode, d.firstcard.Inactive)
+
+			list = append(list, kv{DoorFirstCardActiveMode, fmt.Sprintf("%v", d.firstcard.Inactive)})
 		}
 	}
 

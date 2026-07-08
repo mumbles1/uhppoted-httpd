@@ -94,17 +94,17 @@ function add(oid) {
       { suffix: 'mode', oid: `${oid}.3`, selector: 'td input.mode' },
       { suffix: 'keypad', oid: `${oid}.4`, selector: 'td label.keypad input' },
       { suffix: 'passcodes', oid: `${oid}.5`, selector: 'td input.passcodes' },
-      { suffix: 'firstcard.start-time', oid: `${oid}.6.1.1`, selector: 'td input.firstcard-starttime' },
-      { suffix: 'firstcard.end-time', oid: `${oid}.6.1.2`, selector: 'td input.firstcard-endtime' },
-      { suffix: 'firstcard.active-mode', oid: `${oid}.6.1.3`, selector: 'td input.firstcard-active' },
-      { suffix: 'firstcard.inactive-mode', oid: `${oid}.6.1.4`, selector: 'td input.firstcard-inactive' },
-      { suffix: 'firstcard.monday', oid: `${oid}.6.1.5.1`, selector: 'td input.firstcard-monday' },
-      { suffix: 'firstcard.tuesday', oid: `${oid}.6.1.5.2`, selector: 'td input.firstcard-tuesday' },
-      { suffix: 'firstcard.wednesday', oid: `${oid}.6.1.5.3`, selector: 'td input.firstcard-wednesday' },
-      { suffix: 'firstcard.thursday', oid: `${oid}.6.1.5.4`, selector: 'td input.firstcard-thursday' },
-      { suffix: 'firstcard.friday', oid: `${oid}.6.1.5.5`, selector: 'td input.firstcard-friday' },
-      { suffix: 'firstcard.saturday', oid: `${oid}.6.1.5.6`, selector: 'td input.firstcard-saturday' },
-      { suffix: 'firstcard.sunday', oid: `${oid}.6.1.5.7`, selector: 'td input.firstcard-sunday' },
+      { suffix: 'firstcard.start-time', oid: `${oid}.6.1`, selector: 'td input.firstcard-starttime' },
+      { suffix: 'firstcard.end-time', oid: `${oid}.6.2`, selector: 'td input.firstcard-endtime' },
+      { suffix: 'firstcard.active-mode', oid: `${oid}.6.3`, selector: 'td input.firstcard-active' },
+      { suffix: 'firstcard.inactive-mode', oid: `${oid}.6.4`, selector: 'td input.firstcard-inactive' },
+      { suffix: 'firstcard.monday', oid: `${oid}.6.5.1`, selector: 'td input.firstcard-monday' },
+      { suffix: 'firstcard.tuesday', oid: `${oid}.6.5.2`, selector: 'td input.firstcard-tuesday' },
+      { suffix: 'firstcard.wednesday', oid: `${oid}.6.5.3`, selector: 'td input.firstcard-wednesday' },
+      { suffix: 'firstcard.thursday', oid: `${oid}.6.5.4`, selector: 'td input.firstcard-thursday' },
+      { suffix: 'firstcard.friday', oid: `${oid}.6.5.5`, selector: 'td input.firstcard-friday' },
+      { suffix: 'firstcard.saturday', oid: `${oid}.6.5.6`, selector: 'td input.firstcard-saturday' },
+      { suffix: 'firstcard.sunday', oid: `${oid}.6.5.7`, selector: 'td input.firstcard-sunday' },
     ]
 
     fields.forEach((f) => {
@@ -146,17 +146,17 @@ function updateFromDB(oid, record) {
   const keypad = row.querySelector(`[data-oid="${oid}.4"]`)
   const passcodes = row.querySelector(`[data-oid="${oid}.5"]`)
   const firstcard = {
-    start: row.querySelector(`[data-oid="${oid}.6.1.1"]`),
-    end: row.querySelector(`[data-oid="${oid}.6.1.2"]`),
-    active: row.querySelector(`[data-oid="${oid}.6.1.3"]`),
-    inactive: row.querySelector(`[data-oid="${oid}.6.1.4"]`),
-    monday: row.querySelector(`[data-oid="${oid}.6.1.5.1"]`),
-    tuesday: row.querySelector(`[data-oid="${oid}.6.1.5.2"]`),
-    wednesday: row.querySelector(`[data-oid="${oid}.6.1.5.3"]`),
-    thursday: row.querySelector(`[data-oid="${oid}.6.1.5.4"]`),
-    friday: row.querySelector(`[data-oid="${oid}.6.1.5.5"]`),
-    saturday: row.querySelector(`[data-oid="${oid}.6.1.5.6"]`),
-    sunday: row.querySelector(`[data-oid="${oid}.6.1.5.7"]`),
+    start: row.querySelector(`[data-oid="${oid}.6.1"]`),
+    end: row.querySelector(`[data-oid="${oid}.6.2"]`),
+    active: row.querySelector(`[data-oid="${oid}.6.3"]`),
+    inactive: row.querySelector(`[data-oid="${oid}.6.4"]`),
+    monday: row.querySelector(`[data-oid="${oid}.6.5.1"]`),
+    tuesday: row.querySelector(`[data-oid="${oid}.6.5.2"]`),
+    wednesday: row.querySelector(`[data-oid="${oid}.6.5.3"]`),
+    thursday: row.querySelector(`[data-oid="${oid}.6.5.4"]`),
+    friday: row.querySelector(`[data-oid="${oid}.6.5.5"]`),
+    saturday: row.querySelector(`[data-oid="${oid}.6.5.6"]`),
+    sunday: row.querySelector(`[data-oid="${oid}.6.5.7"]`),
   }
 
   row.dataset.status = record.status

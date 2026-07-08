@@ -10,7 +10,15 @@
     - [x] column
     - [x] popover
     - [x] display
-    - [ ] update/store
+    - [ ] update
+        - [x] start time
+        - [x] end time
+        - [x] active mode
+        - [x] inactive mode
+        - [ ] weekdays
+        - [ ] change core.FirstCardOnly to "firstcard only"
+        - [ ] unit test
+    - [ ] store
     - (?) set/clear button
     - [ ] CHANGELOG
     - [ ] README
