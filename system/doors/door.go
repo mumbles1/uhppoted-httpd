@@ -140,6 +140,32 @@ func (d *Door) AsObjects(a *auth.Authorizator) []schema.Object {
 			passcodes = "******"
 		}
 
+		firstcard := struct {
+			startTime    string
+			endTime      string
+			activeMode   string
+			inactiveMode string
+			monday       bool
+			tuesday      bool
+			wednesday    bool
+			thursday     bool
+			friday       bool
+			saturday     bool
+			sunday       bool
+		}{
+			startTime:    "08:30",
+			endTime:      "16:45",
+			activeMode:   "normally open",
+			inactiveMode: "firstcard only",
+			monday:       true,
+			tuesday:      true,
+			wednesday:    false,
+			thursday:     true,
+			friday:       false,
+			saturday:     false,
+			sunday:       true,
+		}
+
 		if v, ok := catalog.GetUint8(d.OID, DoorDelay); ok {
 			delay.delay = v
 			modified := false
@@ -196,6 +222,17 @@ func (d *Door) AsObjects(a *auth.Authorizator) []schema.Object {
 		list = append(list, kv{DoorControlError, control.err})
 		list = append(list, kv{DoorKeypad, d.keypad})
 		list = append(list, kv{DoorPasscodes, passcodes})
+		list = append(list, kv{DoorFirstCardStartTime, firstcard.startTime})
+		list = append(list, kv{DoorFirstCardEndTime, firstcard.endTime})
+		list = append(list, kv{DoorFirstCardActiveMode, firstcard.activeMode})
+		list = append(list, kv{DoorFirstCardInactiveMode, firstcard.inactiveMode})
+		list = append(list, kv{DoorFirstCardMonday, firstcard.monday})
+		list = append(list, kv{DoorFirstCardTuesday, firstcard.tuesday})
+		list = append(list, kv{DoorFirstCardWednesday, firstcard.wednesday})
+		list = append(list, kv{DoorFirstCardThursday, firstcard.thursday})
+		list = append(list, kv{DoorFirstCardFriday, firstcard.friday})
+		list = append(list, kv{DoorFirstCardSaturday, firstcard.saturday})
+		list = append(list, kv{DoorFirstCardSunday, firstcard.sunday})
 	}
 
 	return d.toObjects(list, a)

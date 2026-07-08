@@ -105,7 +105,7 @@ html.doors {
 
   tr.door td.firstcard div[popover] {
     top: calc(anchor(bottom) + 8px);
-    left: calc(anchor(left) + 12px);
+    left: calc(anchor(left) - 192px);
 
     border: none;
     outline: none;
@@ -123,12 +123,14 @@ html.doors {
     display: grid;
     grid-template-columns: auto auto;
     grid-template-rows: auto;
-    row-gap: 4px;
+    row-gap: 2px;
     column-gap: 4px;
+    align-items: center;
 
     label {
       font-size: 0.8em;
       font-family: sans-serif;
+      font-style: italic;
       white-space: nowrap;
     }
 
@@ -139,16 +141,29 @@ html.doors {
 
     input[type="time"] {
       width: 72px;
-      font-size: 0.8em;
+      font-size: 1em;
       border: none;
       outline: none;
+    }
+
+    input.firstcard-active {
+      font-weight: semibold;
+      font-variant-caps: all-small-caps;;
+    }
+
+    input.firstcard-inactive {
+      font-weight: semibold;
+      font-variant-caps: all-small-caps;;
     }
 
     div.weekdays {
       display: flex;
       flex-direction: row;
       align-items: center;
-      column-gap: 4px;
+      column-gap: 6px;
+
+      padding-top: 6px;
+      padding-left: 4px;
 
       label {
         color: #ccc;

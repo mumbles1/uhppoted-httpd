@@ -9,9 +9,9 @@
         - [ ] update ACL synch and compare for firstcard
     - [x] column
     - [x] popover
-    - [ ] display/update
-    - [ ] store
-    - [ ] set/clear button
+    - [x] display
+    - [ ] update/store
+    - (?) set/clear button
     - [ ] CHANGELOG
     - [ ] README
 

@@ -678,7 +678,7 @@ html.doors tr.door td.firstcard button img {
 }
 html.doors tr.door td.firstcard div[popover] {
   top: calc(anchor(bottom) + 8px);
-  left: calc(anchor(left) + 12px);
+  left: calc(anchor(left) - 192px);
   border: none;
   outline: none;
 }
@@ -693,12 +693,14 @@ html.doors tr.door td.firstcard div[popover] > div {
   display: grid;
   grid-template-columns: auto auto;
   grid-template-rows: auto;
-  row-gap: 4px;
+  row-gap: 2px;
   column-gap: 4px;
+  align-items: center;
 }
 html.doors tr.door td.firstcard div[popover] > div label {
   font-size: 0.8em;
   font-family: sans-serif;
+  font-style: italic;
   white-space: nowrap;
 }
 html.doors tr.door td.firstcard div[popover] > div input {
@@ -707,15 +709,25 @@ html.doors tr.door td.firstcard div[popover] > div input {
 }
 html.doors tr.door td.firstcard div[popover] > div input[type=time] {
   width: 72px;
-  font-size: 0.8em;
+  font-size: 1em;
   border: none;
   outline: none;
+}
+html.doors tr.door td.firstcard div[popover] > div input.firstcard-active {
+  font-weight: semibold;
+  font-variant-caps: all-small-caps;
+}
+html.doors tr.door td.firstcard div[popover] > div input.firstcard-inactive {
+  font-weight: semibold;
+  font-variant-caps: all-small-caps;
 }
 html.doors tr.door td.firstcard div[popover] > div div.weekdays {
   display: flex;
   flex-direction: row;
   align-items: center;
-  column-gap: 4px;
+  column-gap: 6px;
+  padding-top: 6px;
+  padding-left: 4px;
 }
 html.doors tr.door td.firstcard div[popover] > div div.weekdays label {
   color: #ccc;

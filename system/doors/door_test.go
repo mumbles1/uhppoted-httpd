@@ -50,6 +50,17 @@ func TestDoorAsObjects(t *testing.T) {
 		{OID: "0.3.3.3.3", Value: ""},
 		{OID: "0.3.3.4", Value: true},
 		{OID: "0.3.3.5", Value: "******"},
+		{OID: "0.3.3.6.1", Value: "08:30"},
+		{OID: "0.3.3.6.2", Value: "16:45"},
+		{OID: "0.3.3.6.3", Value: "normally open"},
+		{OID: "0.3.3.6.4", Value: "firstcard only"},
+		{OID: "0.3.3.6.5.1", Value: true},
+		{OID: "0.3.3.6.5.2", Value: true},
+		{OID: "0.3.3.6.5.3", Value: false},
+		{OID: "0.3.3.6.5.4", Value: true},
+		{OID: "0.3.3.6.5.5", Value: false},
+		{OID: "0.3.3.6.5.6", Value: false},
+		{OID: "0.3.3.6.5.7", Value: true},
 	}
 
 	objects := d.AsObjects(nil)
@@ -114,6 +125,17 @@ func TestDoorAsObjectsWithAuth(t *testing.T) {
 		{OID: "0.3.3.3.3", Value: ""},
 		{OID: "0.3.3.4", Value: true},
 		{OID: "0.3.3.5", Value: "******"},
+		{OID: "0.3.3.6.1", Value: "08:30"},
+		{OID: "0.3.3.6.2", Value: "16:45"},
+		{OID: "0.3.3.6.3", Value: "normally open"},
+		{OID: "0.3.3.6.4", Value: "firstcard only"},
+		{OID: "0.3.3.6.5.1", Value: true},
+		{OID: "0.3.3.6.5.2", Value: true},
+		{OID: "0.3.3.6.5.3", Value: false},
+		{OID: "0.3.3.6.5.4", Value: true},
+		{OID: "0.3.3.6.5.5", Value: false},
+		{OID: "0.3.3.6.5.6", Value: false},
+		{OID: "0.3.3.6.5.7", Value: true},
 	}
 
 	a := auth.Authorizator{
