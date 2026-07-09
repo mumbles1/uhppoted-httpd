@@ -111,7 +111,11 @@ export function onEdited(tag, event) {
       break
 
     case 'door':
-      set(event.target, event.target.value, status)
+      if (event.target.type === 'checkbox') {
+        set(event.target, event.target.checked, status)
+      } else {
+        set(event.target, event.target.value, status)
+      }
 
       // Allow 'forced' controller update for an error'd door
       if (status === 'error') {

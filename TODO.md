@@ -15,10 +15,10 @@
         - [x] end time
         - [x] active mode
         - [x] inactive mode
-        - [ ] weekdays
+        - [x] weekdays
+        - [ ] Door.set unit test
         - [ ] change core.FirstCardOnly to "firstcard only"
-        - [ ] unit test
-    - [ ] store
+    - [ ] serialization
     - (?) set/clear button
     - [ ] CHANGELOG
     - [ ] README

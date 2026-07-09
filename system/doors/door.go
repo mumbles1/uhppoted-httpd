@@ -432,6 +432,104 @@ func (d *Door) set(a *auth.Authorizator, oid schema.OID, value string, dbc db.DB
 
 			list = append(list, kv{DoorFirstCardActiveMode, fmt.Sprintf("%v", d.firstcard.Inactive)})
 		}
+
+	case d.OID.Append(DoorFirstCardMonday):
+		if err := CanUpdate(a, d, "firstcard", value); err != nil {
+			return nil, err
+		} else {
+			d.log(dbc, uid, "update", "firstcard", d.firstcard.Active, value, "Updated firstcard monday")
+
+			d.firstcard.Weekdays[time.Monday] = (value == "true")
+			d.modified = types.TimestampNow()
+
+			dbc.Updated(d.OID, DoorFirstCardMonday, d.firstcard.Weekdays[time.Monday])
+
+			list = append(list, kv{DoorFirstCardMonday, fmt.Sprintf("%v", d.firstcard.Weekdays[time.Monday])})
+		}
+
+	case d.OID.Append(DoorFirstCardTuesday):
+		if err := CanUpdate(a, d, "firstcard", value); err != nil {
+			return nil, err
+		} else {
+			d.log(dbc, uid, "update", "firstcard", d.firstcard.Active, value, "Updated firstcard tuesday")
+
+			d.firstcard.Weekdays[time.Tuesday] = (value == "true")
+			d.modified = types.TimestampNow()
+
+			dbc.Updated(d.OID, DoorFirstCardTuesday, d.firstcard.Weekdays[time.Tuesday])
+
+			list = append(list, kv{DoorFirstCardTuesday, fmt.Sprintf("%v", d.firstcard.Weekdays[time.Tuesday])})
+		}
+
+	case d.OID.Append(DoorFirstCardWednesday):
+		if err := CanUpdate(a, d, "firstcard", value); err != nil {
+			return nil, err
+		} else {
+			d.log(dbc, uid, "update", "firstcard", d.firstcard.Active, value, "Updated firstcard wednesday")
+
+			d.firstcard.Weekdays[time.Wednesday] = (value == "true")
+			d.modified = types.TimestampNow()
+
+			dbc.Updated(d.OID, DoorFirstCardWednesday, d.firstcard.Weekdays[time.Wednesday])
+
+			list = append(list, kv{DoorFirstCardWednesday, fmt.Sprintf("%v", d.firstcard.Weekdays[time.Wednesday])})
+		}
+
+	case d.OID.Append(DoorFirstCardThursday):
+		if err := CanUpdate(a, d, "firstcard", value); err != nil {
+			return nil, err
+		} else {
+			d.log(dbc, uid, "update", "firstcard", d.firstcard.Active, value, "Updated firstcard thursday")
+
+			d.firstcard.Weekdays[time.Thursday] = (value == "true")
+			d.modified = types.TimestampNow()
+
+			dbc.Updated(d.OID, DoorFirstCardThursday, d.firstcard.Weekdays[time.Thursday])
+
+			list = append(list, kv{DoorFirstCardThursday, fmt.Sprintf("%v", d.firstcard.Weekdays[time.Thursday])})
+		}
+
+	case d.OID.Append(DoorFirstCardFriday):
+		if err := CanUpdate(a, d, "firstcard", value); err != nil {
+			return nil, err
+		} else {
+			d.log(dbc, uid, "update", "firstcard", d.firstcard.Active, value, "Updated firstcard friday")
+
+			d.firstcard.Weekdays[time.Friday] = (value == "true")
+			d.modified = types.TimestampNow()
+
+			dbc.Updated(d.OID, DoorFirstCardFriday, d.firstcard.Weekdays[time.Friday])
+
+			list = append(list, kv{DoorFirstCardFriday, fmt.Sprintf("%v", d.firstcard.Weekdays[time.Friday])})
+		}
+
+	case d.OID.Append(DoorFirstCardSaturday):
+		if err := CanUpdate(a, d, "firstcard", value); err != nil {
+			return nil, err
+		} else {
+			d.log(dbc, uid, "update", "firstcard", d.firstcard.Active, value, "Updated firstcard saturday")
+
+			d.firstcard.Weekdays[time.Saturday] = (value == "true")
+			d.modified = types.TimestampNow()
+
+			dbc.Updated(d.OID, DoorFirstCardSaturday, d.firstcard.Weekdays[time.Saturday])
+
+			list = append(list, kv{DoorFirstCardSaturday, fmt.Sprintf("%v", d.firstcard.Weekdays[time.Saturday])})
+		}
+
+	case d.OID.Append(DoorFirstCardSunday):
+		if err := CanUpdate(a, d, "firstcard", value); err != nil {
+			return nil, err
+		} else {
+			d.log(dbc, uid, "update", "firstcard", d.firstcard.Active, value, "Updated firstcard sunday")
+
+			d.firstcard.Weekdays[time.Sunday] = (value == "true")
+			d.modified = types.TimestampNow()
+
+			dbc.Updated(d.OID, DoorFirstCardSunday, d.firstcard.Weekdays[time.Sunday])
+
+			list = append(list, kv{DoorFirstCardSunday, fmt.Sprintf("%v", d.firstcard.Weekdays[time.Sunday])})
+		}
 	}
 
 	list = append(list, kv{DoorStatus, d.Status()})
@@ -491,19 +589,21 @@ func (d Door) Status() types.Status {
 
 func (d Door) serialize() ([]byte, error) {
 	record := struct {
-		OID      schema.OID        `json:"OID"`
-		Name     string            `json:"name,omitempty"`
-		Delay    uint8             `json:"delay,omitempty"`
-		Mode     core.ControlState `json:"mode,omitempty"`
-		Keypad   bool              `json:"keypad,omitempty"`
-		Created  types.Timestamp   `json:"created"`
-		Modified types.Timestamp   `json:"modified"`
+		OID    schema.OID        `json:"OID"`
+		Name   string            `json:"name,omitempty"`
+		Delay  uint8             `json:"delay,omitempty"`
+		Mode   core.ControlState `json:"mode,omitempty"`
+		Keypad bool              `json:"keypad,omitempty"`
+		// FirstCard core.FirstCard    `json:"firstcard,omitempty"`
+		Created  types.Timestamp `json:"created"`
+		Modified types.Timestamp `json:"modified"`
 	}{
-		OID:      d.OID,
-		Name:     d.name,
-		Delay:    d.delay,
-		Mode:     d.mode,
-		Keypad:   d.keypad,
+		OID:    d.OID,
+		Name:   d.name,
+		Delay:  d.delay,
+		Mode:   d.mode,
+		Keypad: d.keypad,
+		// FirstCard: d.firstcard,
 		Created:  d.created.UTC(),
 		Modified: d.modified.UTC(),
 	}
@@ -515,17 +615,21 @@ func (d *Door) deserialize(bytes []byte) error {
 	created = created.Add(1 * time.Minute)
 
 	record := struct {
-		OID      schema.OID        `json:"OID"`
-		Name     string            `json:"name,omitempty"`
-		Delay    uint8             `json:"delay,omitempty"`
-		Mode     core.ControlState `json:"mode,omitempty"`
-		Keypad   bool              `json:"keypad,omitempty"`
-		Created  types.Timestamp   `json:"created"`
-		Modified types.Timestamp   `json:"modified"`
+		OID    schema.OID        `json:"OID"`
+		Name   string            `json:"name,omitempty"`
+		Delay  uint8             `json:"delay,omitempty"`
+		Mode   core.ControlState `json:"mode,omitempty"`
+		Keypad bool              `json:"keypad,omitempty"`
+		// FirstCard core.FirstCard    `json:"firstcard"`
+		Created  types.Timestamp `json:"created"`
+		Modified types.Timestamp `json:"modified"`
 	}{
-		Delay:   5,
-		Mode:    core.Controlled,
-		Keypad:  false,
+		Delay:  5,
+		Mode:   core.Controlled,
+		Keypad: false,
+		// FirstCard: core.FirstCard{
+		// 	Weekdays: core.Weekdays{},
+		// },
 		Created: created,
 	}
 
@@ -539,6 +643,9 @@ func (d *Door) deserialize(bytes []byte) error {
 	d.mode = record.Mode
 	d.keypad = record.Keypad
 	d.passcodes = []uint32{}
+	d.firstcard = core.FirstCard{
+		Weekdays: core.Weekdays{},
+	}
 	d.created = record.Created
 	d.modified = record.Modified
 
@@ -555,6 +662,7 @@ func (d *Door) clone() Door {
 		mode:      d.mode,
 		keypad:    d.keypad,
 		passcodes: d.passcodes,
+		firstcard: d.firstcard,
 		created:   d.created,
 		modified:  d.modified,
 		deleted:   d.deleted,

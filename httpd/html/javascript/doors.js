@@ -107,6 +107,16 @@ function add(oid) {
       { suffix: 'firstcard.sunday', oid: `${oid}.6.5.7`, selector: 'td input.firstcard-sunday' },
     ]
 
+    const labels = {
+      monday: clone.querySelector('input.field.firstcard-monday ~ label'),
+      tuesday: clone.querySelector('input.field.firstcard-tuesday ~ label'),
+      wednesday: clone.querySelector('input.field.firstcard-wednesday ~ label'),
+      thursday: clone.querySelector('input.field.firstcard-thursday ~ label'),
+      friday: clone.querySelector('input.field.firstcard-friday ~ label'),
+      saturday: clone.querySelector('input.field.firstcard-saturday ~ label'),
+      sunday: clone.querySelector('input.field.firstcard-sunday ~ label'),
+    }
+
     fields.forEach((f) => {
       const field = clone.querySelector(f.selector)
 
@@ -127,7 +137,17 @@ function add(oid) {
       }
     })
 
+    // ... checkboxes
+    labels.monday.htmlFor = uuid + '-firstcard.monday'
+    labels.tuesday.htmlFor = uuid + '-firstcard.tuesday'
+    labels.wednesday.htmlFor = uuid + '-firstcard.wednesday'
+    labels.thursday.htmlFor = uuid + '-firstcard.thursday'
+    labels.friday.htmlFor = uuid + '-firstcard.friday'
+    labels.saturday.htmlFor = uuid + '-firstcard.saturday'
+    labels.sunday.htmlFor = uuid + '-firstcard.sunday'
+
     combobox(clone.querySelector('td.combobox'))
+
     row.appendChild(clone)
 
     return row
