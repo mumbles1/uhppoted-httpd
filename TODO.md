@@ -16,8 +16,8 @@
         - [x] active mode
         - [x] inactive mode
         - [x] weekdays
-        - [ ] Door.set unit test
         - [x] change core.FirstCardOnly to "firstcard only"
+        - [ ] Door.set unit test
     - [ ] serialization
     - (?) set/clear button
     - [ ] CHANGELOG
