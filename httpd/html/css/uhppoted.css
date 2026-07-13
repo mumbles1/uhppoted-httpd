@@ -692,7 +692,7 @@ html.doors tr.door td.firstcard div[popover] > div {
   border-radius: 8px;
   display: grid;
   grid-template-columns: auto auto;
-  grid-template-rows: auto;
+  grid-template-rows: auto auto 16px 20px 16px;
   row-gap: 2px;
   column-gap: 4px;
   align-items: center;
@@ -713,11 +713,15 @@ html.doors tr.door td.firstcard div[popover] > div input[type=time] {
   border: none;
   outline: none;
 }
-html.doors tr.door td.firstcard div[popover] > div input.firstcard-active {
+html.doors tr.door td.firstcard div[popover] > div select.firstcard-active {
+  margin-top: -2px;
+  margin-left: 4px;
   font-weight: semibold;
   font-variant-caps: all-small-caps;
 }
-html.doors tr.door td.firstcard div[popover] > div input.firstcard-inactive {
+html.doors tr.door td.firstcard div[popover] > div select.firstcard-inactive {
+  margin-top: -2px;
+  margin-left: 4px;
   font-weight: semibold;
   font-variant-caps: all-small-caps;
 }

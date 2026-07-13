@@ -182,9 +182,18 @@
                       <label>End time</label>
                       <input class="field firstcard-endtime" type="time" title="end time" onchange="onEdited('door', event)" />
                       <label>Active mode</label>
-                      <input class="field firstcard-active" type="text" title="active door control mode" onchange="onEdited('door', event)" />
+                      <select class="field firstcard-active" title="active door control mode" onchange="onEdited('door', event)">
+                        <option value="controlled">controlled</option>
+                        <option value="normally open">normally open</option>
+                        <option value="normally closed">normally closed</option>
+                      </select>
                       <label>Inactive mode</label>
-                      <input class="field firstcard-inactive" type="text" title="inactive door control mode" onchange="onEdited('door', event)" />
+                      <select class="field firstcard-inactive" type="text" title="inactive door control mode" list="inactive-modes" onchange="onEdited('door', event)">
+                        <option value="controlled">controlled</option>
+                        <option value="normally open">normally open</option>
+                        <option value="normally closed">normally closed</option>
+                        <option value="firstcard only">firstcard only</option>
+                      </select>
 
                       <label>Weekdays</label>
                       <div class="weekdays">

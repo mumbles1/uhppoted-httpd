@@ -122,7 +122,7 @@ html.doors {
 
     display: grid;
     grid-template-columns: auto auto;
-    grid-template-rows: auto;
+    grid-template-rows: auto auto 16px 20px 16px;
     row-gap: 2px;
     column-gap: 4px;
     align-items: center;
@@ -146,12 +146,18 @@ html.doors {
       outline: none;
     }
 
-    input.firstcard-active {
+    select.firstcard-active {
+      margin-top: -2px;
+      margin-left: 4px;
+
       font-weight: semibold;
       font-variant-caps: all-small-caps;;
     }
 
-    input.firstcard-inactive {
+    select.firstcard-inactive {
+      margin-top: -2px;
+      margin-left: 4px;
+
       font-weight: semibold;
       font-variant-caps: all-small-caps;;
     }

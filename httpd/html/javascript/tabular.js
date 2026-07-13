@@ -485,8 +485,11 @@ export function update(element, value, status, checked, options = {}) {
 
     // update fields not pending, modified or editing
     if (element !== document.activeElement) {
-      switch (element.getAttribute('type').toLowerCase()) {
-        case 'checkbox':
+      const tagName = element.tagName.toLowerCase()
+      const type = tagName === 'input' ? element.getAttribute('type'.toLowerCase()) : ''
+
+      switch (true) {
+        case type === 'checkbox':
           if (checked != null) {
             element.checked = checked(v)
           } else {
