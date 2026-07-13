@@ -589,23 +589,26 @@ func (d Door) Status() types.Status {
 
 func (d Door) serialize() ([]byte, error) {
 	record := struct {
-		OID    schema.OID        `json:"OID"`
-		Name   string            `json:"name,omitempty"`
-		Delay  uint8             `json:"delay,omitempty"`
-		Mode   core.ControlState `json:"mode,omitempty"`
-		Keypad bool              `json:"keypad,omitempty"`
-		// FirstCard core.FirstCard    `json:"firstcard,omitempty"`
-		Created  types.Timestamp `json:"created"`
-		Modified types.Timestamp `json:"modified"`
+		OID       schema.OID        `json:"OID"`
+		Name      string            `json:"name,omitempty"`
+		Delay     uint8             `json:"delay,omitempty"`
+		Mode      core.ControlState `json:"mode,omitempty"`
+		Keypad    bool              `json:"keypad,omitempty"`
+		FirstCard *core.FirstCard   `json:"firstcard,omitempty"`
+		Created   types.Timestamp   `json:"created"`
+		Modified  types.Timestamp   `json:"modified"`
 	}{
-		OID:    d.OID,
-		Name:   d.name,
-		Delay:  d.delay,
-		Mode:   d.mode,
-		Keypad: d.keypad,
-		// FirstCard: d.firstcard,
+		OID:      d.OID,
+		Name:     d.name,
+		Delay:    d.delay,
+		Mode:     d.mode,
+		Keypad:   d.keypad,
 		Created:  d.created.UTC(),
 		Modified: d.modified.UTC(),
+	}
+
+	if !d.firstcard.IsZero() {
+		record.FirstCard = &d.firstcard
 	}
 
 	return json.Marshal(record)
@@ -615,21 +618,23 @@ func (d *Door) deserialize(bytes []byte) error {
 	created = created.Add(1 * time.Minute)
 
 	record := struct {
-		OID    schema.OID        `json:"OID"`
-		Name   string            `json:"name,omitempty"`
-		Delay  uint8             `json:"delay,omitempty"`
-		Mode   core.ControlState `json:"mode,omitempty"`
-		Keypad bool              `json:"keypad,omitempty"`
-		// FirstCard core.FirstCard    `json:"firstcard"`
-		Created  types.Timestamp `json:"created"`
-		Modified types.Timestamp `json:"modified"`
+		OID       schema.OID        `json:"OID"`
+		Name      string            `json:"name,omitempty"`
+		Delay     uint8             `json:"delay,omitempty"`
+		Mode      core.ControlState `json:"mode,omitempty"`
+		Keypad    bool              `json:"keypad,omitempty"`
+		FirstCard core.FirstCard    `json:"firstcard"`
+		Created   types.Timestamp   `json:"created"`
+		Modified  types.Timestamp   `json:"modified"`
 	}{
 		Delay:  5,
 		Mode:   core.Controlled,
 		Keypad: false,
-		// FirstCard: core.FirstCard{
-		// 	Weekdays: core.Weekdays{},
-		// },
+		FirstCard: core.FirstCard{
+			Active:   core.Controlled,
+			Inactive: core.Controlled,
+			Weekdays: core.Weekdays{},
+		},
 		Created: created,
 	}
 
@@ -643,9 +648,7 @@ func (d *Door) deserialize(bytes []byte) error {
 	d.mode = record.Mode
 	d.keypad = record.Keypad
 	d.passcodes = []uint32{}
-	d.firstcard = core.FirstCard{
-		Weekdays: core.Weekdays{},
-	}
+	d.firstcard = record.FirstCard
 	d.created = record.Created
 	d.modified = record.Modified
 

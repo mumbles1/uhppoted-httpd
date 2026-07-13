@@ -14,14 +14,16 @@
         - [x] start time
         - [x] end time
         - [x] active mode
+            - [ ] dropdown list
         - [x] inactive mode
+            - [ ] dropdown list
         - [x] weekdays
         - [x] change core.FirstCardOnly to "firstcard only"
         - [ ] Door.set unit test
-    - [ ] serialization
-    - (?) set/clear button
-    - [ ] CHANGELOG
+    - [x] serialization
+    - [x] CHANGELOG
     - [ ] README
+    - [ ] OID.md
 
 - [ ] `failed to put card`
 - [ ] fix light/dark themes

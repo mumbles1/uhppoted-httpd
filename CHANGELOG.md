@@ -4,6 +4,7 @@
 
 ## Added
 1. Added _first card_ privileges to ACL (groups and cards).
+2. Added _doors::first-card_ to manage first card configurations for controller managed doors.
 
 ### Updated
 1. Updated to Go 1.26.
