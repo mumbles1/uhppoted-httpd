@@ -118,11 +118,19 @@ func GetDoors() []schema.OID {
 }
 
 func GetDoorDeviceID(door schema.OID) uint32 {
-	return catalog.GetDoorDeviceID(door)
+	if catalog != nil {
+		return catalog.GetDoorDeviceID(door)
+	}
+
+	return 0
 }
 
 func GetDoorDeviceDoor(door schema.OID) uint8 {
-	return catalog.GetDoorDeviceDoor(door)
+	if catalog != nil {
+		return catalog.GetDoorDeviceDoor(door)
+	}
+
+	return 0
 }
 
 func GetGroups() []schema.OID {

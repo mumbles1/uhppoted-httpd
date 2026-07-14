@@ -128,8 +128,9 @@ publish: release
 	                               "./dist/$(DIST)-windows-x64.zip"     \
 	                               --draft --prerelease --title "$(VERSION)-beta" --notes-file release-notes.md
 
-debug: build
-	$(CMD) --debug --console
+debug:
+	go build -trimpath -o bin/ ./...
+	go test ./... -run TestDoorSetFirstCard
 
 sass:
 	npx sass --watch sass:httpd/html/css --no-source-map  --style=expanded

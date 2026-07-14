@@ -104,6 +104,10 @@ func (d Door) Keypad() bool {
 	return d.keypad
 }
 
+func (d Door) FirstCard() core.FirstCard {
+	return d.firstcard
+}
+
 func (d Door) String() string {
 	return d.name
 }
@@ -430,7 +434,7 @@ func (d *Door) set(a *auth.Authorizator, oid schema.OID, value string, dbc db.DB
 
 			dbc.Updated(d.OID, DoorFirstCardInactiveMode, d.firstcard.Inactive)
 
-			list = append(list, kv{DoorFirstCardActiveMode, fmt.Sprintf("%v", d.firstcard.Inactive)})
+			list = append(list, kv{DoorFirstCardInactiveMode, fmt.Sprintf("%v", d.firstcard.Inactive)})
 		}
 
 	case d.OID.Append(DoorFirstCardMonday):

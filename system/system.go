@@ -510,6 +510,37 @@ func (s *system) Update(oid schema.OID, field schema.Suffix, value any) {
 				}
 			}
 		}
+
+	case
+		oid.HasPrefix(schema.DoorsOID) && field == schema.DoorFirstCardStartTime,
+		oid.HasPrefix(schema.DoorsOID) && field == schema.DoorFirstCardEndTime,
+		oid.HasPrefix(schema.DoorsOID) && field == schema.DoorFirstCardActiveMode,
+		oid.HasPrefix(schema.DoorsOID) && field == schema.DoorFirstCardInactiveMode,
+		oid.HasPrefix(schema.DoorsOID) && field == schema.DoorFirstCardMonday,
+		oid.HasPrefix(schema.DoorsOID) && field == schema.DoorFirstCardTuesday,
+		oid.HasPrefix(schema.DoorsOID) && field == schema.DoorFirstCardWednesday,
+		oid.HasPrefix(schema.DoorsOID) && field == schema.DoorFirstCardThursday,
+		oid.HasPrefix(schema.DoorsOID) && field == schema.DoorFirstCardFriday,
+		oid.HasPrefix(schema.DoorsOID) && field == schema.DoorFirstCardSaturday,
+		oid.HasPrefix(schema.DoorsOID) && field == schema.DoorFirstCardSunday:
+		for _, c := range controllers {
+			for _, door := range []uint8{1, 2, 3, 4} {
+				if did, ok := c.Door(door); ok && did == oid {
+					controller := c
+
+					if d, ok := s.doors.Door(oid); ok {
+						firstcard := d.FirstCard()
+
+						go func() {
+							s.interfaces.SetFirstCard(controller, door, firstcard)
+						}()
+					}
+
+					return
+				}
+			}
+		}
+
 	}
 }
 

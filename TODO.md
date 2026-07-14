@@ -7,17 +7,23 @@
         - [x] enable firstcard for group doors only
         - [x] fix doors page - not displaying door ID
         - [ ] update ACL synch and compare for firstcard
+        - [ ] config::enable-firstcard
     - [x] column
     - [x] popover
     - [x] display
-    - [ ] update
+    - [x] update
         - [x] start time
         - [x] end time
         - [x] active mode
         - [x] inactive mode
         - [x] weekdays
         - [x] change core.FirstCardOnly to "firstcard only"
-        - [ ] Door.set unit test
+        - [x] door.set unit test
+        - [x] invoke set-firstcard
+        - (?) batch all firstcard updates together
+        - [ ] sync if-not-zero/if-valid
+        - [ ] config::enable-firstcard
+        - [ ] default active/inactive should be 'none'
     - [x] serialization
     - [x] CHANGELOG
     - [ ] README

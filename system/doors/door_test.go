@@ -211,6 +211,650 @@ func TestDoorSet(t *testing.T) {
 	}
 }
 
+func TestDoorSetFirstCardStartTime(t *testing.T) {
+	expected := []schema.Object{
+		schema.Object{OID: "0.3.3", Value: ""},
+		schema.Object{OID: "0.3.3.6.1", Value: "08:35"},
+		schema.Object{OID: "0.3.3.0.0", Value: types.StatusOk},
+	}
+
+	d := Door{
+		CatalogDoor: catalog.CatalogDoor{
+			OID: "0.3.3",
+		},
+		name:  "Le Door",
+		delay: 5,
+		mode:  core.NormallyOpen,
+	}
+
+	objects, err := d.set(nil, "0.3.3.6.1", "08:35", db.DBC{})
+	if err != nil {
+		t.Errorf("Unexpected error (%v)", err)
+	}
+
+	if !reflect.DeepEqual(objects, expected) {
+		t.Errorf("Invalid result\n   expected:%#v\n   got:     %#v", expected, objects)
+	}
+
+	if d.firstcard.StartTime != core.MustParseHHmm("08:35") {
+		t.Errorf("Door first card start time not updated - expected:%v, got:%v", "08:35", d.firstcard.StartTime)
+	}
+}
+
+func TestDoorSetFirstCardEndTime(t *testing.T) {
+	expected := []schema.Object{
+		schema.Object{OID: "0.3.3", Value: ""},
+		schema.Object{OID: "0.3.3.6.2", Value: "16:57"},
+		schema.Object{OID: "0.3.3.0.0", Value: types.StatusOk},
+	}
+
+	d := Door{
+		CatalogDoor: catalog.CatalogDoor{
+			OID: "0.3.3",
+		},
+		name:  "Le Door",
+		delay: 5,
+		mode:  core.NormallyOpen,
+	}
+
+	objects, err := d.set(nil, "0.3.3.6.2", "16:57", db.DBC{})
+	if err != nil {
+		t.Errorf("Unexpected error (%v)", err)
+	}
+
+	if !reflect.DeepEqual(objects, expected) {
+		t.Errorf("Invalid result\n   expected:%#v\n   got:     %#v", expected, objects)
+	}
+
+	if d.firstcard.EndTime != core.MustParseHHmm("16:57") {
+		t.Errorf("Door first card end time not updated - expected:%v, got:%v", "16:57", d.firstcard.EndTime)
+	}
+}
+
+func TestDoorSetFirstCardActiveMode(t *testing.T) {
+	expected := []schema.Object{
+		schema.Object{OID: "0.3.3", Value: ""},
+		schema.Object{OID: "0.3.3.6.3", Value: "normally closed"},
+		schema.Object{OID: "0.3.3.0.0", Value: types.StatusOk},
+	}
+
+	d := Door{
+		CatalogDoor: catalog.CatalogDoor{
+			OID: "0.3.3",
+		},
+		name:  "Le Door",
+		delay: 5,
+		mode:  core.NormallyOpen,
+	}
+
+	objects, err := d.set(nil, "0.3.3.6.3", "normally closed", db.DBC{})
+	if err != nil {
+		t.Errorf("Unexpected error (%v)", err)
+	}
+
+	if !reflect.DeepEqual(objects, expected) {
+		t.Errorf("Invalid result\n   expected:%#v\n   got:     %#v", expected, objects)
+	}
+
+	if d.firstcard.Active != core.NormallyClosed {
+		t.Errorf("Door first card active mode not updated - expected:%v, got:%v", core.NormallyClosed, d.firstcard.Active)
+	}
+}
+
+func TestDoorSetFirstCardInvalidActiveMode(t *testing.T) {
+	expected := []schema.Object{
+		schema.Object{OID: "0.3.3", Value: ""},
+		schema.Object{OID: "0.3.3.6.3", Value: "normally open"},
+		schema.Object{OID: "0.3.3.0.0", Value: types.StatusOk},
+	}
+
+	d := Door{
+		CatalogDoor: catalog.CatalogDoor{
+			OID: "0.3.3",
+		},
+		name:  "Le Door",
+		delay: 5,
+		mode:  core.NormallyOpen,
+		firstcard: core.FirstCard{
+			Active: core.NormallyOpen,
+		},
+	}
+
+	objects, err := d.set(nil, "0.3.3.6.3", "firstcard only", db.DBC{})
+	if err != nil {
+		t.Errorf("Unexpected error (%v)", err)
+	}
+
+	if !reflect.DeepEqual(objects, expected) {
+		t.Errorf("Invalid result\n   expected:%#v\n   got:     %#v", expected, objects)
+	}
+
+	if d.firstcard.Active != core.NormallyOpen {
+		t.Errorf("Door first card active mode not updated - expected:%v, got:%v", core.NormallyOpen, d.firstcard.Active)
+	}
+}
+
+func TestDoorSetFirstCardInactiveMode(t *testing.T) {
+	expected := []schema.Object{
+		schema.Object{OID: "0.3.3", Value: ""},
+		schema.Object{OID: "0.3.3.6.4", Value: "firstcard only"},
+		schema.Object{OID: "0.3.3.0.0", Value: types.StatusOk},
+	}
+
+	d := Door{
+		CatalogDoor: catalog.CatalogDoor{
+			OID: "0.3.3",
+		},
+		name:  "Le Door",
+		delay: 5,
+		mode:  core.NormallyOpen,
+		firstcard: core.FirstCard{
+			Active: core.NormallyOpen,
+		},
+	}
+
+	objects, err := d.set(nil, "0.3.3.6.4", "firstcard only", db.DBC{})
+	if err != nil {
+		t.Errorf("Unexpected error (%v)", err)
+	}
+
+	if !reflect.DeepEqual(objects, expected) {
+		t.Errorf("Invalid result\n   expected:%#v\n   got:     %#v", expected, objects)
+	}
+
+	if d.firstcard.Inactive != core.FirstCardOnly {
+		t.Errorf("Door first card inactive mode not updated - expected:%v, got:%v", core.FirstCardOnly, d.firstcard.Inactive)
+	}
+}
+
+func TestDoorSetFirstCardInvalidInactiveMode(t *testing.T) {
+	expected := []schema.Object{
+		schema.Object{OID: "0.3.3", Value: ""},
+		schema.Object{OID: "0.3.3.6.4", Value: "firstcard only"},
+		schema.Object{OID: "0.3.3.0.0", Value: types.StatusOk},
+	}
+
+	d := Door{
+		CatalogDoor: catalog.CatalogDoor{
+			OID: "0.3.3",
+		},
+		name:  "Le Door",
+		delay: 5,
+		mode:  core.NormallyOpen,
+		firstcard: core.FirstCard{
+			Inactive: core.FirstCardOnly,
+		},
+	}
+
+	objects, err := d.set(nil, "0.3.3.6.4", "qwertyuiop", db.DBC{})
+	if err != nil {
+		t.Errorf("Unexpected error (%v)", err)
+	}
+
+	if !reflect.DeepEqual(objects, expected) {
+		t.Errorf("Invalid result\n   expected:%#v\n   got:     %#v", expected, objects)
+	}
+
+	if d.firstcard.Inactive != core.FirstCardOnly {
+		t.Errorf("Door first card active mode unexpectedly updated - expected:%v, got:%v", core.FirstCardOnly, d.firstcard.Inactive)
+	}
+}
+
+func TestDoorSetFirstCardMonday(t *testing.T) {
+	expected := []schema.Object{
+		schema.Object{OID: "0.3.3", Value: ""},
+		schema.Object{OID: "0.3.3.6.5.1", Value: "true"},
+		schema.Object{OID: "0.3.3.0.0", Value: types.StatusOk},
+	}
+
+	d := Door{
+		CatalogDoor: catalog.CatalogDoor{
+			OID: "0.3.3",
+		},
+		name:  "Le Door",
+		delay: 5,
+		mode:  core.NormallyOpen,
+		firstcard: core.FirstCard{
+			Weekdays: core.Weekdays{
+				time.Monday:    false,
+				time.Tuesday:   false,
+				time.Wednesday: false,
+				time.Thursday:  false,
+				time.Friday:    false,
+				time.Saturday:  false,
+				time.Sunday:    false,
+			},
+		},
+	}
+
+	objects, err := d.set(nil, "0.3.3.6.5.1", "true", db.DBC{})
+	if err != nil {
+		t.Errorf("Unexpected error (%v)", err)
+	}
+
+	if !reflect.DeepEqual(objects, expected) {
+		t.Errorf("Invalid result\n   expected:%#v\n   got:     %#v", expected, objects)
+	}
+
+	if !d.firstcard.Weekdays[time.Monday] {
+		t.Errorf("Door first card weekdays.monday mode not updated - expected:%v, got:%v", true, d.firstcard.Weekdays[time.Monday])
+	}
+
+	if d.firstcard.Weekdays[time.Tuesday] {
+		t.Errorf("Door first card weekdays.tuesday mode unexpected updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Tuesday])
+	}
+
+	if d.firstcard.Weekdays[time.Wednesday] {
+		t.Errorf("Door first card weekdays.wednesday mode unexpected updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Wednesday])
+	}
+
+	if d.firstcard.Weekdays[time.Thursday] {
+		t.Errorf("Door first card weekdays.thursday mode unexpected updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Thursday])
+	}
+
+	if d.firstcard.Weekdays[time.Friday] {
+		t.Errorf("Door first card weekdays.friday mode unexpected updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Friday])
+	}
+
+	if d.firstcard.Weekdays[time.Saturday] {
+		t.Errorf("Door first card weekdays.saturday mode unexpected updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Saturday])
+	}
+
+	if d.firstcard.Weekdays[time.Sunday] {
+		t.Errorf("Door first card weekdays.sunday mode unexpected updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Sunday])
+	}
+}
+
+func TestDoorSetFirstCardTuesday(t *testing.T) {
+	expected := []schema.Object{
+		schema.Object{OID: "0.3.3", Value: ""},
+		schema.Object{OID: "0.3.3.6.5.2", Value: "true"},
+		schema.Object{OID: "0.3.3.0.0", Value: types.StatusOk},
+	}
+
+	d := Door{
+		CatalogDoor: catalog.CatalogDoor{
+			OID: "0.3.3",
+		},
+		name:  "Le Door",
+		delay: 5,
+		mode:  core.NormallyOpen,
+		firstcard: core.FirstCard{
+			Weekdays: core.Weekdays{
+				time.Monday:    false,
+				time.Tuesday:   false,
+				time.Wednesday: false,
+				time.Thursday:  false,
+				time.Friday:    false,
+				time.Saturday:  false,
+				time.Sunday:    false,
+			},
+		},
+	}
+
+	objects, err := d.set(nil, "0.3.3.6.5.2", "true", db.DBC{})
+	if err != nil {
+		t.Errorf("Unexpected error (%v)", err)
+	}
+
+	if !reflect.DeepEqual(objects, expected) {
+		t.Errorf("Invalid result\n   expected:%#v\n   got:     %#v", expected, objects)
+	}
+
+	if d.firstcard.Weekdays[time.Monday] {
+		t.Errorf("Door first card weekdays.monday mode unexpectedly updated - expected:%v, got:%v", true, d.firstcard.Weekdays[time.Monday])
+	}
+
+	if !d.firstcard.Weekdays[time.Tuesday] {
+		t.Errorf("Door first card weekdays.tuesday mode not updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Tuesday])
+	}
+
+	if d.firstcard.Weekdays[time.Wednesday] {
+		t.Errorf("Door first card weekdays.wednesday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Wednesday])
+	}
+
+	if d.firstcard.Weekdays[time.Thursday] {
+		t.Errorf("Door first card weekdays.thursday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Thursday])
+	}
+
+	if d.firstcard.Weekdays[time.Friday] {
+		t.Errorf("Door first card weekdays.friday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Friday])
+	}
+
+	if d.firstcard.Weekdays[time.Saturday] {
+		t.Errorf("Door first card weekdays.saturday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Saturday])
+	}
+
+	if d.firstcard.Weekdays[time.Sunday] {
+		t.Errorf("Door first card weekdays.sunday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Sunday])
+	}
+}
+
+func TestDoorSetFirstCardWednesday(t *testing.T) {
+	expected := []schema.Object{
+		schema.Object{OID: "0.3.3", Value: ""},
+		schema.Object{OID: "0.3.3.6.5.3", Value: "true"},
+		schema.Object{OID: "0.3.3.0.0", Value: types.StatusOk},
+	}
+
+	d := Door{
+		CatalogDoor: catalog.CatalogDoor{
+			OID: "0.3.3",
+		},
+		name:  "Le Door",
+		delay: 5,
+		mode:  core.NormallyOpen,
+		firstcard: core.FirstCard{
+			Weekdays: core.Weekdays{
+				time.Monday:    false,
+				time.Tuesday:   false,
+				time.Wednesday: false,
+				time.Thursday:  false,
+				time.Friday:    false,
+				time.Saturday:  false,
+				time.Sunday:    false,
+			},
+		},
+	}
+
+	objects, err := d.set(nil, "0.3.3.6.5.3", "true", db.DBC{})
+	if err != nil {
+		t.Errorf("Unexpected error (%v)", err)
+	}
+
+	if !reflect.DeepEqual(objects, expected) {
+		t.Errorf("Invalid result\n   expected:%#v\n   got:     %#v", expected, objects)
+	}
+
+	if d.firstcard.Weekdays[time.Monday] {
+		t.Errorf("Door first card weekdays.monday mode unexpectedly updated - expected:%v, got:%v", true, d.firstcard.Weekdays[time.Monday])
+	}
+
+	if d.firstcard.Weekdays[time.Tuesday] {
+		t.Errorf("Door first card weekdays.tuesday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Tuesday])
+	}
+
+	if !d.firstcard.Weekdays[time.Wednesday] {
+		t.Errorf("Door first card weekdays.wednesday mode not updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Wednesday])
+	}
+
+	if d.firstcard.Weekdays[time.Thursday] {
+		t.Errorf("Door first card weekdays.thursday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Thursday])
+	}
+
+	if d.firstcard.Weekdays[time.Friday] {
+		t.Errorf("Door first card weekdays.friday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Friday])
+	}
+
+	if d.firstcard.Weekdays[time.Saturday] {
+		t.Errorf("Door first card weekdays.saturday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Saturday])
+	}
+
+	if d.firstcard.Weekdays[time.Sunday] {
+		t.Errorf("Door first card weekdays.sunday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Sunday])
+	}
+}
+
+func TestDoorSetFirstCardThursday(t *testing.T) {
+	expected := []schema.Object{
+		schema.Object{OID: "0.3.3", Value: ""},
+		schema.Object{OID: "0.3.3.6.5.4", Value: "true"},
+		schema.Object{OID: "0.3.3.0.0", Value: types.StatusOk},
+	}
+
+	d := Door{
+		CatalogDoor: catalog.CatalogDoor{
+			OID: "0.3.3",
+		},
+		name:  "Le Door",
+		delay: 5,
+		mode:  core.NormallyOpen,
+		firstcard: core.FirstCard{
+			Weekdays: core.Weekdays{
+				time.Monday:    false,
+				time.Tuesday:   false,
+				time.Wednesday: false,
+				time.Thursday:  false,
+				time.Friday:    false,
+				time.Saturday:  false,
+				time.Sunday:    false,
+			},
+		},
+	}
+
+	objects, err := d.set(nil, "0.3.3.6.5.4", "true", db.DBC{})
+	if err != nil {
+		t.Errorf("Unexpected error (%v)", err)
+	}
+
+	if !reflect.DeepEqual(objects, expected) {
+		t.Errorf("Invalid result\n   expected:%#v\n   got:     %#v", expected, objects)
+	}
+
+	if d.firstcard.Weekdays[time.Monday] {
+		t.Errorf("Door first card weekdays.monday mode unexpectedly updated - expected:%v, got:%v", true, d.firstcard.Weekdays[time.Monday])
+	}
+
+	if d.firstcard.Weekdays[time.Tuesday] {
+		t.Errorf("Door first card weekdays.tuesday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Tuesday])
+	}
+
+	if d.firstcard.Weekdays[time.Wednesday] {
+		t.Errorf("Door first card weekdays.wednesday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Wednesday])
+	}
+
+	if !d.firstcard.Weekdays[time.Thursday] {
+		t.Errorf("Door first card weekdays.thursday mode not updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Thursday])
+	}
+
+	if d.firstcard.Weekdays[time.Friday] {
+		t.Errorf("Door first card weekdays.friday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Friday])
+	}
+
+	if d.firstcard.Weekdays[time.Saturday] {
+		t.Errorf("Door first card weekdays.saturday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Saturday])
+	}
+
+	if d.firstcard.Weekdays[time.Sunday] {
+		t.Errorf("Door first card weekdays.sunday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Sunday])
+	}
+}
+
+func TestDoorSetFirstCardFriday(t *testing.T) {
+	expected := []schema.Object{
+		schema.Object{OID: "0.3.3", Value: ""},
+		schema.Object{OID: "0.3.3.6.5.5", Value: "true"},
+		schema.Object{OID: "0.3.3.0.0", Value: types.StatusOk},
+	}
+
+	d := Door{
+		CatalogDoor: catalog.CatalogDoor{
+			OID: "0.3.3",
+		},
+		name:  "Le Door",
+		delay: 5,
+		mode:  core.NormallyOpen,
+		firstcard: core.FirstCard{
+			Weekdays: core.Weekdays{
+				time.Monday:    false,
+				time.Tuesday:   false,
+				time.Wednesday: false,
+				time.Thursday:  false,
+				time.Friday:    false,
+				time.Saturday:  false,
+				time.Sunday:    false,
+			},
+		},
+	}
+
+	objects, err := d.set(nil, "0.3.3.6.5.5", "true", db.DBC{})
+	if err != nil {
+		t.Errorf("Unexpected error (%v)", err)
+	}
+
+	if !reflect.DeepEqual(objects, expected) {
+		t.Errorf("Invalid result\n   expected:%#v\n   got:     %#v", expected, objects)
+	}
+
+	if d.firstcard.Weekdays[time.Monday] {
+		t.Errorf("Door first card weekdays.monday mode unexpectedly updated - expected:%v, got:%v", true, d.firstcard.Weekdays[time.Monday])
+	}
+
+	if d.firstcard.Weekdays[time.Tuesday] {
+		t.Errorf("Door first card weekdays.tuesday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Tuesday])
+	}
+
+	if d.firstcard.Weekdays[time.Wednesday] {
+		t.Errorf("Door first card weekdays.wednesday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Wednesday])
+	}
+
+	if d.firstcard.Weekdays[time.Thursday] {
+		t.Errorf("Door first card weekdays.thursday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Thursday])
+	}
+
+	if !d.firstcard.Weekdays[time.Friday] {
+		t.Errorf("Door first card weekdays.friday mode not updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Friday])
+	}
+
+	if d.firstcard.Weekdays[time.Saturday] {
+		t.Errorf("Door first card weekdays.saturday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Saturday])
+	}
+
+	if d.firstcard.Weekdays[time.Sunday] {
+		t.Errorf("Door first card weekdays.sunday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Sunday])
+	}
+}
+
+func TestDoorSetFirstCardSaturday(t *testing.T) {
+	expected := []schema.Object{
+		schema.Object{OID: "0.3.3", Value: ""},
+		schema.Object{OID: "0.3.3.6.5.6", Value: "true"},
+		schema.Object{OID: "0.3.3.0.0", Value: types.StatusOk},
+	}
+
+	d := Door{
+		CatalogDoor: catalog.CatalogDoor{
+			OID: "0.3.3",
+		},
+		name:  "Le Door",
+		delay: 5,
+		mode:  core.NormallyOpen,
+		firstcard: core.FirstCard{
+			Weekdays: core.Weekdays{
+				time.Monday:    false,
+				time.Tuesday:   false,
+				time.Wednesday: false,
+				time.Thursday:  false,
+				time.Friday:    false,
+				time.Saturday:  false,
+				time.Sunday:    false,
+			},
+		},
+	}
+
+	objects, err := d.set(nil, "0.3.3.6.5.6", "true", db.DBC{})
+	if err != nil {
+		t.Errorf("Unexpected error (%v)", err)
+	}
+
+	if !reflect.DeepEqual(objects, expected) {
+		t.Errorf("Invalid result\n   expected:%#v\n   got:     %#v", expected, objects)
+	}
+
+	if d.firstcard.Weekdays[time.Monday] {
+		t.Errorf("Door first card weekdays.monday mode unexpectedly updated - expected:%v, got:%v", true, d.firstcard.Weekdays[time.Monday])
+	}
+
+	if d.firstcard.Weekdays[time.Tuesday] {
+		t.Errorf("Door first card weekdays.tuesday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Tuesday])
+	}
+
+	if d.firstcard.Weekdays[time.Wednesday] {
+		t.Errorf("Door first card weekdays.wednesday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Wednesday])
+	}
+
+	if d.firstcard.Weekdays[time.Thursday] {
+		t.Errorf("Door first card weekdays.thursday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Thursday])
+	}
+
+	if d.firstcard.Weekdays[time.Friday] {
+		t.Errorf("Door first card weekdays.friday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Friday])
+	}
+
+	if !d.firstcard.Weekdays[time.Saturday] {
+		t.Errorf("Door first card weekdays.saturday mode not updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Saturday])
+	}
+
+	if d.firstcard.Weekdays[time.Sunday] {
+		t.Errorf("Door first card weekdays.sunday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Sunday])
+	}
+}
+
+func TestDoorSetFirstCardSunday(t *testing.T) {
+	expected := []schema.Object{
+		schema.Object{OID: "0.3.3", Value: ""},
+		schema.Object{OID: "0.3.3.6.5.7", Value: "true"},
+		schema.Object{OID: "0.3.3.0.0", Value: types.StatusOk},
+	}
+
+	d := Door{
+		CatalogDoor: catalog.CatalogDoor{
+			OID: "0.3.3",
+		},
+		name:  "Le Door",
+		delay: 5,
+		mode:  core.NormallyOpen,
+		firstcard: core.FirstCard{
+			Weekdays: core.Weekdays{
+				time.Monday:    false,
+				time.Tuesday:   false,
+				time.Wednesday: false,
+				time.Thursday:  false,
+				time.Friday:    false,
+				time.Saturday:  false,
+				time.Sunday:    false,
+			},
+		},
+	}
+
+	objects, err := d.set(nil, "0.3.3.6.5.7", "true", db.DBC{})
+	if err != nil {
+		t.Errorf("Unexpected error (%v)", err)
+	}
+
+	if !reflect.DeepEqual(objects, expected) {
+		t.Errorf("Invalid result\n   expected:%#v\n   got:     %#v", expected, objects)
+	}
+
+	if d.firstcard.Weekdays[time.Monday] {
+		t.Errorf("Door first card weekdays.monday mode unexpectedly updated - expected:%v, got:%v", true, d.firstcard.Weekdays[time.Monday])
+	}
+
+	if d.firstcard.Weekdays[time.Tuesday] {
+		t.Errorf("Door first card weekdays.tuesday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Tuesday])
+	}
+
+	if d.firstcard.Weekdays[time.Wednesday] {
+		t.Errorf("Door first card weekdays.wednesday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Wednesday])
+	}
+
+	if d.firstcard.Weekdays[time.Thursday] {
+		t.Errorf("Door first card weekdays.thursday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Thursday])
+	}
+
+	if d.firstcard.Weekdays[time.Friday] {
+		t.Errorf("Door first card weekdays.friday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Friday])
+	}
+
+	if d.firstcard.Weekdays[time.Saturday] {
+		t.Errorf("Door first card weekdays.saturday mode unexpectedly updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Saturday])
+	}
+
+	if !d.firstcard.Weekdays[time.Sunday] {
+		t.Errorf("Door first card weekdays.sunday mode not updated - expected:%v, got:%v", false, d.firstcard.Weekdays[time.Sunday])
+	}
+}
+
 func TestDoorSetWithDeleted(t *testing.T) {
 	d := Door{
 		CatalogDoor: catalog.CatalogDoor{
