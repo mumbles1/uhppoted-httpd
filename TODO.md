@@ -6,8 +6,13 @@
         - [x] include firstcard group in put-card
         - [x] enable firstcard for group doors only
         - [x] fix doors page - not displaying door ID
-        - [ ] update ACL synch and compare for firstcard
+        - [ ] update ACL synch
+            - [x] update firstcard in sync
+            - [ ] include firstcard in compare
+            - [ ] grules
+        - [ ] menu popup hidden by Muggle
         - [ ] config::enable-firstcard
+
     - [x] column
     - [x] popover
     - [x] display
@@ -21,9 +26,9 @@
         - [x] door.set unit test
         - [x] invoke set-firstcard
         - [x] default active/inactive should be 'none'
-        - (?) batch all firstcard updates together
         - [ ] sync if-not-zero/if-valid
         - [ ] config::enable-firstcard
+        - (?) batch all firstcard updates together
     - [x] serialization
     - [x] CHANGELOG
     - [ ] README

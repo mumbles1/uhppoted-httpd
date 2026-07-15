@@ -1,6 +1,7 @@
 package system
 
 import (
+	"fmt"
 	"sync"
 
 	lib "github.com/uhppoted/uhppote-core/types"
@@ -68,6 +69,12 @@ func (s *system) compareACL() {
 	} else if diff == nil {
 		warnf("ACL", "invalid ACL diff (%v)", diff)
 	} else {
+		fmt.Printf(">>>> COMPARE - ACL:  %v\n", acl[405419896][10058400])
+		fmt.Printf(">>>> COMPARE - DIFF added:     %v\n", diff[405419896].Added)
+		fmt.Printf(">>>>                deleted:   %v\n", diff[405419896].Deleted)
+		fmt.Printf(">>>>                updated:   %v\n", diff[405419896].Updated)
+		fmt.Printf(">>>>                unchanged: %v\n", diff[405419896].Unchanged)
+
 		found := map[uint32]struct{}{}
 		cards := map[uint32]struct{}{}
 
@@ -107,9 +114,7 @@ func (s *system) compareACL() {
 	}
 }
 
-// NTS: revoke all if card is nil because card number may have changed and the old
-//
-//	card will no longer have access
+// NTS: revoke all if card is nil because card number may have changed and the old card will no longer have access
 func (s *system) updateCardPermissions(controller types.IController, cardID uint32) {
 	if cardID == 0 {
 		return
@@ -248,25 +253,53 @@ func (s *system) permissions(controllers []types.IController) (acl.ACL, error) {
 	}
 
 	// ... populate ACL from cards + groups + doors
-	grant := func(card uint32, device uint32, door uint8) {
-		if card > 0 && device > 0 && door >= 1 && door <= 4 {
-			if _, ok := acl[device]; ok {
-				if _, ok := acl[device][card]; ok {
-					if _, ok := acl[device][card].Doors[door]; ok {
-						acl[device][card].Doors[door] = 1
+	grant := func(card uint32, controller uint32, door uint8) {
+		if card > 0 && controller > 0 && door >= 1 && door <= 4 {
+			if _, ok := acl[controller]; ok {
+				if _, ok := acl[controller][card]; ok {
+					if _, ok := acl[controller][card].Doors[door]; ok {
+						acl[controller][card].Doors[door] = 1
 					}
 				}
 			}
 		}
 	}
 
-	revoke := func(card uint32, device uint32, door uint8) {
-		if card > 0 && device > 0 && door >= 1 && door <= 4 {
-			if _, ok := acl[device]; ok {
-				if _, ok := acl[device][card]; ok {
-					if _, ok := acl[device][card].Doors[door]; ok {
-						acl[device][card].Doors[door] = 0
+	revoke := func(card uint32, controller uint32, door uint8) {
+		if card > 0 && controller > 0 && door >= 1 && door <= 4 {
+			if _, ok := acl[controller]; ok {
+				if _, ok := acl[controller][card]; ok {
+					if _, ok := acl[controller][card].Doors[door]; ok {
+						acl[controller][card].Doors[door] = 0
 					}
+				}
+			}
+		}
+	}
+
+	firstcard := func(card uint32) {
+		if card > 0 {
+			for controller := range acl {
+				if c, ok := acl[controller][card]; ok {
+					c.FirstCard = lib.FirstCardPrivileges{}
+
+					if allowed, ok := acl[controller][card].Doors[1]; allowed != 0 && ok {
+						c.FirstCard.Door1 = true
+					}
+
+					if allowed, ok := acl[controller][card].Doors[2]; allowed != 0 && ok {
+						c.FirstCard.Door2 = true
+					}
+
+					if allowed, ok := acl[controller][card].Doors[3]; allowed != 0 && ok {
+						c.FirstCard.Door3 = true
+					}
+
+					if allowed, ok := acl[controller][card].Doors[4]; allowed != 0 && ok {
+						c.FirstCard.Door4 = true
+					}
+
+					acl[controller][card] = c
 				}
 			}
 		}
@@ -275,15 +308,20 @@ func (s *system) permissions(controllers []types.IController) (acl.ACL, error) {
 	for _, c := range cards {
 		card := c.CardID
 		membership := c.Groups()
+
 		for _, g := range membership {
 			if group, ok := groups.Group(g); ok {
 				for d, allowed := range group.Doors {
 					if door, ok := doors.Door(d); ok && allowed {
-						device := catalog.GetDoorDeviceID(door.OID)
+						controller := catalog.GetDoorDeviceID(door.OID)
 						doorID := catalog.GetDoorDeviceDoor(door.OID)
 
-						grant(card, device, doorID)
+						grant(card, controller, doorID)
 					}
+				}
+
+				if group.FirstCard {
+					firstcard(card)
 				}
 			}
 		}
