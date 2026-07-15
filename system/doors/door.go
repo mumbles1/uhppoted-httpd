@@ -627,16 +627,26 @@ func (d *Door) deserialize(bytes []byte) error {
 		Delay     uint8             `json:"delay,omitempty"`
 		Mode      core.ControlState `json:"mode,omitempty"`
 		Keypad    bool              `json:"keypad,omitempty"`
-		FirstCard core.FirstCard    `json:"firstcard"`
-		Created   types.Timestamp   `json:"created"`
-		Modified  types.Timestamp   `json:"modified"`
+		FirstCard struct {
+			StartTime core.HHmm     `json:"start-time"`
+			EndTime   core.HHmm     `json:"end-time"`
+			Active    string        `json:"active-mode,omitempty"`
+			Inactive  string        `json:"inactive-mode,omitempty"`
+			Weekdays  core.Weekdays `json:"weekdays,omitempty"`
+		} `json:"firstcard"`
+		Created  types.Timestamp `json:"created"`
+		Modified types.Timestamp `json:"modified"`
 	}{
 		Delay:  5,
 		Mode:   core.Controlled,
 		Keypad: false,
-		FirstCard: core.FirstCard{
-			Active:   core.Controlled,
-			Inactive: core.Controlled,
+		FirstCard: struct {
+			StartTime core.HHmm     `json:"start-time"`
+			EndTime   core.HHmm     `json:"end-time"`
+			Active    string        `json:"active-mode,omitempty"`
+			Inactive  string        `json:"inactive-mode,omitempty"`
+			Weekdays  core.Weekdays `json:"weekdays,omitempty"`
+		}{
 			Weekdays: core.Weekdays{},
 		},
 		Created: created,
@@ -652,7 +662,33 @@ func (d *Door) deserialize(bytes []byte) error {
 	d.mode = record.Mode
 	d.keypad = record.Keypad
 	d.passcodes = []uint32{}
-	d.firstcard = record.FirstCard
+
+	d.firstcard = core.FirstCard{
+		StartTime: record.FirstCard.StartTime,
+		EndTime:   record.FirstCard.EndTime,
+		Weekdays:  record.FirstCard.Weekdays,
+	}
+
+	switch record.FirstCard.Active {
+	case "controlled":
+		d.firstcard.Active = core.Controlled
+	case "normally open":
+		d.firstcard.Active = core.NormallyOpen
+	case "normally closed":
+		d.firstcard.Active = core.NormallyClosed
+	}
+
+	switch record.FirstCard.Inactive {
+	case "controlled":
+		d.firstcard.Inactive = core.Controlled
+	case "normally open":
+		d.firstcard.Inactive = core.NormallyOpen
+	case "normally closed":
+		d.firstcard.Inactive = core.NormallyClosed
+	case "firstcard only":
+		d.firstcard.Inactive = core.FirstCardOnly
+	}
+
 	d.created = record.Created
 	d.modified = record.Modified
 

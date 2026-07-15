@@ -20,10 +20,10 @@
         - [x] change core.FirstCardOnly to "firstcard only"
         - [x] door.set unit test
         - [x] invoke set-firstcard
+        - [x] default active/inactive should be 'none'
         - (?) batch all firstcard updates together
         - [ ] sync if-not-zero/if-valid
         - [ ] config::enable-firstcard
-        - [ ] default active/inactive should be 'none'
     - [x] serialization
     - [x] CHANGELOG
     - [ ] README

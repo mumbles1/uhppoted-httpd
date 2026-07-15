@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"sync"
 	"time"
 
@@ -530,6 +531,16 @@ func (s *system) Update(oid schema.OID, field schema.Suffix, value any) {
 
 					if d, ok := s.doors.Door(oid); ok {
 						firstcard := d.FirstCard()
+
+						if !slices.Contains([]lib.ControlState{lib.Controlled, lib.NormallyOpen, lib.NormallyClosed}, firstcard.Active) {
+							warnf("system", "invalid door first-card active mode (%v)", firstcard.Active)
+							return
+						}
+
+						if !slices.Contains([]lib.ControlState{lib.Controlled, lib.NormallyOpen, lib.NormallyClosed, lib.FirstCardOnly}, firstcard.Inactive) {
+							warnf("system", "invalid door first-card inactive mode (%v)", firstcard.Inactive)
+							return
+						}
 
 						go func() {
 							s.interfaces.SetFirstCard(controller, door, firstcard)
