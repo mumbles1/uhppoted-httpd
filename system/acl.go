@@ -1,7 +1,6 @@
 package system
 
 import (
-	"fmt"
 	"sync"
 
 	lib "github.com/uhppoted/uhppote-core/types"
@@ -69,12 +68,6 @@ func (s *system) compareACL() {
 	} else if diff == nil {
 		warnf("ACL", "invalid ACL diff (%v)", diff)
 	} else {
-		fmt.Printf(">>>> COMPARE - ACL:  %v\n", acl[405419896][10058400])
-		fmt.Printf(">>>> COMPARE - DIFF added:     %v\n", diff[405419896].Added)
-		fmt.Printf(">>>>                deleted:   %v\n", diff[405419896].Deleted)
-		fmt.Printf(">>>>                updated:   %v\n", diff[405419896].Updated)
-		fmt.Printf(">>>>                unchanged: %v\n", diff[405419896].Unchanged)
-
 		found := map[uint32]struct{}{}
 		cards := map[uint32]struct{}{}
 

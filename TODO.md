@@ -8,7 +8,7 @@
         - [x] fix doors page - not displaying door ID
         - [ ] update ACL synch
             - [x] update firstcard in sync
-            - [ ] include firstcard in compare
+            - [x] include firstcard in compare
             - [ ] grules
         - [ ] menu popup hidden by Muggle
         - [ ] config::enable-firstcard
