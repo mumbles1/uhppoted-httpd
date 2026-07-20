@@ -82,15 +82,29 @@
 |    |      |                                                                #
 |    |      |- 0.3.1.1: _name_                                               #    name
 |    |      |- 0.3.1.2: _delay_                                              #    door open delay value
-|    |               |- 0.3.1.2.1: _status_                                  #                    status
-|    |               |- 0.3.1.2.2: _configured_                              #                    configured value
-|    |               |- 0.3.1.2.3: _error_                                   #                    error info
-|    |               |- 0.3.1.2.4: _modified_                                #                    has been modified
+|    |      |        |- 0.3.1.2.1: _status_                                  #                    status
+|    |      |        |- 0.3.1.2.2: _configured_                              #                    configured value
+|    |      |        |- 0.3.1.2.3: _error_                                   #                    error info
+|    |      |        |- 0.3.1.2.4: _modified_                                #                    has been modified
 |    |      |- 0.3.1.3: _control_                                            #    door control state value
-|    |               |- 0.3.1.2.1: _status_                                  #    door control state status
-|    |               |- 0.3.1.2.2: _configured_                              #                       configured value
-|    |               |- 0.3.1.2.3: _error_                                   #                       error info
-|    |               |- 0.3.1.2.4: _modified_                                #                       has been modified
+|    |      |        |- 0.3.1.2.1: _status_                                  #    door control state status
+|    |      |        |- 0.3.1.2.2: _configured_                              #                       configured value
+|    |      |        |- 0.3.1.2.3: _error_                                   #                       error info
+|    |      |        |- 0.3.1.2.4: _modified_                                #                       has been modified
+|    |      |- 0.3.1.4: _keypad_                                             #    reader keypad enabled
+|    |      |- 0.3.1.5: _passcodes_                                          #    supervisor override passcodes
+|    |      |- 0.3.1.6: _first-card_                                         #    first-card configuration
+|    |               |: 0.3.1.6.1: _start-time_                              #               start time (HH:mm)
+|    |               |: 0.3.1.6.2: _end-time_                                #               end time (HH:mm)
+|    |               |: 0.3.1.6.3: _active-mode_                             #               door control mode when first-card activated
+|    |               |: 0.3.1.6.3: _inactive-mode_                           #               door control mode when first-card deactivated
+|    |               |: 0.3.1.6.4: _monday_                                  #               enabled/disabled on Monday
+|    |               |: 0.3.1.6.4: _tuesday_                                 #               enabled/disabled on Tuesday
+|    |               |: 0.3.1.6.4: _wednesday_                               #               enabled/disabled on Wednesday
+|    |               |: 0.3.1.6.4: _thursday_                                #               enabled/disabled on Thursday
+|    |               |: 0.3.1.6.4: _friday_                                  #               enabled/disabled on Friday
+|    |               |: 0.3.1.6.4: _saturday_                                #               enabled/disabled on Saturday
+|    |               |: 0.3.1.6.4: _sundday_                                 #               enabled/disabled on Sunday
 |
 |- 0.4                                                                       # cards
 |    |- 0.4.1:                                                               # card #1

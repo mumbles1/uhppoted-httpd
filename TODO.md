@@ -1,5 +1,8 @@
 # TODO
 
+- [x] menu popup hidden by Muggle
+- [ ] fix light/dark themes
+
 - [ ] 'first card' API (cf. https://github.com/uhppoted/uhppoted/issues/82)
     - [x] first-card privilege
         - [x] first-card group
@@ -10,8 +13,7 @@
             - [x] update firstcard in sync
             - [x] include firstcard in compare
             - [ ] grules
-        - [ ] menu popup hidden by Muggle
-        - [ ] config::enable-firstcard
+        - (?) config::enable-firstcard
 
     - [x] column
     - [x] popover
@@ -27,15 +29,13 @@
         - [x] invoke set-firstcard
         - [x] default active/inactive should be 'none'
         - [ ] sync if-not-zero/if-valid
-        - [ ] config::enable-firstcard
+        - (?) config::enable-firstcard
         - (?) batch all firstcard updates together
     - [x] serialization
     - [x] CHANGELOG
-    - [ ] README
-    - [ ] OID.md
+    - [x] README
+    - [x] OID.md
 
-- [ ] `failed to put card`
-- [ ] fix light/dark themes
 
 - [ ] doors: https://developer.chrome.com/blog/a-customizable-select
 
