@@ -6,7 +6,7 @@ import (
 
 	syslog "log"
 
-	"github.com/uhppoted/uhppoted-lib/log"
+	"codeberg.org/uhppoted/uhppoted-lib/log"
 )
 
 var queue = make(chan string, 8)

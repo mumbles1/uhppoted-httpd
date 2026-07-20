@@ -3,10 +3,10 @@ package system
 import (
 	"time"
 
-	"github.com/uhppoted/uhppoted-httpd/auth"
-	"github.com/uhppoted/uhppoted-httpd/system/catalog/schema"
-	"github.com/uhppoted/uhppoted-httpd/types"
-	"github.com/uhppoted/uhppoted-lib/uhppoted"
+	"codeberg.org/uhppoted/uhppoted-httpd/auth"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog/schema"
+	"codeberg.org/uhppoted/uhppoted-httpd/types"
+	"codeberg.org/uhppoted/uhppoted-lib/uhppoted"
 )
 
 func Events(uid, role string, start, count int) []schema.Object {

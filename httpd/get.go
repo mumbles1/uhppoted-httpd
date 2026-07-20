@@ -15,11 +15,11 @@ import (
 	"strings"
 	text "text/template"
 
-	"github.com/uhppoted/uhppoted-httpd/httpd/cookies"
-	"github.com/uhppoted/uhppoted-httpd/httpd/users"
-	"github.com/uhppoted/uhppoted-httpd/system"
-	"github.com/uhppoted/uhppoted-httpd/system/catalog/schema"
-	"github.com/uhppoted/uhppoted-httpd/types"
+	"codeberg.org/uhppoted/uhppoted-httpd/httpd/cookies"
+	"codeberg.org/uhppoted/uhppoted-httpd/httpd/users"
+	"codeberg.org/uhppoted/uhppoted-httpd/system"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog/schema"
+	"codeberg.org/uhppoted/uhppoted-httpd/types"
 )
 
 const GZIP_MINIMUM = 16384

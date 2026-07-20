@@ -13,8 +13,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/uhppoted/uhppoted-httpd/auth"
-	"github.com/uhppoted/uhppoted-httpd/httpd/cookies"
+	"codeberg.org/uhppoted/uhppoted-httpd/auth"
+	"codeberg.org/uhppoted/uhppoted-httpd/httpd/cookies"
 )
 
 type Basic struct {

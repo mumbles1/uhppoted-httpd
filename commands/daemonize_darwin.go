@@ -10,7 +10,7 @@ import (
 	"strings"
 	"text/template"
 
-	xpath "github.com/uhppoted/uhppoted-lib/encoding/plist"
+	xpath "codeberg.org/uhppoted/uhppoted-lib/encoding/plist"
 )
 
 type info struct {

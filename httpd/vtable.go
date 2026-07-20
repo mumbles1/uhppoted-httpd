@@ -3,14 +3,14 @@ package httpd
 import (
 	"net/http"
 
-	"github.com/uhppoted/uhppoted-httpd/httpd/cards"
-	"github.com/uhppoted/uhppoted-httpd/httpd/controllers"
-	"github.com/uhppoted/uhppoted-httpd/httpd/doors"
-	"github.com/uhppoted/uhppoted-httpd/httpd/events"
-	"github.com/uhppoted/uhppoted-httpd/httpd/groups"
-	"github.com/uhppoted/uhppoted-httpd/httpd/interfaces"
-	"github.com/uhppoted/uhppoted-httpd/httpd/logs"
-	"github.com/uhppoted/uhppoted-httpd/httpd/users"
+	"codeberg.org/uhppoted/uhppoted-httpd/httpd/cards"
+	"codeberg.org/uhppoted/uhppoted-httpd/httpd/controllers"
+	"codeberg.org/uhppoted/uhppoted-httpd/httpd/doors"
+	"codeberg.org/uhppoted/uhppoted-httpd/httpd/events"
+	"codeberg.org/uhppoted/uhppoted-httpd/httpd/groups"
+	"codeberg.org/uhppoted/uhppoted-httpd/httpd/interfaces"
+	"codeberg.org/uhppoted/uhppoted-httpd/httpd/logs"
+	"codeberg.org/uhppoted/uhppoted-httpd/httpd/users"
 )
 
 type handler struct {

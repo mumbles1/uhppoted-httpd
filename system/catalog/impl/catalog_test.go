@@ -5,8 +5,8 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/uhppoted/uhppoted-httpd/system/catalog"
-	"github.com/uhppoted/uhppoted-httpd/system/catalog/schema"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog/schema"
 )
 
 func TestNewInterface(t *testing.T) {

@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/uhppoted/uhppoted-httpd/system/catalog"
-	"github.com/uhppoted/uhppoted-httpd/system/catalog/schema"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog/schema"
 )
 
 func TestEventsNewOID(t *testing.T) {

@@ -6,18 +6,18 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/uhppoted/uhppoted-lib/config"
-	"github.com/uhppoted/uhppoted-lib/lockfile"
+	"codeberg.org/uhppoted/uhppoted-lib/config"
+	"codeberg.org/uhppoted/uhppoted-lib/lockfile"
 
-	"github.com/uhppoted/uhppoted-httpd/audit"
-	provider "github.com/uhppoted/uhppoted-httpd/auth"
-	"github.com/uhppoted/uhppoted-httpd/auth/impl"
-	"github.com/uhppoted/uhppoted-httpd/auth/otp"
-	"github.com/uhppoted/uhppoted-httpd/httpd"
-	"github.com/uhppoted/uhppoted-httpd/httpd/auth"
-	"github.com/uhppoted/uhppoted-httpd/log"
-	"github.com/uhppoted/uhppoted-httpd/system"
-	"github.com/uhppoted/uhppoted-httpd/types"
+	"codeberg.org/uhppoted/uhppoted-httpd/audit"
+	provider "codeberg.org/uhppoted/uhppoted-httpd/auth"
+	"codeberg.org/uhppoted/uhppoted-httpd/auth/impl"
+	"codeberg.org/uhppoted/uhppoted-httpd/auth/otp"
+	"codeberg.org/uhppoted/uhppoted-httpd/httpd"
+	"codeberg.org/uhppoted/uhppoted-httpd/httpd/auth"
+	"codeberg.org/uhppoted/uhppoted-httpd/log"
+	"codeberg.org/uhppoted/uhppoted-httpd/system"
+	"codeberg.org/uhppoted/uhppoted-httpd/types"
 )
 
 type Run struct {

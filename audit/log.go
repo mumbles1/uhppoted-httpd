@@ -10,8 +10,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/uhppoted/uhppoted-httpd/system/catalog/schema"
-	"github.com/uhppoted/uhppoted-lib/eventlog"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog/schema"
+	"codeberg.org/uhppoted/uhppoted-lib/eventlog"
 )
 
 type AuditTrail interface {

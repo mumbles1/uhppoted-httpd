@@ -1,3 +1,5 @@
+codeberg.org/uhppoted/uhppoted-core v0.0.0-20260720170136-a2a15d8604fa h1:H2pvGGSxiDu+CjpSd/BLW+43cmK2MGqL629lSNG3wV8=
+codeberg.org/uhppoted/uhppoted-core v0.0.0-20260720170136-a2a15d8604fa/go.mod h1:MoeCM7GWMq72F2tUs6/lBt9tlnBoOsMFT6effpitLRs=
 dario.cat/mergo v1.0.0 h1:AGCNq9Evsj31mOgNPcLyXc+4PNABt905YmuqPYYpBWk=
 dario.cat/mergo v1.0.0/go.mod h1:uNxQE+84aUszobStD9th8a29P2fMDhsBdgRYvZOxGmk=
 github.com/Microsoft/go-winio v0.5.2/go.mod h1:WpS1mjBmmwHBEWmogvA2mj8546UReBk4v8QkMxJ6pZY=

@@ -1,9 +1,9 @@
 package system
 
 import (
-	"github.com/uhppoted/uhppoted-httpd/auth"
-	"github.com/uhppoted/uhppoted-httpd/system/catalog/schema"
-	"github.com/uhppoted/uhppoted-httpd/system/db"
+	"codeberg.org/uhppoted/uhppoted-httpd/auth"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog/schema"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/db"
 )
 
 func Groups(uid, role string) []schema.Object {

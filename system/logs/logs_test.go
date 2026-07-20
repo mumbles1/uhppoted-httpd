@@ -7,10 +7,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/uhppoted/uhppoted-httpd/auth"
-	"github.com/uhppoted/uhppoted-httpd/system/catalog"
-	"github.com/uhppoted/uhppoted-httpd/system/catalog/schema"
-	"github.com/uhppoted/uhppoted-httpd/types"
+	"codeberg.org/uhppoted/uhppoted-httpd/auth"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog/schema"
+	"codeberg.org/uhppoted/uhppoted-httpd/types"
 )
 
 func TestLogEntryAsObjects(t *testing.T) {

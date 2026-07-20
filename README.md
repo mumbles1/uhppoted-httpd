@@ -156,7 +156,7 @@ should be installed locally in the project:
 
     * Initial project setup:
 ```
-git clone https://github.com/uhppoted/uhppoted-httpd.git
+git clone https://codeberg.org/uhppoted/uhppoted-httpd.git
 cd uhppoted-httpd
 npm install eslint-config-standard
 ```
@@ -254,40 +254,40 @@ Command line:
 ### `uhppoted.conf`
 
 `uhppoted.conf` is the communal configuration file shared by all the `uhppoted` project modules and is (or will 
-eventually be) documented in [uhppoted](https://github.com/uhppoted/uhppoted). The `daemonize` command will 
+eventually be) documented in [uhppoted](https://codeberg.org/uhppoted/uhppoted). The `daemonize` command will 
 create a `uhppoted.conf` file if one does not exist, or update the existing file with the default configuration.
 
-The configuration for `uhppoted-httpd` is defined in the [_HTTPD_](https://github.com/uhppoted/uhppoted-httpd/blob/master/documentation/uhppoted.conf.md) section.
+The configuration for `uhppoted-httpd` is defined in the [_HTTPD_](https://codeberg.org/uhppoted/uhppoted-httpd/blob/master/documentation/uhppoted.conf.md) section.
 
 ### HTML files
 
 By default, the static files for the user interface are served from a file system embedded in the application
 executable. For customisation, the static files can be relocated to an external folder, as described here:
 
-- [HTML](https://github.com/uhppoted/uhppoted-httpd/blob/master/documentation/HTML.md)
+- [HTML](https://codeberg.org/uhppoted/uhppoted-httpd/blob/master/documentation/HTML.md)
 
 ### `auth.json`
 
 Coarse-grained authorisation for HTTP request is set by the entries in the `auth.json` file, which maps URLs and
 user roles to GET/POST rights. Detailed description of the file can be found here:
 
-- [auth.json](https://github.com/uhppoted/uhppoted-httpd/blob/master/documentation/auth.json.md)
+- [auth.json](https://codeberg.org/uhppoted/uhppoted-httpd/blob/master/documentation/auth.json.md)
 
 
 ### `acl.grl`
 
 The `acl.grl` file implements rule based access for cards to supplement the relatively simple grid-based access
 control supported by the combination of card + groups + doors. The `acl.grl` file is documented in more detail 
-[here](https://github.com/uhppoted/uhppoted-httpd/blob/master/documentation/acl.grl.md).
+[here](https://codeberg.org/uhppoted/uhppoted-httpd/blob/master/documentation/acl.grl.md).
 
 ### GRULES files
 
 The _grules_ files implement rule based fine-grained authorisation for view, create, update and delete operations
-on individual entities.. The _grules_ files are documented in more detail [here](https://github.com/uhppoted/uhppoted-httpd/blob/master/documentation/grules.md).
+on individual entities.. The _grules_ files are documented in more detail [here](https://codeberg.org/uhppoted/uhppoted-httpd/blob/master/documentation/grules.md).
 
 ### JSON files
 
-The system data is (currently) stored as a set of JSON files, described (https://github.com/uhppoted/uhppoted-httpd/blob/master/documentation/db.md).
+The system data is (currently) stored as a set of JSON files, described (https://codeberg.org/uhppoted/uhppoted-httpd/blob/master/documentation/db.md).
 
 ## Notes
 

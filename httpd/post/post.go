@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/uhppoted/uhppoted-httpd/log"
+	"codeberg.org/uhppoted/uhppoted-httpd/log"
 )
 
 func parseHeader(r *http.Request) (contentType string, acceptsGzip bool) {

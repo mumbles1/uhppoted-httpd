@@ -14,7 +14,7 @@ import (
 	lib "github.com/pquerna/otp"
 	"github.com/pquerna/otp/totp"
 
-	"github.com/uhppoted/uhppoted-httpd/system"
+	"codeberg.org/uhppoted/uhppoted-httpd/system"
 )
 
 type otpkey struct {

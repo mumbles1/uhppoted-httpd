@@ -3,8 +3,8 @@ package memdb
 import (
 	"testing"
 
-	cat "github.com/uhppoted/uhppoted-httpd/system/catalog"
-	"github.com/uhppoted/uhppoted-httpd/system/catalog/schema"
+	cat "codeberg.org/uhppoted/uhppoted-httpd/system/catalog"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog/schema"
 )
 
 func TestGetDoorDeviceID(t *testing.T) {

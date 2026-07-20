@@ -14,9 +14,9 @@ import (
 	"github.com/cristalhq/jwt/v3"
 	"github.com/google/uuid"
 
-	"github.com/uhppoted/uhppoted-httpd/auth"
-	"github.com/uhppoted/uhppoted-httpd/auth/otp"
-	"github.com/uhppoted/uhppoted-httpd/system"
+	"codeberg.org/uhppoted/uhppoted-httpd/auth"
+	"codeberg.org/uhppoted/uhppoted-httpd/auth/otp"
+	"codeberg.org/uhppoted/uhppoted-httpd/system"
 )
 
 var constants = struct {

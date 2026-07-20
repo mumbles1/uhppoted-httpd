@@ -3,8 +3,8 @@ package post
 import (
 	"net/http"
 
-	"github.com/uhppoted/uhppoted-httpd/httpd/auth"
-	"github.com/uhppoted/uhppoted-httpd/httpd/cookies"
+	"codeberg.org/uhppoted/uhppoted-httpd/httpd/auth"
+	"codeberg.org/uhppoted/uhppoted-httpd/httpd/cookies"
 )
 
 func Login(w http.ResponseWriter, r *http.Request, auth auth.IAuth) {

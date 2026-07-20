@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/uhppoted/uhppoted-httpd/log"
+	"codeberg.org/uhppoted/uhppoted-httpd/log"
 )
 
 var timezones = []struct {

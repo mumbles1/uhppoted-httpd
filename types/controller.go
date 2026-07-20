@@ -3,8 +3,8 @@ package types
 import (
 	"time"
 
-	"github.com/uhppoted/uhppote-core/types"
-	"github.com/uhppoted/uhppoted-httpd/system/catalog/schema"
+	"codeberg.org/uhppoted/uhppoted-core/types"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog/schema"
 )
 
 type IController interface {

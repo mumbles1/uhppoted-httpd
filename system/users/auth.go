@@ -1,7 +1,7 @@
 package users
 
 import (
-	"github.com/uhppoted/uhppoted-httpd/auth"
+	"codeberg.org/uhppoted/uhppoted-httpd/auth"
 )
 
 type TAuthable interface {

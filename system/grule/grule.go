@@ -7,9 +7,9 @@ import (
 	"github.com/hyperjumptech/grule-rule-engine/ast"
 	"github.com/hyperjumptech/grule-rule-engine/engine"
 
-	"github.com/uhppoted/uhppoted-httpd/system/cards"
-	"github.com/uhppoted/uhppoted-httpd/system/catalog/schema"
-	"github.com/uhppoted/uhppoted-httpd/system/doors"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/cards"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog/schema"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/doors"
 )
 
 type Rules interface {

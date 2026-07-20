@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/uhppoted/uhppoted-httpd/httpd/auth"
-	"github.com/uhppoted/uhppoted-httpd/system"
+	"codeberg.org/uhppoted/uhppoted-httpd/httpd/auth"
+	"codeberg.org/uhppoted/uhppoted-httpd/system"
 )
 
 func Setup(w http.ResponseWriter, r *http.Request, auth auth.IAuth) {

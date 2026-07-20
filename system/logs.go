@@ -1,8 +1,8 @@
 package system
 
 import (
-	"github.com/uhppoted/uhppoted-httpd/auth"
-	"github.com/uhppoted/uhppoted-httpd/system/catalog/schema"
+	"codeberg.org/uhppoted/uhppoted-httpd/auth"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog/schema"
 )
 
 func Logs(uid, role string, start, count int) []schema.Object {

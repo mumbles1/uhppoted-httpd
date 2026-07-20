@@ -9,14 +9,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/uhppoted/uhppoted-httpd.git"
+    "url": "git+https://codeberg.org/uhppoted/uhppoted-httpd.git"
   },
   "author": "uhppoted",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/uhppoted/uhppoted-httpd/issues"
+    "url": "https://codeberg.org/uhppoted/uhppoted-httpd/issues"
   },
-  "homepage": "https://github.com/uhppoted/uhppoted-httpd#readme",
+  "homepage": "https://codeberg.org/uhppoted/uhppoted-httpd#readme",
   "devDependencies": {
     "@eslint/js": "^9.19.0",
     "eslint": "^9.19.0",

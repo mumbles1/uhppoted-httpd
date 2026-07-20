@@ -1,7 +1,7 @@
 package groups
 
 import (
-	"github.com/uhppoted/uhppoted-httpd/system"
+	"codeberg.org/uhppoted/uhppoted-httpd/system"
 )
 
 func Get(uid, role string) any {

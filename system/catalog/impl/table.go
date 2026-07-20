@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/uhppoted/uhppoted-httpd/system/catalog/schema"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog/schema"
 )
 
 type Table interface {

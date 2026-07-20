@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/uhppoted/uhppoted-httpd/httpd/auth"
-	"github.com/uhppoted/uhppoted-httpd/system"
+	"codeberg.org/uhppoted/uhppoted-httpd/httpd/auth"
+	"codeberg.org/uhppoted/uhppoted-httpd/system"
 )
 
 func Password(uid, role string, w http.ResponseWriter, r *http.Request, auth auth.IAuth) (any, error) {

@@ -1,7 +1,7 @@
 package types
 
 import (
-	"github.com/uhppoted/uhppoted-lib/uhppoted"
+	"codeberg.org/uhppoted/uhppoted-lib/uhppoted"
 )
 
 type EventsList struct {

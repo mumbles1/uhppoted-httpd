@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/uhppoted/uhppoted-httpd/log"
+	"codeberg.org/uhppoted/uhppoted-httpd/log"
 )
 
 type options struct {

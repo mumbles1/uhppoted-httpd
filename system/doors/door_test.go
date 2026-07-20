@@ -7,14 +7,14 @@ import (
 	"testing"
 	"time"
 
-	core "github.com/uhppoted/uhppote-core/types"
+	core "codeberg.org/uhppoted/uhppoted-core/types"
 
-	"github.com/uhppoted/uhppoted-httpd/auth"
-	"github.com/uhppoted/uhppoted-httpd/system/catalog"
-	"github.com/uhppoted/uhppoted-httpd/system/catalog/impl"
-	"github.com/uhppoted/uhppoted-httpd/system/catalog/schema"
-	"github.com/uhppoted/uhppoted-httpd/system/db"
-	"github.com/uhppoted/uhppoted-httpd/types"
+	"codeberg.org/uhppoted/uhppoted-httpd/auth"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog/impl"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog/schema"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/db"
+	"codeberg.org/uhppoted/uhppoted-httpd/types"
 )
 
 func TestDoorAsObjects(t *testing.T) {

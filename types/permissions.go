@@ -3,7 +3,7 @@ package types
 import (
 	"fmt"
 
-	core "github.com/uhppoted/uhppote-core/types"
+	core "codeberg.org/uhppoted/uhppoted-core/types"
 )
 
 type Permissions struct {

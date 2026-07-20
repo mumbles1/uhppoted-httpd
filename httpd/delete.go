@@ -3,7 +3,7 @@ package httpd
 import (
 	"net/http"
 
-	"github.com/uhppoted/uhppoted-httpd/httpd/users"
+	"codeberg.org/uhppoted/uhppoted-httpd/httpd/users"
 )
 
 func (d *dispatcher) delete(w http.ResponseWriter, r *http.Request) {

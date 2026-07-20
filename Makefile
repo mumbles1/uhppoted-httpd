@@ -24,8 +24,8 @@ clean:
 	rm -rf bin
 
 update:
-	go get -u github.com/uhppoted/uhppote-core@main
-	go get -u github.com/uhppoted/uhppoted-lib@main
+	go get -u codeberg.org/uhppoted/uhppoted-core@main
+	go get -u codeberg.org/uhppoted/uhppoted-lib@main
 	go get -u github.com/cristalhq/jwt/v3
 	go get -u github.com/google/uuid
 	go get -u golang.org/x/sys
@@ -34,13 +34,13 @@ update:
 	go fix ./...
 
 update-release:
-	go get -u github.com/uhppoted/uhppote-core
-	go get -u github.com/uhppoted/uhppoted-lib
+	go get -u codeberg.org/uhppoted/uhppoted-core
+	go get -u codeberg.org/uhppoted/uhppoted-lib
 	go mod tidy
 
 update-all:
-	go get -u github.com/uhppoted/uhppote-core
-	go get -u github.com/uhppoted/uhppoted-lib
+	go get -u codeberg.org/uhppoted/uhppoted-core
+	go get -u codeberg.org/uhppoted/uhppoted-lib
 	go get -u github.com/cristalhq/jwt/v3
 	go get -u github.com/google/uuid
 	go get -u golang.org/x/sys
@@ -138,7 +138,7 @@ sass:
 delve: format
 	go build -trimpath -o bin ./...
 #	dlv exec ./bin/uhppoted-httpd -- --debug --console
-	dlv test github.com/uhppoted/uhppoted-httpd/system/interfaces -- run TestLANSet
+	dlv test codeberg.org/uhppoted/uhppoted-httpd/system/interfaces -- run TestLANSet
 
 godoc:
 	godoc -http=:80	-index_interval=60s

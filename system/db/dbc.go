@@ -3,8 +3,8 @@ package db
 import (
 	"fmt"
 
-	"github.com/uhppoted/uhppoted-httpd/audit"
-	"github.com/uhppoted/uhppoted-httpd/system/catalog/schema"
+	"codeberg.org/uhppoted/uhppoted-httpd/audit"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog/schema"
 )
 
 type DBC struct {

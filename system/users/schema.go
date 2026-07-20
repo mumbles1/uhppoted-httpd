@@ -1,7 +1,7 @@
 package users
 
 import (
-	"github.com/uhppoted/uhppoted-httpd/system/catalog/schema"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog/schema"
 )
 
 const UserStatus = schema.Status

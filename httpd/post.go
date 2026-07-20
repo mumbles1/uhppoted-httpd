@@ -4,11 +4,11 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/uhppoted/uhppoted-httpd/httpd/cookies"
-	"github.com/uhppoted/uhppoted-httpd/httpd/post"
-	"github.com/uhppoted/uhppoted-httpd/httpd/users"
-	"github.com/uhppoted/uhppoted-httpd/system"
-	"github.com/uhppoted/uhppoted-httpd/types"
+	"codeberg.org/uhppoted/uhppoted-httpd/httpd/cookies"
+	"codeberg.org/uhppoted/uhppoted-httpd/httpd/post"
+	"codeberg.org/uhppoted/uhppoted-httpd/httpd/users"
+	"codeberg.org/uhppoted/uhppoted-httpd/system"
+	"codeberg.org/uhppoted/uhppoted-httpd/types"
 )
 
 func (d *dispatcher) post(w http.ResponseWriter, r *http.Request) {

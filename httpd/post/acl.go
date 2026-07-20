@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/uhppoted/uhppoted-httpd/system"
+	"codeberg.org/uhppoted/uhppoted-httpd/system"
 )
 
 func SynchronizeACL(ctx context.Context, w http.ResponseWriter, r *http.Request, timeout time.Duration) {

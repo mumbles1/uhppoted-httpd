@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/uhppoted/uhppoted-httpd/auth"
+	"codeberg.org/uhppoted/uhppoted-httpd/auth"
 )
 
 func (d *dispatcher) exec(w http.ResponseWriter, r *http.Request, f func(map[string]any) (any, error)) {

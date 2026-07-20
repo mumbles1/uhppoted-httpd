@@ -1,24 +1,24 @@
 # HTML
 
-The HTML, CSS, images and Javascript files for the default implementation are [embedded](https://github.com/uhppoted/uhppoted-httpd/tree/master/httpd/html) in the executable and are loaded on startup.
+The HTML, CSS, images and Javascript files for the default implementation are [embedded](https://codeberg.org/uhppoted/uhppoted-httpd/tree/master/httpd/html) in the executable and are loaded on startup.
 
-As outlined in the [caveat emptor](https://github.com/uhppoted/uhppoted-httpd#raison-d%C3%AAtre), in line with the _uhppoted_
+As outlined in the [caveat emptor](https://codeberg.org/uhppoted/uhppoted-httpd#raison-d%C3%AAtre), in line with the _uhppoted_
 philosophy of providing components rather than solutions, the look and feel and implementation of the user interface has been
 deliberately kept as simple and plain as it can reasonably be to simplify customising it on an individual basis. Specifically:
 
 - the Javascript is plain vanilla Javascript (so no React or any other dependencies)
 - vanilla and relatively uncomplicated CSS (generated from the _scss_ files in the 
-  [Sass](https://github.com/uhppoted/uhppoted-httpd/tree/master/sass) folder
+  [Sass](https://codeberg.org/uhppoted/uhppoted-httpd/tree/master/sass) folder
 
 The HTML files do however use the _Go_ [templating engine](https://pkg.go.dev/html/template) to reuse common snippets of HTML -
-the {{ ... }} markers in the HTML files indicate template replacements using the snippets found in the [templates](https://github.com/uhppoted/uhppoted-httpd/tree/master/httpd/html/templates) folder.
+the {{ ... }} markers in the HTML files indicate template replacements using the snippets found in the [templates](https://codeberg.org/uhppoted/uhppoted-httpd/tree/master/httpd/html/templates) folder.
 
 
 ## Customising the user interface
 
 ### First steps
 
-The static files for the base user interface can be obtained directly from the _github_ [repo](https://github.com/uhppoted/uhppoted-httpd)
+The static files for the base user interface can be obtained directly from the _github_ [repo](https://codeberg.org/uhppoted/uhppoted-httpd)
 or alternatively by running `uhppoted-httpd daemonize` and answering _yes_ when asked if you would like to unpack the HTML.
 
 The first step in customising the user interface is to set `uhppoted-httpd` to use an external folder for the static
@@ -62,7 +62,7 @@ The default folder/file structure is as follows:
 Permissions and routing is coded directly into the application so keeping to the above structure is recommended. If you
 do need to modify it, the routing is located in:
 
-- [httpd/httpd.go](https://github.com/uhppoted/uhppoted-httpd/blob/master/httpd/httpd.go#L71-L104):
+- [httpd/httpd.go](https://codeberg.org/uhppoted/uhppoted-httpd/blob/master/httpd/httpd.go#L71-L104):
 ```
     mux.Handle("/css/", http.FileServer(fs))
     mux.Handle("/images/", http.FileServer(fs))
@@ -74,7 +74,7 @@ do need to modify it, the routing is located in:
     mux.HandleFunc("/index.html", d.getNoAuth)
 ```
 
-- [httpd/get.go](https://github.com/uhppoted/uhppoted-httpd/blob/master/httpd/get.go#L35-L46):
+- [httpd/get.go](https://codeberg.org/uhppoted/uhppoted-httpd/blob/master/httpd/get.go#L35-L46):
 ```
     switch path {
     case "/interfaces",
@@ -90,7 +90,7 @@ do need to modify it, the routing is located in:
         }
 ```
 
-- [httpd/post.go](https://github.com/uhppoted/uhppoted-httpd/blob/master/httpd/post.go#L21-L97):
+- [httpd/post.go](https://codeberg.org/uhppoted/uhppoted-httpd/blob/master/httpd/post.go#L21-L97):
 ```
     if path == "/authenticate" {
     ..
@@ -130,7 +130,7 @@ The API is:
 
 but for now comprises:
 
-- [`get`](https://github.com/uhppoted/uhppoted-httpd/blob/master/httpd/html/javascript/tabular.js#L567)
+- [`get`](https://codeberg.org/uhppoted/uhppoted-httpd/blob/master/httpd/html/javascript/tabular.js#L567)
 ```
 function get (urls, refreshed) {
 ...
@@ -141,7 +141,7 @@ takes a URL for a resource (e.g. /cards), retrieves a list of items for that res
 (see below), stores the information in the local _database_ and then invokes the `refreshed` function to process 
 the update.
 
-- [`post`](https://github.com/uhppoted/uhppoted-httpd/blob/master/httpd/html/javascript/tabular.js#L704)
+- [`post`](https://codeberg.org/uhppoted/uhppoted-httpd/blob/master/httpd/html/javascript/tabular.js#L704)
 ```
 function post (url, created, updated, deleted, refreshed, reset, cleanup) {
 ...
@@ -161,8 +161,8 @@ request and the supplied `cleanup` function cleans up after both successful and 
 ### `{ OID, value }`
 
 Every item on a page is tagged with an _Object Identication_ (OID) tag that uniquely identifies it to the 
-backend. The [OID schema](https://github.com/uhppoted/uhppoted-httpd/blob/master/documentation/OID.md) outlines
-the structure of the OID tagspace (JS: [schema.js](https://github.com/uhppoted/uhppoted-httpd/blob/master/httpd/html/javascript/schema.js).
+backend. The [OID schema](https://codeberg.org/uhppoted/uhppoted-httpd/blob/master/documentation/OID.md) outlines
+the structure of the OID tagspace (JS: [schema.js](https://codeberg.org/uhppoted/uhppoted-httpd/blob/master/httpd/html/javascript/schema.js).
 
 The OID approach was borrowed from SNMP and facilitates a flexible approach to populating information on a
 page (GraphQL and REST were considered but typically require more structure than was deemed desirable - at

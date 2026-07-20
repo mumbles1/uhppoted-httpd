@@ -1,7 +1,7 @@
 package events
 
 import (
-	"github.com/uhppoted/uhppoted-httpd/system/catalog/schema"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog/schema"
 )
 
 const EventDeviceID = schema.EventDeviceID

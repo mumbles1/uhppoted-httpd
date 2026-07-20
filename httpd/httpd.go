@@ -13,11 +13,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/uhppoted/uhppoted-httpd/httpd/auth"
-	"github.com/uhppoted/uhppoted-httpd/httpd/cookies"
-	"github.com/uhppoted/uhppoted-httpd/httpd/html"
-	"github.com/uhppoted/uhppoted-httpd/log"
-	"github.com/uhppoted/uhppoted-httpd/types"
+	"codeberg.org/uhppoted/uhppoted-httpd/httpd/auth"
+	"codeberg.org/uhppoted/uhppoted-httpd/httpd/cookies"
+	"codeberg.org/uhppoted/uhppoted-httpd/httpd/html"
+	"codeberg.org/uhppoted/uhppoted-httpd/log"
+	"codeberg.org/uhppoted/uhppoted-httpd/types"
 )
 
 type HTTPD struct {

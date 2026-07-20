@@ -4,11 +4,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/uhppoted/uhppoted-httpd/system/cards"
-	"github.com/uhppoted/uhppoted-httpd/system/catalog"
-	"github.com/uhppoted/uhppoted-httpd/system/catalog/impl"
-	"github.com/uhppoted/uhppoted-httpd/system/catalog/schema"
-	"github.com/uhppoted/uhppoted-httpd/system/doors"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/cards"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog/impl"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog/schema"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/doors"
 )
 
 var entries = []Entry{

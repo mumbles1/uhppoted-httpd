@@ -13,7 +13,7 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/uhppoted/uhppoted-lib/config"
+	"codeberg.org/uhppoted/uhppoted-lib/config"
 )
 
 type usergroup string
@@ -160,7 +160,7 @@ func (cmd *Daemonize) execute() error {
 
 	i := info{
 		Description:   "UHPPOTE UTO311-L0x access card controllers HTTPD service/daemon ",
-		Documentation: "https://github.com/uhppoted/uhppoted-httpd",
+		Documentation: "https://codeberg.org/uhppoted/uhppoted-httpd",
 		Executable:    executable,
 		PID:           fmt.Sprintf("/var/uhppoted/%s.pid", SERVICE),
 		User:          "uhppoted",

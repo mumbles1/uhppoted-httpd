@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/uhppoted/uhppoted-httpd/auth/otp"
-	"github.com/uhppoted/uhppoted-httpd/httpd/auth"
-	"github.com/uhppoted/uhppoted-httpd/httpd/cookies"
+	"codeberg.org/uhppoted/uhppoted-httpd/auth/otp"
+	"codeberg.org/uhppoted/uhppoted-httpd/httpd/auth"
+	"codeberg.org/uhppoted/uhppoted-httpd/httpd/cookies"
 )
 
 func GenerateOTP(uid, role string, w http.ResponseWriter, r *http.Request, auth auth.IAuth) {
