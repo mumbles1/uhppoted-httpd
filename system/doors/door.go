@@ -355,7 +355,7 @@ func (d *Door) set(a *auth.Authorizator, oid schema.OID, value string, dbc db.DB
 		}
 
 	case d.OID.Append(DoorFirstCardStartTime):
-		if err := CanUpdate(a, d, "firstcard", value); err != nil {
+		if err := CanUpdate(a, d, "firstcard.start-time", value); err != nil {
 			return nil, err
 		} else {
 			d.log(dbc, uid, "update", "firstcard", d.firstcard.StartTime, value, "Updated firstcard start-time")
@@ -371,7 +371,7 @@ func (d *Door) set(a *auth.Authorizator, oid schema.OID, value string, dbc db.DB
 		}
 
 	case d.OID.Append(DoorFirstCardEndTime):
-		if err := CanUpdate(a, d, "firstcard", value); err != nil {
+		if err := CanUpdate(a, d, "firstcard.end-time", value); err != nil {
 			return nil, err
 		} else {
 			d.log(dbc, uid, "update", "firstcard", d.firstcard.EndTime, value, "Updated firstcard end-time")
@@ -387,7 +387,7 @@ func (d *Door) set(a *auth.Authorizator, oid schema.OID, value string, dbc db.DB
 		}
 
 	case d.OID.Append(DoorFirstCardActiveMode):
-		if err := CanUpdate(a, d, "firstcard", value); err != nil {
+		if err := CanUpdate(a, d, "firstcard.active-mode", value); err != nil {
 			return nil, err
 		} else {
 			d.log(dbc, uid, "update", "firstcard", d.firstcard.Active, value, "Updated firstcard active mode")
@@ -411,7 +411,7 @@ func (d *Door) set(a *auth.Authorizator, oid schema.OID, value string, dbc db.DB
 		}
 
 	case d.OID.Append(DoorFirstCardInactiveMode):
-		if err := CanUpdate(a, d, "firstcard", value); err != nil {
+		if err := CanUpdate(a, d, "firstcard.inactive-mode", value); err != nil {
 			return nil, err
 		} else {
 			d.log(dbc, uid, "update", "firstcard", d.firstcard.Active, value, "Updated firstcard inactive mode")
@@ -438,7 +438,7 @@ func (d *Door) set(a *auth.Authorizator, oid schema.OID, value string, dbc db.DB
 		}
 
 	case d.OID.Append(DoorFirstCardMonday):
-		if err := CanUpdate(a, d, "firstcard", value); err != nil {
+		if err := CanUpdate(a, d, "firstcard.weekdays.monday", value); err != nil {
 			return nil, err
 		} else {
 			d.log(dbc, uid, "update", "firstcard", d.firstcard.Active, value, "Updated firstcard monday")
@@ -452,7 +452,7 @@ func (d *Door) set(a *auth.Authorizator, oid schema.OID, value string, dbc db.DB
 		}
 
 	case d.OID.Append(DoorFirstCardTuesday):
-		if err := CanUpdate(a, d, "firstcard", value); err != nil {
+		if err := CanUpdate(a, d, "firstcard.weekdays.tuesday", value); err != nil {
 			return nil, err
 		} else {
 			d.log(dbc, uid, "update", "firstcard", d.firstcard.Active, value, "Updated firstcard tuesday")
@@ -466,7 +466,7 @@ func (d *Door) set(a *auth.Authorizator, oid schema.OID, value string, dbc db.DB
 		}
 
 	case d.OID.Append(DoorFirstCardWednesday):
-		if err := CanUpdate(a, d, "firstcard", value); err != nil {
+		if err := CanUpdate(a, d, "firstcard.weekdays.wednesday", value); err != nil {
 			return nil, err
 		} else {
 			d.log(dbc, uid, "update", "firstcard", d.firstcard.Active, value, "Updated firstcard wednesday")
@@ -480,7 +480,7 @@ func (d *Door) set(a *auth.Authorizator, oid schema.OID, value string, dbc db.DB
 		}
 
 	case d.OID.Append(DoorFirstCardThursday):
-		if err := CanUpdate(a, d, "firstcard", value); err != nil {
+		if err := CanUpdate(a, d, "firstcard.weekdays.thursday", value); err != nil {
 			return nil, err
 		} else {
 			d.log(dbc, uid, "update", "firstcard", d.firstcard.Active, value, "Updated firstcard thursday")
@@ -494,7 +494,7 @@ func (d *Door) set(a *auth.Authorizator, oid schema.OID, value string, dbc db.DB
 		}
 
 	case d.OID.Append(DoorFirstCardFriday):
-		if err := CanUpdate(a, d, "firstcard", value); err != nil {
+		if err := CanUpdate(a, d, "firstcard.weekdays.friday", value); err != nil {
 			return nil, err
 		} else {
 			d.log(dbc, uid, "update", "firstcard", d.firstcard.Active, value, "Updated firstcard friday")
@@ -508,7 +508,7 @@ func (d *Door) set(a *auth.Authorizator, oid schema.OID, value string, dbc db.DB
 		}
 
 	case d.OID.Append(DoorFirstCardSaturday):
-		if err := CanUpdate(a, d, "firstcard", value); err != nil {
+		if err := CanUpdate(a, d, "firstcard.weekdays.saturday", value); err != nil {
 			return nil, err
 		} else {
 			d.log(dbc, uid, "update", "firstcard", d.firstcard.Active, value, "Updated firstcard saturday")
@@ -522,7 +522,7 @@ func (d *Door) set(a *auth.Authorizator, oid schema.OID, value string, dbc db.DB
 		}
 
 	case d.OID.Append(DoorFirstCardSunday):
-		if err := CanUpdate(a, d, "firstcard", value); err != nil {
+		if err := CanUpdate(a, d, "firstcard.weekdays.sunday", value); err != nil {
 			return nil, err
 		} else {
 			d.log(dbc, uid, "update", "firstcard", d.firstcard.Active, value, "Updated firstcard sunday")

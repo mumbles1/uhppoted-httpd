@@ -4,15 +4,15 @@
 - [ ] fix light/dark themes
 
 - [ ] 'first card' API (cf. https://github.com/uhppoted/uhppoted/issues/82)
+    - [x] grules
     - [x] first-card privilege
         - [x] first-card group
         - [x] include firstcard group in put-card
         - [x] enable firstcard for group doors only
         - [x] fix doors page - not displaying door ID
-        - [ ] update ACL synch
+        - [x] update ACL synch
             - [x] update firstcard in sync
             - [x] include firstcard in compare
-            - [ ] grules
         - (?) config::enable-firstcard
 
     - [x] column
