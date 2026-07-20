@@ -1,7 +1,6 @@
 # TODO
 
 - [x] menu popup hidden by Muggle
-- [ ] fix light/dark themes
 
 - [ ] 'first card' API (cf. https://github.com/uhppoted/uhppoted/issues/82)
     - [x] grules
@@ -11,9 +10,6 @@
         - [x] enable firstcard for group doors only
         - [x] fix doors page - not displaying door ID
         - [x] update ACL synch
-            - [x] update firstcard in sync
-            - [x] include firstcard in compare
-        - (?) config::enable-firstcard
 
     - [x] column
     - [x] popover
@@ -28,15 +24,16 @@
         - [x] door.set unit test
         - [x] invoke set-firstcard
         - [x] default active/inactive should be 'none'
-        - [ ] sync if-not-zero/if-valid
-        - (?) config::enable-firstcard
+        - [x] sync if-not-zero/if-valid
         - (?) batch all firstcard updates together
     - [x] serialization
     - [x] CHANGELOG
     - [x] README
     - [x] OID.md
+    - (?) config::enable-firstcard
 
 
+- [ ] make light/dark theme toggle immediately
 - [ ] doors: https://developer.chrome.com/blog/a-customizable-select
 
 - [ ] Virtual lists

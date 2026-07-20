@@ -359,6 +359,13 @@ func SynchronizeDoors() error {
 
 					go func(id uint8, door doors.Door) {
 						sys.interfaces.SetDoor(controller, id, door.Mode(), door.Delay())
+
+						firstcard := door.FirstCard()
+
+						if !firstcard.IsZero() {
+							warnf("system", "synchronizing first-card configuration for door %v", door)
+							sys.interfaces.SetFirstCard(controller, d, firstcard)
+						}
 					}(doorID, door)
 				}
 			}
@@ -558,7 +565,7 @@ func (s *system) Update(oid schema.OID, field schema.Suffix, value any) {
 func (s *system) sweep() {
 	cutoff := time.Now().Add(-s.retention)
 
-	infof("system", "Sweeping all items invalidated before %v", cutoff.Format("2006-01-02 15:04:05"))
+	infof("system", "sweeping all items invalidated before %v", cutoff.Format("2006-01-02 15:04:05"))
 
 	s.controllers.Sweep(s.retention)
 	s.doors.Sweep(s.retention)
