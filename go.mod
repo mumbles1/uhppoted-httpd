@@ -3,17 +3,16 @@ module codeberg.org/uhppoted/uhppoted-httpd
 go 1.26
 
 require (
+	codeberg.org/uhppoted/uhppoted-core v0.0.0-20260720171551-807ffedb65bd
+	codeberg.org/uhppoted/uhppoted-lib v0.0.0-20260720171336-0e6aa2ac65f4
 	github.com/cristalhq/jwt/v3 v3.1.0
 	github.com/google/uuid v1.6.0
 	github.com/hyperjumptech/grule-rule-engine v1.15.0
 	github.com/pquerna/otp v1.4.0
-	github.com/uhppoted/uhppote-core v0.9.1-0.20260716180112-03d5aa1f4663
-	github.com/uhppoted/uhppoted-lib v0.9.1-0.20260716181227-33163e5fb5d9
 	golang.org/x/sys v0.47.0
 )
 
 require (
-	codeberg.org/uhppoted/uhppoted-core v0.0.0-20260720170136-a2a15d8604fa // indirect
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/ProtonMail/go-crypto v1.1.6 // indirect

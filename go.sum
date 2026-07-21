@@ -1,5 +1,7 @@
-codeberg.org/uhppoted/uhppoted-core v0.0.0-20260720170136-a2a15d8604fa h1:H2pvGGSxiDu+CjpSd/BLW+43cmK2MGqL629lSNG3wV8=
-codeberg.org/uhppoted/uhppoted-core v0.0.0-20260720170136-a2a15d8604fa/go.mod h1:MoeCM7GWMq72F2tUs6/lBt9tlnBoOsMFT6effpitLRs=
+codeberg.org/uhppoted/uhppoted-core v0.0.0-20260720171551-807ffedb65bd h1:d89NEC0VZRMCeTnh88438Fkwg8cGwYp2Fjepck/au+k=
+codeberg.org/uhppoted/uhppoted-core v0.0.0-20260720171551-807ffedb65bd/go.mod h1:MoeCM7GWMq72F2tUs6/lBt9tlnBoOsMFT6effpitLRs=
+codeberg.org/uhppoted/uhppoted-lib v0.0.0-20260720171336-0e6aa2ac65f4 h1:rpvf80SwdBdR0DILsmpsuaM1E7HIRjNjDwWqBZzDfw8=
+codeberg.org/uhppoted/uhppoted-lib v0.0.0-20260720171336-0e6aa2ac65f4/go.mod h1:lhLdbZQulgZ+opmKr0yaR1J+7LEY4pL2OyY+X9v+zXo=
 dario.cat/mergo v1.0.0 h1:AGCNq9Evsj31mOgNPcLyXc+4PNABt905YmuqPYYpBWk=
 dario.cat/mergo v1.0.0/go.mod h1:uNxQE+84aUszobStD9th8a29P2fMDhsBdgRYvZOxGmk=
 github.com/Microsoft/go-winio v0.5.2/go.mod h1:WpS1mjBmmwHBEWmogvA2mj8546UReBk4v8QkMxJ6pZY=
@@ -89,10 +91,6 @@ github.com/stretchr/testify v1.4.0/go.mod h1:j7eGeouHqKxXV5pUuKE4zz7dFj8WfuZ+81P
 github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/h/Wwjteg=
 github.com/stretchr/testify v1.11.1 h1:7s2iGBzp5EwR7/aIZr8ao5+dra3wiQyKjjFuvgVKu7U=
 github.com/stretchr/testify v1.11.1/go.mod h1:wZwfW3scLgRK+23gO65QZefKpKQRnfz6sD981Nm4B6U=
-github.com/uhppoted/uhppote-core v0.9.1-0.20260716180112-03d5aa1f4663 h1:enw8wBvI+ieqg2Orfg3k6Rr+Q6Wtj0o0PVWiAekKB/0=
-github.com/uhppoted/uhppote-core v0.9.1-0.20260716180112-03d5aa1f4663/go.mod h1:xtbsmTv0ysEkhRIrj8hH1Uja2TOnWURApfToy9cXwDc=
-github.com/uhppoted/uhppoted-lib v0.9.1-0.20260716181227-33163e5fb5d9 h1:SJYtpfN7gp/c6Y0WWh5Jm0jPPpqCiK/OvGnB6czYLaA=
-github.com/uhppoted/uhppoted-lib v0.9.1-0.20260716181227-33163e5fb5d9/go.mod h1:FtzeNWKEp99dWJt6GxlweYvgnzlRjQ6QY9m6XSXz2ZU=
 github.com/xanzy/ssh-agent v0.3.3 h1:+/15pJfg/RsTxqYcX6fHqOXZwwMP+2VyYWJeWM2qQFM=
 github.com/xanzy/ssh-agent v0.3.3/go.mod h1:6dzNDKs0J9rVPHPhaGCukekBHKqfl+L3KghI1Bc68Uw=
 go.uber.org/goleak v1.2.0 h1:xqgm/S+aQvhWFTtR0XK3Jvg7z8kGV8P4X14IzwN3Eqk=
