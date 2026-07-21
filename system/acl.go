@@ -170,7 +170,7 @@ func (s *system) updateCardPermissions(controller types.IController, cardID uint
 						acl[d] = 1
 					}
 
-					if p.firstcard {
+					if s.withFirstCard && p.firstcard {
 						firstcard[d] = p.firstcard
 					}
 				}

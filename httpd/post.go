@@ -31,12 +31,12 @@ func (d *dispatcher) post(w http.ResponseWriter, r *http.Request) {
 
 	// ... setup?
 	role := d.auth.AdminRole()
-	if !d.noSetup && !system.HasAdmin(role) && path == "/setup" {
+	if !d.options.NoSetup && !system.HasAdmin(role) && path == "/setup" {
 		d.setup(w, r)
 		return
 	}
 
-	if (d.noSetup || system.HasAdmin(role)) && path == "/setup" {
+	if (d.options.NoSetup || system.HasAdmin(role)) && path == "/setup" {
 		http.Redirect(w, r, "/index.html", http.StatusFound)
 		return
 	}
@@ -91,7 +91,11 @@ func (d *dispatcher) post(w http.ResponseWriter, r *http.Request) {
 		if d.mode == types.Monitor {
 			http.Error(w, "Synchronize doors disabled in 'monitor' mode", http.StatusBadRequest)
 		} else {
-			d.synchronize(w, r, system.SynchronizeDoors)
+			f := func() error {
+				return system.SynchronizeDoors(d.options.WithFirstCard)
+			}
+
+			d.synchronize(w, r, f)
 		}
 
 	case "/password":

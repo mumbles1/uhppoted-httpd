@@ -69,9 +69,10 @@ func (d *dispatcher) getNoAuth(w http.ResponseWriter, r *http.Request) {
 	// ... parse headers, etc
 	acceptsGzip := parseHeader(r)
 	context := map[string]any{
-		"Theme":   parseSettings(r),
-		"Mode":    d.mode,
-		"WithPIN": d.withPIN,
+		"Theme":         parseSettings(r),
+		"Mode":          d.mode,
+		"WithPIN":       d.options.WithPIN,
+		"WithFirstCard": d.options.WithFirstCard,
 	}
 
 	// ... normalise path
@@ -83,12 +84,12 @@ func (d *dispatcher) getNoAuth(w http.ResponseWriter, r *http.Request) {
 
 	// ... setup?
 	role := d.auth.AdminRole()
-	if !d.noSetup && !system.HasAdmin(role) && path != "/sys/setup.html" {
+	if !d.options.NoSetup && !system.HasAdmin(role) && path != "/sys/setup.html" {
 		http.Redirect(w, r, "/sys/setup.html", http.StatusFound)
 		return
 	}
 
-	if (d.noSetup || system.HasAdmin(role)) && path == "/sys/setup.html" {
+	if (d.options.NoSetup || system.HasAdmin(role)) && path == "/sys/setup.html" {
 		http.Redirect(w, r, "/index.html", http.StatusFound)
 		return
 	}
@@ -126,7 +127,8 @@ func (d *dispatcher) getJS(w http.ResponseWriter, r *http.Request) {
 	name := path.Base(file)
 	functions := template.FuncMap{}
 	context := map[string]any{
-		"WithPIN": d.withPIN,
+		"WithPIN":       d.options.WithPIN,
+		"WithFirstCard": d.options.WithFirstCard,
 	}
 
 	t, err := text.New(name).Funcs(functions).ParseFS(d.fs, filepath)
@@ -198,11 +200,12 @@ func (d *dispatcher) getWithAuth(w http.ResponseWriter, r *http.Request) {
 	// ... good to go
 	acceptsGzip := parseHeader(r)
 	context := map[string]any{
-		"Theme":   parseSettings(r),
-		"Mode":    d.mode,
-		"User":    uid,
-		"Options": options,
-		"WithPIN": d.withPIN,
+		"Theme":         parseSettings(r),
+		"Mode":          d.mode,
+		"User":          uid,
+		"Options":       options,
+		"WithPIN":       d.options.WithPIN,
+		"WithFirstCard": d.options.WithFirstCard,
 	}
 
 	authorised := map[string]bool{

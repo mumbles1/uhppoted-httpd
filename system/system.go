@@ -66,10 +66,11 @@ var sys = system{
 	users:       users.NewUsers(),
 	history:     history.NewHistory(),
 
-	mode:      types.Normal,
-	withPIN:   false,
-	taskQ:     NewTaskQ(),
-	retention: 6 * time.Hour,
+	mode:          types.Normal,
+	withPIN:       false,
+	withFirstCard: false,
+	taskQ:         NewTaskQ(),
+	retention:     6 * time.Hour,
 
 	acl: struct {
 		defaultStartDate lib.Date
@@ -91,14 +92,15 @@ type system struct {
 	users       users.Users
 	history     history.History
 
-	files     map[Tag]string
-	rules     grule.Rules
-	taskQ     TaskQ
-	retention time.Duration // time after which 'deleted' items are permanently removed
-	trail     trail
-	mode      types.RunMode
-	withPIN   bool
-	debug     bool
+	files         map[Tag]string
+	rules         grule.Rules
+	taskQ         TaskQ
+	retention     time.Duration // time after which 'deleted' items are permanently removed
+	trail         trail
+	mode          types.RunMode
+	withPIN       bool
+	withFirstCard bool
+	debug         bool
 
 	acl struct {
 		defaultStartDate lib.Date
@@ -140,6 +142,7 @@ func Init(cfg config.Config, conf string, mode types.RunMode, debug bool) error 
 
 	sys.mode = mode
 	sys.withPIN = cfg.HTTPD.PIN.Enabled
+	sys.withFirstCard = cfg.HTTPD.FirstCard.Enabled
 
 	sys.files = map[Tag]string{
 		TagInterfaces:  cfg.HTTPD.System.Interfaces,
@@ -313,7 +316,7 @@ func (s *system) synchronize() {
 
 	if unsynchronized.doors {
 		warnf("system", "Resynchronizing mode and delay for all doors")
-		SynchronizeDoors()
+		SynchronizeDoors(s.withFirstCard)
 	}
 
 	if unsynchronized.ACL {
@@ -346,7 +349,7 @@ func SynchronizeDateTime() error {
 	return nil
 }
 
-func SynchronizeDoors() error {
+func SynchronizeDoors(withFirstCard bool) error {
 	controllers := sys.controllers.AsIControllers()
 
 	for _, c := range controllers {
@@ -360,11 +363,9 @@ func SynchronizeDoors() error {
 					go func(id uint8, door doors.Door) {
 						sys.interfaces.SetDoor(controller, id, door.Mode(), door.Delay())
 
-						firstcard := door.FirstCard()
-
-						if !firstcard.IsZero() {
+						if withFirstCard && !door.FirstCard().IsZero() {
 							warnf("system", "synchronizing first-card configuration for door %v", door)
-							sys.interfaces.SetFirstCard(controller, d, firstcard)
+							sys.interfaces.SetFirstCard(controller, d, door.FirstCard())
 						}
 					}(doorID, door)
 				}
@@ -549,9 +550,11 @@ func (s *system) Update(oid schema.OID, field schema.Suffix, value any) {
 							return
 						}
 
-						go func() {
-							s.interfaces.SetFirstCard(controller, door, firstcard)
-						}()
+						if s.withFirstCard {
+							go func() {
+								s.interfaces.SetFirstCard(controller, door, firstcard)
+							}()
+						}
 					}
 
 					return
@@ -694,7 +697,7 @@ func infof(tag string, format string, args ...any) {
 	if tag == "" {
 		log.Infof("%v", args...)
 	} else {
-		log.Infof(fmt.Sprintf("%-8v %v", tag, format), args...)
+		log.Infof(fmt.Sprintf("%-10v %v", tag, format), args...)
 	}
 }
 
@@ -702,6 +705,6 @@ func warnf(tag string, format string, args ...any) {
 	if tag == "" {
 		log.Warnf("%v", args...)
 	} else {
-		log.Warnf(fmt.Sprintf("%-8v %v", tag, format), args...)
+		log.Warnf(fmt.Sprintf("%-10v %v", tag, format), args...)
 	}
 }

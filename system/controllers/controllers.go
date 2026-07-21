@@ -212,7 +212,7 @@ loop:
 			}
 		}
 
-		log.Infof("Adding unconfigured controller %v", v)
+		log.Infof("%-10v unconfigured controller", v)
 
 		id := v // because .. Go loop variable gotcha (the loop variable is mutable)
 		c := Controller{

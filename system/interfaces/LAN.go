@@ -231,7 +231,7 @@ func (l *LAN) search(controllers []types.IController) ([]uint32, error) {
 
 // A long-running function i.e. expects to be invoked from an external goroutine
 func (l *LAN) refresh(c types.IController) {
-	log.Infof("%v: refreshing LAN controller status", c.ID())
+	log.Infof("%-10v refreshing LAN controller status", c.ID())
 
 	api := l.api([]types.IController{c})
 	deviceIDu := c.ID()
@@ -297,7 +297,7 @@ func (l *LAN) getEvents(c types.IController, intervals []types.Interval) {
 	deviceID := c.ID()
 	oid := c.OID()
 
-	log.Infof("%v: retrieving LAN controller events (%v)", deviceID, intervals)
+	log.Infof("%-10v retrieving LAN controller events (%v)", deviceID, intervals)
 
 	if first, last, current, err := api.GetEventIndices(deviceID); err != nil {
 		log.Warnf("%v", err)
@@ -612,7 +612,7 @@ func (l *LAN) compareACL(controllers []types.IController, permissions acl.ACL, w
 	}
 
 	for k, v := range compare {
-		log.Infof("ACL %v  unchanged:%-3v updated:%-3v added:%-3v deleted:%-3v", k, len(v.Unchanged), len(v.Updated), len(v.Added), len(v.Deleted))
+		log.Infof("%-10v ACL unchanged:%-3v updated:%-3v added:%-3v deleted:%-3v", k, len(v.Unchanged), len(v.Updated), len(v.Added), len(v.Deleted))
 	}
 
 	diff := acl.SystemDiff(compare)
@@ -626,7 +626,7 @@ func (l *LAN) compareACL(controllers []types.IController, permissions acl.ACL, w
 	added := len(report.Added)
 	deleted := len(report.Deleted)
 
-	log.Infof("ACL compare    unchanged:%-3v updated:%-3v added:%-3v deleted:%-3v", unchanged, updated, added, deleted)
+	log.Infof("%-10v --- unchanged:%-3v updated:%-3v added:%-3v deleted:%-3v", "ACL", unchanged, updated, added, deleted)
 
 	for _, c := range controllers {
 		for _, d := range devices {

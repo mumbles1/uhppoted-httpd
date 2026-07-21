@@ -414,6 +414,6 @@ func infof(tag string, format string, args ...any) {
 	if tag == "" {
 		log.Infof("%v", args...)
 	} else {
-		log.Infof(fmt.Sprintf("%-8v %v", tag, format), args...)
+		log.Infof(fmt.Sprintf("%-10v %v", tag, format), args...)
 	}
 }

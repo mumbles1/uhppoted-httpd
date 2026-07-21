@@ -193,7 +193,13 @@ func (cmd *Run) run(conf config.Config, interrupt chan os.Signal) {
 		panic(fmt.Errorf("could not load system configuration (%v)", err))
 	}
 
-	h.Run(runMode, conf.HTTPD.PIN.Enabled, conf.HTTPD.Security.NoSetup, interrupt)
+	options := httpd.Options{
+		WithPIN:       conf.HTTPD.PIN.Enabled,
+		WithFirstCard: conf.HTTPD.FirstCard.Enabled,
+		NoSetup:       conf.HTTPD.Security.NoSetup,
+	}
+
+	h.Run(runMode, options, interrupt)
 }
 
 func cleanup(cfg config.Config) {

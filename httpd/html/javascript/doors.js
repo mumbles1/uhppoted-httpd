@@ -74,8 +74,10 @@ function add(oid) {
     rollback.id = uuid + '_rollback'
     rollback.dataset.record = uuid
 
+    // {{if .WithFirstCard}}
     popover.id = `${uuid}_popover`
     button.popoverTargetElement = popover
+    // {{end}}
 
     const fields = [
       { suffix: 'name', oid: `${oid}.1`, selector: 'td input.name' },
@@ -94,10 +96,10 @@ function add(oid) {
       { suffix: 'mode', oid: `${oid}.3`, selector: 'td input.mode' },
       { suffix: 'keypad', oid: `${oid}.4`, selector: 'td label.keypad input' },
       { suffix: 'passcodes', oid: `${oid}.5`, selector: 'td input.passcodes' },
+
+      // {{if .WithFirstCard}}
       { suffix: 'firstcard.start-time', oid: `${oid}.6.1`, selector: 'td input.firstcard-starttime' },
       { suffix: 'firstcard.end-time', oid: `${oid}.6.2`, selector: 'td input.firstcard-endtime' },
-      // { suffix: 'firstcard.active-mode', oid: `${oid}.6.3`, selector: 'td input.firstcard-active' },
-      // { suffix: 'firstcard.inactive-mode', oid: `${oid}.6.4`, selector: 'td input.firstcard-inactive' },
       { suffix: 'firstcard.active-mode', oid: `${oid}.6.3`, selector: 'td select.firstcard-active' },
       { suffix: 'firstcard.inactive-mode', oid: `${oid}.6.4`, selector: 'td select.firstcard-inactive' },
       { suffix: 'firstcard.monday', oid: `${oid}.6.5.1`, selector: 'td input.firstcard-monday' },
@@ -107,8 +109,10 @@ function add(oid) {
       { suffix: 'firstcard.friday', oid: `${oid}.6.5.5`, selector: 'td input.firstcard-friday' },
       { suffix: 'firstcard.saturday', oid: `${oid}.6.5.6`, selector: 'td input.firstcard-saturday' },
       { suffix: 'firstcard.sunday', oid: `${oid}.6.5.7`, selector: 'td input.firstcard-sunday' },
+      // {{ end }}
     ]
 
+    // {{if .WithFirstCard}}
     const labels = {
       monday: clone.querySelector('input.field.firstcard-monday ~ label'),
       tuesday: clone.querySelector('input.field.firstcard-tuesday ~ label'),
@@ -118,6 +122,7 @@ function add(oid) {
       saturday: clone.querySelector('input.field.firstcard-saturday ~ label'),
       sunday: clone.querySelector('input.field.firstcard-sunday ~ label'),
     }
+    // {{ end }}
 
     fields.forEach((f) => {
       const field = clone.querySelector(f.selector)
@@ -140,6 +145,7 @@ function add(oid) {
     })
 
     // ... checkboxes
+    // {{if .WithFirstCard}}
     labels.monday.htmlFor = uuid + '-firstcard.monday'
     labels.tuesday.htmlFor = uuid + '-firstcard.tuesday'
     labels.wednesday.htmlFor = uuid + '-firstcard.wednesday'
@@ -147,6 +153,7 @@ function add(oid) {
     labels.friday.htmlFor = uuid + '-firstcard.friday'
     labels.saturday.htmlFor = uuid + '-firstcard.saturday'
     labels.sunday.htmlFor = uuid + '-firstcard.sunday'
+    // {{ end }}
 
     combobox(clone.querySelector('td.combobox'))
 
@@ -167,6 +174,8 @@ function updateFromDB(oid, record) {
   const mode = row.querySelector(`[data-oid="${oid}.3"]`)
   const keypad = row.querySelector(`[data-oid="${oid}.4"]`)
   const passcodes = row.querySelector(`[data-oid="${oid}.5"]`)
+
+  // {{if .WithFirstCard}}
   const firstcard = {
     start: row.querySelector(`[data-oid="${oid}.6.1"]`),
     end: row.querySelector(`[data-oid="${oid}.6.2"]`),
@@ -180,6 +189,7 @@ function updateFromDB(oid, record) {
     saturday: row.querySelector(`[data-oid="${oid}.6.5.6"]`),
     sunday: row.querySelector(`[data-oid="${oid}.6.5.7"]`),
   }
+  // {{ end }}
 
   row.dataset.status = record.status
 
@@ -195,6 +205,8 @@ function updateFromDB(oid, record) {
   update(mode, m, record.mode.status)
   update(keypad, record.keypad)
   update(passcodes, record.passcodes)
+
+  // {{if .WithFirstCard}}
   update(firstcard.start, record.firstcard.startTime)
   update(firstcard.end, record.firstcard.endTime)
   update(firstcard.active, record.firstcard.activeMode)
@@ -206,6 +218,7 @@ function updateFromDB(oid, record) {
   update(firstcard.friday, record.firstcard.weekdays.friday)
   update(firstcard.saturday, record.firstcard.weekdays.saturday)
   update(firstcard.sunday, record.firstcard.weekdays.sunday)
+  // {{ end }}
 
   // ... set tooltips for error'd values
   {

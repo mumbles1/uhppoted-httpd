@@ -53,15 +53,19 @@ function realize(groups) {
 
   missing.forEach((o) => {
     const padding = thead.rows[0].lastElementChild
-    const firstcard = padding.previousElementSibling
     const th = document.createElement('th')
+    let last = padding
+
+    // {{if .WithFirstCard}}
+    last = padding.previousElementSibling
+    // {{end}}
 
     th.classList.add('colheader')
     th.classList.add('door')
     th.dataset.door = o.OID
     th.innerText = o.name
 
-    thead.rows[0].insertBefore(th, firstcard)
+    thead.rows[0].insertBefore(th, last)
   })
 
   surplus.forEach(([, v]) => {
@@ -86,9 +90,13 @@ function realize(groups) {
     missing.forEach((o) => {
       const door = o.OID.match(schema.doors.regex)[2]
       const padding = row.lastElementChild
-      const firstcard = padding.previousElementSibling
       const template = document.querySelector('#door')
       const clone = document.importNode(template.content, true)
+      let last = padding
+
+      // {{if .WithFirstCard}}
+      last = padding.previousElementSibling
+      // {{end}}
 
       const uuid = row.id
       const oid = `${row.dataset.oid}${schema.groups.door}.${door}`
@@ -107,7 +115,7 @@ function realize(groups) {
       field.dataset.value = ''
 
       cell.appendChild(clone)
-      firstcard.insertAdjacentElement('beforebegin', cell)
+      last.insertAdjacentElement('beforebegin', cell)
     })
 
     surplus.forEach(([, v]) => {
@@ -141,7 +149,9 @@ function add(oid, _record) {
 
     const fields = [
       { suffix: 'name', oid: `${oid}.1`, selector: 'td input.name' },
+      // {{if .WithFirstCard}}
       { suffix: 'firstcard', oid: `${oid}.3`, selector: 'td input.firstcard' },
+      // {{end}}
     ]
 
     fields.forEach((f) => {
@@ -173,13 +183,16 @@ function updateFromDB(oid, record) {
   const row = document.querySelector("div#groups tr[data-oid='" + oid + "']")
 
   const name = row.querySelector(`[data-oid="${oid}${schema.groups.name}"]`)
-  const firstcard = row.querySelector(`[data-oid="${oid}${schema.groups.firstcard}"]`)
   const doors = [...DB.doors.values()].filter((o) => o.status && o.status !== '<new>' && alive(o))
 
   row.dataset.status = record.status
 
   update(name, record.name)
+
+  // {{if .WithFirstCard}}
+  const firstcard = row.querySelector(`[data-oid="${oid}${schema.groups.firstcard}"]`)
   update(firstcard, record.firstcard)
+  // {{end}}
 
   doors.forEach((o) => {
     const td = row.querySelector(`td[data-door="${o.OID}"]`)

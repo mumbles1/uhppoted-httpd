@@ -4,7 +4,7 @@ go 1.26
 
 require (
 	codeberg.org/uhppoted/uhppoted-core v0.0.0-20260720171551-807ffedb65bd
-	codeberg.org/uhppoted/uhppoted-lib v0.0.0-20260720171336-0e6aa2ac65f4
+	codeberg.org/uhppoted/uhppoted-lib v0.0.0-20260721134957-2397d188319f
 	github.com/cristalhq/jwt/v3 v3.1.0
 	github.com/google/uuid v1.6.0
 	github.com/hyperjumptech/grule-rule-engine v1.15.0

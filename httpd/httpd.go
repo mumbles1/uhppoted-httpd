@@ -40,11 +40,16 @@ type dispatcher struct {
 	context context.Context
 	timeout time.Duration
 	mode    types.RunMode
-	withPIN bool
-	noSetup bool
+	options Options
 }
 
-func (h *HTTPD) Run(mode types.RunMode, withPIN bool, noSetup bool, interrupt chan os.Signal) {
+type Options struct {
+	WithPIN       bool
+	WithFirstCard bool
+	NoSetup       bool
+}
+
+func (h *HTTPD) Run(mode types.RunMode, options Options, interrupt chan os.Signal) {
 	// ... initialisation
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -55,8 +60,7 @@ func (h *HTTPD) Run(mode types.RunMode, withPIN bool, noSetup bool, interrupt ch
 		context: ctx,
 		timeout: h.RequestTimeout,
 		mode:    mode,
-		withPIN: withPIN,
-		noSetup: noSetup,
+		options: options,
 	}
 
 	if h.HTML != "" {
@@ -290,7 +294,7 @@ func infof(subsystem string, format string, args ...any) {
 	if subsystem == "" {
 		log.Infof("%v", args...)
 	} else {
-		log.Infof(fmt.Sprintf("%-8v %v", subsystem, format), args...)
+		log.Infof(fmt.Sprintf("%-10v %v", subsystem, format), args...)
 	}
 }
 
@@ -298,7 +302,7 @@ func warnf(subsystem string, format string, args ...any) {
 	if subsystem == "" {
 		log.Warnf("%v", args...)
 	} else {
-		log.Warnf(fmt.Sprintf("%-8v %v", subsystem, format), args...)
+		log.Warnf(fmt.Sprintf("%-10v %v", subsystem, format), args...)
 	}
 }
 
@@ -306,7 +310,7 @@ func errorf(subsystem string, format string, args ...any) {
 	if subsystem == "" {
 		log.Errorf("%v", args...)
 	} else {
-		log.Errorf(fmt.Sprintf("%-8v %v", subsystem, format), args...)
+		log.Errorf(fmt.Sprintf("%-10v %v", subsystem, format), args...)
 	}
 }
 
@@ -314,6 +318,6 @@ func fatalf(subsystem string, format string, args ...any) {
 	if subsystem == "" {
 		log.Fatalf("%v", args...)
 	} else {
-		log.Fatalf(fmt.Sprintf("%-8v %v", subsystem, format), args...)
+		log.Fatalf(fmt.Sprintf("%-10v %v", subsystem, format), args...)
 	}
 }

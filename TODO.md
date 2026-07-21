@@ -5,32 +5,16 @@
 - [ ] 'first card' API (cf. https://github.com/uhppoted/uhppoted/issues/82)
     - [x] grules
     - [x] first-card privilege
-        - [x] first-card group
-        - [x] include firstcard group in put-card
-        - [x] enable firstcard for group doors only
-        - [x] fix doors page - not displaying door ID
-        - [x] update ACL synch
-
     - [x] column
     - [x] popover
     - [x] display
     - [x] update
-        - [x] start time
-        - [x] end time
-        - [x] active mode
-        - [x] inactive mode
-        - [x] weekdays
-        - [x] change core.FirstCardOnly to "firstcard only"
-        - [x] door.set unit test
-        - [x] invoke set-firstcard
-        - [x] default active/inactive should be 'none'
-        - [x] sync if-not-zero/if-valid
-        - (?) batch all firstcard updates together
     - [x] serialization
     - [x] CHANGELOG
     - [x] README
     - [x] OID.md
-    - (?) config::enable-firstcard
+    - [x] config::firstcard.enabled
+    - (?) batch all firstcard updates together
 
 
 - [ ] make light/dark theme toggle immediately

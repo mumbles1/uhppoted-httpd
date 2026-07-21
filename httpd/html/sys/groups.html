@@ -35,7 +35,9 @@
               <thead>
                 <tr>
                   <th class="name      colheader rowheader">Group</th>
+                  {{if .context.WithFirstCard}}
                   <th class="firstcard colheader rowheader">FirstCard</th>
+                  {{end}}
                   <th class="padding   colheader"></th>
                 </tr>
               </thead>
@@ -64,6 +66,7 @@
                 </td>
 
                 <!-- 'firstcard' column-->
+                {{if .context.WithFirstCard}}
                 <td>
                   <label class="privilege">
                     <input class="field firstcard"
@@ -77,6 +80,7 @@
                     <img class="yes" src="/images/{{$.context.Theme}}/check-solid.svg" draggable="false" />
                   </label>                  
                 </td>
+                {{end}}
 
                 <!-- 'padding' column (CSS: tr::last-child) -->
                 <td class="padding"></td>

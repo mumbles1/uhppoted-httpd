@@ -42,7 +42,9 @@
                   <th class="delay colheader">Delay</th>
                   <th class="keypad colheader">Keypad</th>
                   <th class="passcodes colheader">Passcodes</th>
-                  <th class="passcodes colheader">First&nbsp;Card</th>
+                  {{if .context.WithFirstCard}}
+                  <th class="firstcard colheader">First&nbsp;Card</th>
+                  {{end}}
                   <th class="padding colheader"></th>
                 </tr>
               </thead>
@@ -171,6 +173,7 @@
                          data-value="" 
                          {{if .readonly}}readonly{{end}} />
                 </td>
+                {{if .context.WithFirstCard}}
                 <td class="firstcard">
                   <button>
                     <img src="/images/{{$.context.Theme}}/card.svg" draggable="false" />
@@ -215,6 +218,7 @@
                     </div>
                   </div>
                 </td>
+                {{end}}
 
                 <!-- 'padding' column (CSS: tr::last-child) -->
                 <td class="padding"></td>
