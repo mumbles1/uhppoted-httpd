@@ -21,6 +21,7 @@ type impl interface {
 
 type System interface {
 	Update(oid schema.OID, field schema.Suffix, value any)
+	Commit()
 }
 
 func NewDBC(trail audit.AuditTrail) DBC {

@@ -106,6 +106,8 @@ type system struct {
 		defaultStartDate lib.Date
 		defaultEndDate   lib.Date
 	}
+
+	pending sync.Map
 }
 
 type trail struct {
@@ -389,7 +391,6 @@ func (s *system) Update(oid schema.OID, field schema.Suffix, value any) {
 				}()
 			}
 		}
-		return
 
 	case oid.HasPrefix(schema.GroupsOID):
 		list := map[schema.OID]cards.Card{}
@@ -411,8 +412,6 @@ func (s *system) Update(oid schema.OID, field schema.Suffix, value any) {
 				}()
 			}
 		}
-
-		return
 
 	case oid.HasPrefix(schema.ControllersOID) && field == schema.ControllerDateTime:
 		for _, c := range controllers {
@@ -532,10 +531,9 @@ func (s *system) Update(oid schema.OID, field schema.Suffix, value any) {
 		oid.HasPrefix(schema.DoorsOID) && field == schema.DoorFirstCardFriday,
 		oid.HasPrefix(schema.DoorsOID) && field == schema.DoorFirstCardSaturday,
 		oid.HasPrefix(schema.DoorsOID) && field == schema.DoorFirstCardSunday:
-		for _, c := range controllers {
+		for _, controller := range controllers {
 			for _, door := range []uint8{1, 2, 3, 4} {
-				if did, ok := c.Door(door); ok && did == oid {
-					controller := c
+				if did, ok := controller.Door(door); ok && did == oid {
 
 					if d, ok := s.doors.Door(oid); ok {
 						firstcard := d.FirstCard()
@@ -551,14 +549,44 @@ func (s *system) Update(oid schema.OID, field schema.Suffix, value any) {
 						}
 
 						if s.withFirstCard {
-							go func() {
+							f := func() {
 								s.interfaces.SetFirstCard(controller, door, firstcard)
-							}()
+							}
+
+							// NTS: batch update in pending
+							// go func() {
+							// 	s.interfaces.SetFirstCard(controller, door, firstcard)
+							// }()
+
+							s.pending.Store(oid, f)
 						}
 					}
 
 					return
 				}
+			}
+		}
+	}
+}
+
+// Executes any deferred updates.
+func (s *system) Commit() {
+	pending := []schema.OID{}
+
+	s.pending.Range(func(k any, v any) bool {
+		if oid, ok := k.(schema.OID); ok {
+			pending = append(pending, oid)
+		}
+
+		return true
+	})
+
+	for _, oid := range pending {
+		if f, ok := s.pending.LoadAndDelete(oid); ok {
+			if task, ok := f.(func()); ok {
+				go func() {
+					task()
+				}()
 			}
 		}
 
