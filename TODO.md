@@ -1,19 +1,7 @@
 # TODO
 
 - [x] menu popup hidden by Muggle
-- [x] 'first card' API (cf. https://github.com/uhppoted/uhppoted/issues/82)
-    - [x] grules
-    - [x] first-card privilege
-    - [x] column
-    - [x] popover
-    - [x] display
-    - [x] update
-    - [x] serialization
-    - [x] CHANGELOG
-    - [x] README
-    - [x] OID.md
-    - [x] config::firstcard.enabled
-    - [x] batch all firstcard updates together
+- [x] 'first card' API (cf. https://codeberg.org/uhppoted/uhppoted/issues/2)
 
 
 - [ ] make light/dark theme toggle immediately
