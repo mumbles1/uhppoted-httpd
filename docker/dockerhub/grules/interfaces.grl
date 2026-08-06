@@ -1,0 +1,39 @@
+rule ViewInterface "(allowed)" {
+     when
+         OP == "view::interface"
+     then
+         RESULT.Allow = true;
+         Retract("ViewInterface");
+}
+
+rule AddInterface "(allowed)" {
+     when
+         OP == "add::interface" && ROLE == ADMIN
+     then
+         RESULT.Revoke = true;
+         Retract("AddInterface");
+}
+
+rule UpdateLAN "(allowed)" {
+     when
+         OP == "update::lan" && ROLE == ADMIN
+     then
+         RESULT.Allow = true;
+         Retract("UpdateLAN");
+}
+
+rule DeleteInterface "(allowed)" {
+     when
+         OP == "delete::interface" && ROLE == ADMIN
+     then
+         RESULT.Revoke = true;
+         Retract("DeleteInterface");
+}
+
+// rule DebugInterface "(debugging)" {
+//      when
+//          true
+//      then
+//          Log("## grule[OP]: " + OP);
+//          Retract("DebugInterface");
+// }

@@ -1,5 +1,7 @@
+<!--
 ![build](https://github.com/uhppoted/uhppoted-httpd/workflows/build/badge.svg)
 ![build](https://github.com/uhppoted/uhppoted-httpd/workflows/ghcr/badge.svg)
+-->
 
 # uhppoted-httpd
 
@@ -45,18 +47,17 @@ _CAVEAT EMPTOR_
 
 ### Current Release
 
-**[v0.9.0](https://github.com/uhppoted/uhppoted-httpd/releases/tag/v0.9.0) - 2026-01-27**
+**[v0.9.0](https://codeberg.org/uhppoted/uhppoted-httpd/releases/tag/v0.9.0) - 2026-01-27**
 1. Updated to Go 1.25.
 2. Updated dependencies for security patches.
 
 
 ## Installation
 
-Executables for all the supported operating systems are packaged in the [releases](https://github.com/uhppoted/uhppoted-httpd/releases):
+Executables for all the supported operating systems are packaged in the _codeberg.org_ [releases](https://codeberg.org/uhppoted/uhppoted-httpd/releases)
+section. Installation is straightforward - download the archive and extract it to a directory of your choice.
 
-The release tarballs contain the executables for all the operating systems - OS specific tarballs with all the _uhppoted_ components can be found in [uhpppoted](https://github.com/uhppoted/uhppoted/releases) releases.
-
-Installation is straightforward - download the archive and extract it to a directory of your choice. To install `uhppoted-httpd` as a system service:
+To install `uhppoted-httpd` as a system service:
 ```
    cd <uhppoted directory>
    sudo uhppoted-httpd daemonize
@@ -74,7 +75,7 @@ The `daemonize` command will create all the necessary files for `uhppoted-httpd`
 
 ### Docker
 
-A public _Docker_ image is published to [ghcr.io](https://github.com/uhppoted?tab=packages&repo_name=uhppoted-httpd). 
+A public _Docker_ image is published to [docker.io](https://hub.docker.com/repository/docker/uhppoted/httpd/general). 
 
 The image is configured to use the `/usr/local/etc/uhppoted/uhppoted.conf` file for configuration information.
 
@@ -119,10 +120,10 @@ from _compose.yml_. The expected folder structure is:
 
 #### `docker run`
 
-To start a REST server using Docker `run`:
+To start an HTTPD server using Docker `run`:
 ```
-docker pull ghcr.io/uhppoted/httpd:latest
-docker run --publish 8080:8080 --publish 8443:8443 --name httpd --mount source=uhppoted,target=/var/uhppoted --rm ghcr.io/uhppoted/httpd
+docker pull uhppoted/httpd:latest
+docker run --publish 8080:8080 --publish 8443:8443 --name httpd --mount source=uhppoted,target=/var/uhppoted --rm uhppoted/httpd
 ```
 
 And open URL http://localhost:8080 in your browser of choice.

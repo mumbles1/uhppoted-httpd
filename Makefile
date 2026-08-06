@@ -2,7 +2,8 @@ RELEASE = v0.8.x
 DIST   ?= development
 DEBUG  ?= --debug
 CMD     = ./bin/uhppoted-httpd
-DOCKER  ?= ghcr.io/uhppoted/httpd:latest
+DOCKER ?= uhppoted/httpd:latest
+GHCR   ?= ghcr.io/uhppoted/httpd:latest
 
 .DEFAULT_GOAL := test
 .PHONY: sass
@@ -170,7 +171,7 @@ undaemonize: build
 config: build
 	$(CMD) config
 
-docker: docker-dev docker-ghcr docker-compose
+docker: docker-dev dockerhub docker-ghcr docker-compose
 	cd docker && find . -name .DS_Store -delete && rm -f compose.zip && zip --recurse-paths compose.zip compose
 	
 docker-dev: build
@@ -200,6 +201,24 @@ docker-ghcr: build
 	rsync -av --exclude='**/html.go' httpd/html dist/docker/ghcr
 	cd dist/docker/ghcr && docker build --no-cache -f Dockerfile -t $(DOCKER) .
 
+docker-dockerhub: build
+	rm -rf dist/docker/dockerhub/*
+	mkdir -p dist/docker/dockerhub
+	env GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -trimpath -o dist/docker/dockerhub ./...
+	cp docker/dockerhub/Dockerfile    dist/docker/dockerhub
+	cp docker/dockerhub/uhppoted.conf dist/docker/dockerhub
+	cp docker/dockerhub/auth.json     dist/docker/dockerhub
+	cp docker/dockerhub/acl.grl       dist/docker/dockerhub
+	cp -r docker/dockerhub/grules     dist/docker/dockerhub
+	cp -r docker/dockerhub/system     dist/docker/dockerhub
+	rsync -av --exclude='**/html.go' httpd/html dist/docker/dockerhub
+	cd dist/docker/dockerhub && docker build --no-cache -f Dockerfile -t $(DOCKER) .
+
+docker-publish:
+	make docker-dockerhub DOCKER=uhppoted/httpd:${VERSION}
+	docker images
+	docker login -u uhppoted && docker push uhppoted/httpd:${VERSION}
+
 docker-compose: 
 	rsync -av --exclude "html.go" httpd/html docker/compose/
 	cd docker && find . -name .DS_Store -delete && rm -f compose.zip && zip --recurse-paths compose.zip compose
@@ -210,6 +229,10 @@ docker-run-dev:
 
 docker-run-ghcr:
 	docker run --publish 8888:8080 --publish 8443:8443 --name httpd --mount source=uhppoted-httpd,target=/usr/local/etc/uhppoted --rm ghcr.io/uhppoted/httpd
+	sleep 1
+
+docker-run-dockerhub:
+	docker run --publish 8888:8080 --publish 8443:8443 --name httpd --mount source=uhppoted-httpd,target=/usr/local/etc/uhppoted --rm dcoker.io/uhppoted/httpd
 	sleep 1
 
 docker-run-compose:
