@@ -13,11 +13,11 @@ import (
 )
 
 var UNDAEMONIZE = Undaemonize{
-	plist:   fmt.Sprintf("com.github.uhppoted.%s.plist", SERVICE),
-	workdir: "/usr/local/var/com.github.uhppoted",
-	logdir:  "/usr/local/var/com.github.uhppoted/logs",
-	config:  "/usr/local/etc/com.github.uhppoted/uhppoted.conf",
-	etc:     "/usr/local/etc/com.github.uhppoted/httpd",
+	plist:   fmt.Sprintf("org.codeberg.uhppoted.%s.plist", SERVICE),
+	workdir: "/usr/local/var/org.codeberg.uhppoted",
+	logdir:  "/usr/local/var/org.codeberg.uhppoted/logs",
+	config:  "/usr/local/etc/org.codeberg.uhppoted/uhppoted.conf",
+	etc:     "/usr/local/etc/org.codeberg.uhppoted/httpd",
 }
 
 type Undaemonize struct {
@@ -74,7 +74,7 @@ func (cmd *Undaemonize) Execute(args ...any) error {
 		return err
 	}
 
-	fmt.Printf("   ... com.github.uhppoted.%s unregistered as a LaunchDaemon\n", SERVICE)
+	fmt.Printf("   ... org.codeberg.uhppoted.%s unregistered as a LaunchDaemon\n", SERVICE)
 	fmt.Printf(`
 	   NOTE: Configuration files in %s,
 	         working files in %s,
@@ -89,7 +89,7 @@ func (cmd *Undaemonize) Execute(args ...any) error {
 }
 
 func (cmd *Undaemonize) launchd() (string, error) {
-	label := fmt.Sprintf("com.github.uhppoted.%s", SERVICE)
+	label := fmt.Sprintf("org.codeberg.uhppoted.%s", SERVICE)
 
 	path := filepath.Join("/Library/LaunchDaemons", cmd.plist)
 	_, err := os.Stat(path)

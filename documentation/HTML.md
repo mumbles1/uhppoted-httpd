@@ -18,7 +18,7 @@ the {{ ... }} markers in the HTML files indicate template replacements using the
 
 ### First steps
 
-The static files for the base user interface can be obtained directly from the _github_ [repo](https://codeberg.org/uhppoted/uhppoted-httpd)
+The static files for the base user interface can be obtained directly from the _codeberg_ [repo](https://codeberg.org/uhppoted/uhppoted-httpd)
 or alternatively by running `uhppoted-httpd daemonize` and answering _yes_ when asked if you would like to unpack the HTML.
 
 The first step in customising the user interface is to set `uhppoted-httpd` to use an external folder for the static

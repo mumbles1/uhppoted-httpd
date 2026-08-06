@@ -37,11 +37,11 @@ const newsyslog = `#logfilename                                       [owner:gro
 {{end}}`
 
 var DAEMONIZE = Daemonize{
-	plist:   fmt.Sprintf("com.github.uhppoted.%s.plist", SERVICE),
-	workdir: "/usr/local/var/com.github.uhppoted/httpd",
-	logdir:  "/usr/local/var/com.github.uhppoted/logs",
-	config:  "/usr/local/etc/com.github.uhppoted/uhppoted.conf",
-	etc:     "/usr/local/etc/com.github.uhppoted/httpd",
+	plist:   fmt.Sprintf("org.codeberg.uhppoted.%s.plist", SERVICE),
+	workdir: "/usr/local/var/org.codeberg.uhppoted/httpd",
+	logdir:  "/usr/local/var/org.codeberg.uhppoted/logs",
+	config:  "/usr/local/etc/org.codeberg.uhppoted/uhppoted.conf",
+	etc:     "/usr/local/etc/org.codeberg.uhppoted/httpd",
 }
 
 var replacer *strings.Replacer
@@ -110,7 +110,7 @@ func (cmd *Daemonize) execute() error {
 	}
 
 	i := info{
-		Label:        fmt.Sprintf("com.github.uhppoted.%s", SERVICE),
+		Label:        fmt.Sprintf("org.codeberg.uhppoted.%s", SERVICE),
 		Executable:   executable,
 		StdLogFile:   filepath.Join(cmd.logdir, fmt.Sprintf("%s.log", SERVICE)),
 		ErrLogFile:   filepath.Join(cmd.logdir, fmt.Sprintf("%s.err", SERVICE)),
@@ -163,7 +163,7 @@ func (cmd *Daemonize) execute() error {
 	fmt.Println()
 	fmt.Printf("       The daemon will start automatically on the next system restart - to start it manually, execute the following command:\n")
 	fmt.Println()
-	fmt.Printf("       > sudo launchctl load /Library/LaunchDaemons/com.github.uhppoted.%s.plist\n", SERVICE)
+	fmt.Printf("       > sudo launchctl load /Library/LaunchDaemons/org.codeberg.uhppoted.%s.plist\n", SERVICE)
 	fmt.Println()
 
 	return nil

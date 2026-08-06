@@ -18,7 +18,7 @@ a set of JSON files:
 in the _var_ folder:
 
 - /var/uhppoted/httpd/system (Linux)
-- /usr/local/var/com.github.uhppoted/httpd/system (MacOS)
+- /usr/local/var/org.codeberg.uhppoted/httpd/system (MacOS)
 - \Program Data\uhppoted\httpd\system (Windows)
 
 ## Data structure

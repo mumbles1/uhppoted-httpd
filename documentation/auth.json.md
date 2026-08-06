@@ -4,7 +4,7 @@ The `auth.json` file sets the coarse grained authorisation for user access to re
 variously located in the _uhppoted-httpd_ configuration folder:
 
 - /etc/uhppoted/httpd/auth.json (Linux)
-- /usr/local/com.github.uhppoted/httpd/auth.json (MacOS)
+- /usr/local/org.codeberg.uhppoted/httpd/auth.json (MacOS)
 - \Program Data\uhppoted\httpd\auth.json (Windows)
 
 A typical entry looks like:

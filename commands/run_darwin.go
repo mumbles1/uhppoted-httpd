@@ -14,9 +14,9 @@ import (
 
 var RUN = Run{
 	console:       false,
-	workdir:       "/usr/local/var/com.github.uhppoted",
-	configuration: "/usr/local/etc/com.github.uhppoted/uhppoted.conf",
-	logFile:       fmt.Sprintf("/usr/local/var/com.github.uhppoted/logs/%s.log", SERVICE),
+	workdir:       "/usr/local/var/org.codeberg.uhppoted",
+	configuration: "/usr/local/etc/org.codeberg.uhppoted/uhppoted.conf",
+	logFile:       fmt.Sprintf("/usr/local/var/org.codeberg.uhppoted/logs/%s.log", SERVICE),
 	logFileSize:   10,
 }
 

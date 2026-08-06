@@ -30,7 +30,7 @@ Access to a door will be granted to a card if:
 The `acl.grl` file is typically located in:
 
 - /etc/uhppoted/httpd/acl.grl (Linux)
-- /usr/local/etc/com.github.uhppoted/http/acl.grl (MacO)
+- /usr/local/etc/org.codeberg.uhppoted/http/acl.grl (MacO)
 - \Program Data\uhppoted\httpd\acl.grl (Windows)
 
 and is automatically reloaded when it has been modified i.e. it is not necessary to stop and restart `uhppoted-httpd`

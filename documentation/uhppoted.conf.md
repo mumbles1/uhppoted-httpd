@@ -3,7 +3,7 @@
 `uhppoted.conf` is the shared configuration file for all the `uhppoted` modules and is variously located in:
 
 - /etc/uhppoted/uhppoted.conf (Linux)
-- /usr/local/etc/com.github.uhppoted/uhppoted.conf (MacOS)
+- /usr/local/etc/org.codeberg.uhppoted/uhppoted.conf (MacOS)
 - \Program Data\uhppoted\uhppoted.conf (Windows)
 
 The file contains optional configuration sections for all supported modules. For `uhppoted-httpd`, only 
@@ -64,45 +64,45 @@ the _HTTPD_ section is relevant.
 Sample HTTPD section:
 ```
 # HTTPD
-httpd.html = /usr/local/etc/com.github.uhppoted/http/html
+httpd.html = /usr/local/etc/org.codeberg.uhppoted/http/html
 httpd.http.enabled = true
 ; httpd.http.port = 8080
 ; httpd.https.enabled = true
 ; httpd.https.port = 8443
-; httpd.tls.ca = /usr/local/etc/com.github.uhppoted/httpd/ca.cert
-; httpd.tls.certificate = /usr/local/etc/com.github.uhppoted/httpd/uhppoted.cert
-; httpd.tls.key = /usr/local/etc/com.github.uhppoted/httpd/uhppoted.key
+; httpd.tls.ca = /usr/local/etc/org.codeberg.uhppoted/httpd/ca.cert
+; httpd.tls.certificate = /usr/local/etc/org.codeberg.uhppoted/httpd/uhppoted.cert
+; httpd.tls.key = /usr/local/etc/org.codeberg.uhppoted/httpd/uhppoted.key
 httpd.tls.client.certificates.required = true
 httpd.security.auth = some
-; httpd.security.local.db = /usr/local/etc/com.github.uhppoted/httpd/auth.json
+; httpd.security.local.db = /usr/local/etc/org.codeberg.uhppoted/httpd/auth.json
 ; httpd.security.cookie.max-age = 24
 ; httpd.security.login.expiry = 1m
 httpd.security.session.expiry = 300s
 httpd.request.timeout = 15s
-; httpd.system.interfaces = /usr/local/var/com.github.uhppoted/httpd/system/interfaces.json
-; httpd.system.controllers = /usr/local/var/com.github.uhppoted/httpd/system/controllers.json
-; httpd.system.doors = /usr/local/var/com.github.uhppoted/httpd/system/doors.json
-; httpd.system.groups = /usr/local/var/com.github.uhppoted/httpd/system/groups.json
-; httpd.system.cards = /usr/local/var/com.github.uhppoted/httpd/system/cards.json
-; httpd.system.events = /usr/local/var/com.github.uhppoted/httpd/system/events.json
-; httpd.system.logs = /usr/local/var/com.github.uhppoted/httpd/system/logs.json
-; httpd.system.users = /usr/local/var/com.github.uhppoted/httpd/system/users.json
+; httpd.system.interfaces = /usr/local/var/org.codeberg.uhppoted/httpd/system/interfaces.json
+; httpd.system.controllers = /usr/local/var/org.codeberg.uhppoted/httpd/system/controllers.json
+; httpd.system.doors = /usr/local/var/org.codeberg.uhppoted/httpd/system/doors.json
+; httpd.system.groups = /usr/local/var/org.codeberg.uhppoted/httpd/system/groups.json
+; httpd.system.cards = /usr/local/var/org.codeberg.uhppoted/httpd/system/cards.json
+; httpd.system.events = /usr/local/var/org.codeberg.uhppoted/httpd/system/events.json
+; httpd.system.logs = /usr/local/var/org.codeberg.uhppoted/httpd/system/logs.json
+; httpd.system.users = /usr/local/var/org.codeberg.uhppoted/httpd/system/users.json
 ; httpd.system.refresh = 30s
 httpd.system.windows.ok = 10s
 httpd.system.windows.uncertain = 30s
 ; httpd.system.windows.systime = 5m0s
 ; httpd.system.windows.expires = 2m0s
-; httpd.db.rules.acl = /usr/local/etc/com.github.uhppoted/httpd/acl.grl
-httpd.db.rules.interfaces = /usr/local/etc/com.github.uhppoted/httpd/grules/interfaces.grl
-httpd.db.rules.controllers = /usr/local/etc/com.github.uhppoted/httpd/grules/controllers.grl
-httpd.db.rules.cards = /usr/local/etc/com.github.uhppoted/httpd/grules/cards.grl
-httpd.db.rules.doors = /usr/local/etc/com.github.uhppoted/httpd/grules/doors.grl
-httpd.db.rules.groups = /usr/local/etc/com.github.uhppoted/httpd/grules/groups.grl
-httpd.db.rules.events = /usr/local/etc/com.github.uhppoted/httpd/grules/events.grl
-httpd.db.rules.logs = /usr/local/etc/com.github.uhppoted/httpd/grules/logs.grl
-httpd.db.rules.users = /usr/local/etc/com.github.uhppoted/httpd/grules/users.grl
-; httpd.audit.file = /usr/local/var/com.github.uhppoted/httpd/audit/audit.log
+; httpd.db.rules.acl = /usr/local/etc/org.codeberg.uhppoted/httpd/acl.grl
+httpd.db.rules.interfaces = /usr/local/etc/org.codeberg.uhppoted/httpd/grules/interfaces.grl
+httpd.db.rules.controllers = /usr/local/etc/org.codeberg.uhppoted/httpd/grules/controllers.grl
+httpd.db.rules.cards = /usr/local/etc/org.codeberg.uhppoted/httpd/grules/cards.grl
+httpd.db.rules.doors = /usr/local/etc/org.codeberg.uhppoted/httpd/grules/doors.grl
+httpd.db.rules.groups = /usr/local/etc/org.codeberg.uhppoted/httpd/grules/groups.grl
+httpd.db.rules.events = /usr/local/etc/org.codeberg.uhppoted/httpd/grules/events.grl
+httpd.db.rules.logs = /usr/local/etc/org.codeberg.uhppoted/httpd/grules/logs.grl
+httpd.db.rules.users = /usr/local/etc/org.codeberg.uhppoted/httpd/grules/users.grl
+; httpd.audit.file = /usr/local/var/org.codeberg.uhppoted/httpd/audit/audit.log
 httpd.retention = 5m0s
-; httpd.timezones = /usr/local/etc/com.github.uhppoted/timezones
+; httpd.timezones = /usr/local/etc/org.codeberg.uhppoted/timezones
 ; http.PIN.enabled = false
 ```

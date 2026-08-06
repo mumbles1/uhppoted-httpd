@@ -20,7 +20,7 @@ The default _grules_ files comprise:
 and are embedded in the executable but can be overridden with external _grules_  files located (variously) in:
 
 - /etc/uhppoted/httpd/grules (Linux)
-- /usr/local/com.github.uhppoted/httpd/grules (MacOS)
+- /usr/local/org.codeberg.uhppoted/httpd/grules (MacOS)
 - \Program Data\uhppoted\httpd\grules (Windows)
 
 Rule-based access is currently implemented using the [Grule Rule Engine](https://github.com/hyperjumptech/grule-rule-engine),
