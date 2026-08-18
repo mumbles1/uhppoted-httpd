@@ -3,8 +3,8 @@ module codeberg.org/uhppoted/uhppoted-httpd
 go 1.26
 
 require (
-	codeberg.org/uhppoted/uhppoted-core v0.0.0-20260720171551-807ffedb65bd
-	codeberg.org/uhppoted/uhppoted-lib v0.0.0-20260721134957-2397d188319f
+	codeberg.org/uhppoted/uhppoted-core v0.9.1-0.20260813185934-c004d9c86466
+	codeberg.org/uhppoted/uhppoted-lib v0.9.1-0.20260811151401-370952f4629a
 	github.com/cristalhq/jwt/v3 v3.1.0
 	github.com/google/uuid v1.6.0
 	github.com/hyperjumptech/grule-rule-engine v1.15.0

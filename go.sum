@@ -1,7 +1,7 @@
-codeberg.org/uhppoted/uhppoted-core v0.0.0-20260720171551-807ffedb65bd h1:d89NEC0VZRMCeTnh88438Fkwg8cGwYp2Fjepck/au+k=
-codeberg.org/uhppoted/uhppoted-core v0.0.0-20260720171551-807ffedb65bd/go.mod h1:MoeCM7GWMq72F2tUs6/lBt9tlnBoOsMFT6effpitLRs=
-codeberg.org/uhppoted/uhppoted-lib v0.0.0-20260721134957-2397d188319f h1:zyV/AYsjzgH8qSrlPMERvITakLKdyiT8weJu1palL4g=
-codeberg.org/uhppoted/uhppoted-lib v0.0.0-20260721134957-2397d188319f/go.mod h1:lhLdbZQulgZ+opmKr0yaR1J+7LEY4pL2OyY+X9v+zXo=
+codeberg.org/uhppoted/uhppoted-core v0.9.1-0.20260813185934-c004d9c86466 h1:i778JsUnaOMBOQ3SBS0HIt2YHt/BL/smFLj688Z5NBY=
+codeberg.org/uhppoted/uhppoted-core v0.9.1-0.20260813185934-c004d9c86466/go.mod h1:MoeCM7GWMq72F2tUs6/lBt9tlnBoOsMFT6effpitLRs=
+codeberg.org/uhppoted/uhppoted-lib v0.9.1-0.20260811151401-370952f4629a h1:yFosg4nCarDYN3l+sY3eOfqWgu0PQruf8weJGAA13ko=
+codeberg.org/uhppoted/uhppoted-lib v0.9.1-0.20260811151401-370952f4629a/go.mod h1:0GAYfXxnmDI4j5wxGx4+me4Xp+RHASifTfHRVvk3BIk=
 dario.cat/mergo v1.0.0 h1:AGCNq9Evsj31mOgNPcLyXc+4PNABt905YmuqPYYpBWk=
 dario.cat/mergo v1.0.0/go.mod h1:uNxQE+84aUszobStD9th8a29P2fMDhsBdgRYvZOxGmk=
 github.com/Microsoft/go-winio v0.5.2/go.mod h1:WpS1mjBmmwHBEWmogvA2mj8546UReBk4v8QkMxJ6pZY=
