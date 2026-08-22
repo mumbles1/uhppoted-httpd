@@ -13,6 +13,7 @@ import (
 	lib "codeberg.org/uhppoted/uhppoted-core/types"
 
 	"codeberg.org/uhppoted/uhppoted-httpd/auth"
+	"codeberg.org/uhppoted/uhppoted-httpd/log"
 	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog"
 	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog/schema"
 	"codeberg.org/uhppoted/uhppoted-httpd/system/db"
@@ -756,17 +757,17 @@ func (c *Controller) deserialize(bytes []byte) error {
 	created = created.Add(1 * time.Minute)
 
 	record := struct {
-		OID          schema.OID         `json:"OID"`
-		Name         string             `json:"name,omitempty"`
-		DeviceID     uint32             `json:"device-id,omitempty"`
-		Address      lib.ControllerAddr `json:"address"`
-		Doors        map[uint8]string   `json:"doors"`
-		Interlock    lib.Interlock      `json:"interlock"`
-		AntiPassback lib.AntiPassback   `json:"antipassback"`
-		TimeZone     string             `json:"timezone,omitempty"`
-		Protocol     string             `json:"protocol,omitempty"`
-		Created      types.Timestamp    `json:"created"`
-		Modified     types.Timestamp    `json:"modified"`
+		OID          schema.OID       `json:"OID"`
+		Name         string           `json:"name,omitempty"`
+		DeviceID     uint32           `json:"device-id,omitempty"`
+		Address      string           `json:"address"`
+		Doors        map[uint8]string `json:"doors"`
+		Interlock    lib.Interlock    `json:"interlock"`
+		AntiPassback lib.AntiPassback `json:"antipassback"`
+		TimeZone     string           `json:"timezone,omitempty"`
+		Protocol     string           `json:"protocol,omitempty"`
+		Created      types.Timestamp  `json:"created"`
+		Modified     types.Timestamp  `json:"modified"`
 	}{
 		Created:  created,
 		Protocol: "udp",
@@ -779,8 +780,17 @@ func (c *Controller) deserialize(bytes []byte) error {
 	c.OID = record.OID
 	c.name = strings.TrimSpace(record.Name)
 	c.DeviceID = record.DeviceID
-	c.IP = record.Address
 	c.doors = map[uint8]schema.OID{1: "", 2: "", 3: "", 4: ""}
+
+	// NTS: an unset/blank address is a valid 'not configured' state - don't fail the entire
+	//      record just because the (optional) address doesn't parse as a controller address
+	if addr := strings.TrimSpace(record.Address); addr != "" {
+		if v, err := lib.ParseControllerAddr(addr); err != nil {
+			log.Warnf("%v", err)
+		} else {
+			c.IP = v
+		}
+	}
 	c.interlock = record.Interlock
 	c.antipassback = record.AntiPassback
 	c.timezone = record.TimeZone
