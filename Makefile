@@ -129,9 +129,9 @@ publish: release
 	                               "./dist/$(DIST)-windows-x64.zip"     \
 	                               --draft --prerelease --title "$(VERSION)-beta" --notes-file release-notes.md
 
-debug:
+debug: format
 	go build -trimpath -o bin/ ./...
-	go test ./... -run TestDoorSetFirstCard
+	go test ./... -run TestControllerUnmarshalJSON
 
 sass:
 	npx sass --watch sass:httpd/html/css --no-source-map  --style=expanded

@@ -140,7 +140,7 @@ func (cc *Controllers) Load(blob json.RawMessage) error {
 	cc.controllers = []*Controller{}
 	for _, v := range rs {
 		var c Controller
-		if err := c.deserialize(v); err != nil {
+		if err := json.Unmarshal(v, &c); err != nil {
 			log.Warnf("%v", err)
 		} else {
 			cc.controllers = append(cc.controllers, &c)

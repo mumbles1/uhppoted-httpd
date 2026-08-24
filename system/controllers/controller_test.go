@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -8,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	core "codeberg.org/uhppoted/uhppoted-core/types"
+	lib "codeberg.org/uhppoted/uhppoted-core/types"
 
 	"codeberg.org/uhppoted/uhppoted-httpd/auth"
 	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog"
@@ -24,7 +25,7 @@ func TestControllerAsObjects(t *testing.T) {
 	created = types.Timestamp(time.Date(2021, time.February, 28, 12, 34, 56, 0, time.Local))
 	name := "Le Thing"
 	deviceID := uint32(12345678)
-	address := core.MustParseControllerAddr("192.168.1.101")
+	address := lib.MustParseControllerAddr("192.168.1.101")
 
 	c := Controller{
 		CatalogController: catalog.CatalogController{
@@ -40,7 +41,7 @@ func TestControllerAsObjects(t *testing.T) {
 			3: "0.3.9",
 			4: "0.3.11",
 		},
-		interlock: core.Interlock123,
+		interlock: lib.Interlock123,
 		// antipassback: core.Readers13_24, // NTS: cached
 		created: created,
 	}
@@ -87,7 +88,7 @@ func TestControllerAsObjectsWithDeleted(t *testing.T) {
 	deleted := types.TimestampNow()
 	name := "Le Thing"
 	deviceID := uint32(12345678)
-	address := core.MustParseControllerAddr("192.168.1.101")
+	address := lib.MustParseControllerAddr("192.168.1.101")
 
 	c := Controller{
 		CatalogController: catalog.CatalogController{
@@ -121,7 +122,7 @@ func TestControllerAsObjectsWithAuth(t *testing.T) {
 	created = types.Timestamp(time.Date(2021, time.February, 28, 12, 34, 56, 0, time.Local))
 	name := "Le Thing"
 	deviceID := uint32(12345678)
-	address := core.MustParseControllerAddr("192.168.1.101")
+	address := lib.MustParseControllerAddr("192.168.1.101")
 
 	c := Controller{
 		CatalogController: catalog.CatalogController{
@@ -137,7 +138,7 @@ func TestControllerAsObjectsWithAuth(t *testing.T) {
 			3: "0.3.9",
 			4: "0.3.11",
 		},
-		interlock: core.Interlock123,
+		interlock: lib.Interlock123,
 		// antipassback: core.Readers13_24, // NTS: cached
 		created: created,
 	}
@@ -243,5 +244,118 @@ func TestControllerSetWithDeleted(t *testing.T) {
 
 	if c.name != "Le Controlleur" {
 		t.Errorf("Controller name unexpectedly updated - expected:%v, got:%v", "Le Controlleur", c.name)
+	}
+}
+
+func TestControllerUnmarshalJSON(t *testing.T) {
+	const JSON = `
+    {
+      "OID": "0.2.2",
+      "name": "Alpha",
+      "device-id": 405419896,
+      "address": "192.168.1.125",
+      "doors": {
+        "1": "0.3.4",
+        "2": "0.3.5",
+        "3": "0.3.6",
+        "4": "0.3.7"
+      },
+      "interlock": 0,
+      "antipassback": 1,
+      "timezone": "PDT",
+      "protocol": "tcp",
+      "created": "2026-01-18 16:42:34 UTC",
+      "modified": "2026-06-25 15:24:16 UTC"
+    }`
+
+	expected := Controller{
+		CatalogController: catalog.CatalogController{
+			OID:      "0.2.2",
+			DeviceID: 405419896,
+		},
+
+		name: "Alpha",
+		IP:   lib.MustParseControllerAddr("192.168.1.125"),
+
+		doors: map[uint8]schema.OID{
+			1: "0.3.4",
+			2: "0.3.5",
+			3: "0.3.6",
+			4: "0.3.7",
+		},
+
+		interlock:    lib.NoInterlock,
+		antipassback: lib.Readers12_34,
+		timezone:     "PDT",
+		protocol:     "tcp",
+
+		created:  types.MustParseTimestamp("2026-01-18 16:42:34 UTC"),
+		modified: types.MustParseTimestamp("2026-06-25 15:24:16 UTC"),
+	}
+
+	var c Controller
+
+	if err := json.Unmarshal([]byte(JSON), &c); err != nil {
+		t.Fatalf("Expected error, got (%v)", err)
+	}
+
+	if !reflect.DeepEqual(c, expected) {
+		t.Errorf("Invalid deserialized controller\n   expected:%#v\n   got:     %#v", expected, c)
+	}
+}
+
+func TestControllerUnmarshalJSONWithMissingAddress(t *testing.T) {
+	const JSON = `
+    {
+      "OID": "0.2.2",
+      "name": "Alpha",
+      "device-id": 405419896,
+      "doors": {
+        "1": "0.3.4",
+        "2": "0.3.5",
+        "3": "0.3.6",
+        "4": "0.3.7"
+      },
+      "interlock": 0,
+      "antipassback": 1,
+      "timezone": "PDT",
+      "protocol": "tcp",
+      "created": "2026-01-18 16:42:34 UTC",
+      "modified": "2026-06-25 15:24:16 UTC"
+    }`
+
+	expected := Controller{
+		CatalogController: catalog.CatalogController{
+			OID:      "0.2.2",
+			DeviceID: 405419896,
+		},
+
+		name: "Alpha",
+		IP:   lib.ControllerAddr{},
+
+		doors: map[uint8]schema.OID{
+			1: "0.3.4",
+			2: "0.3.5",
+			3: "0.3.6",
+			4: "0.3.7",
+		},
+
+		interlock:    lib.NoInterlock,
+		antipassback: lib.Readers12_34,
+		timezone:     "PDT",
+		protocol:     "tcp",
+
+		created:  types.MustParseTimestamp("2026-01-18 16:42:34 UTC"),
+		modified: types.MustParseTimestamp("2026-06-25 15:24:16 UTC"),
+	}
+
+	var c Controller
+
+	if err := json.Unmarshal([]byte(JSON), &c); err != nil {
+		t.Fatalf("Expected error, got (%v)", err)
+	}
+
+	if !reflect.DeepEqual(c, expected) {
+		t.Errorf("Invalid deserialized controller\n   expected:%#v\n   got:     %#v", expected, c)
 	}
 }

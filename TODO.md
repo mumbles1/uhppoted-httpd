@@ -2,7 +2,8 @@
 
 - [x] menu popup hidden by Muggle
 - [x] 'first card' API (cf. https://codeberg.org/uhppoted/uhppoted/issues/2)
-
+- [x] unit test for controller deserialization
+    - https://codeberg.org/uhppoted/uhppoted-httpd/pulls/1
 
 - [ ] make light/dark theme toggle immediately
 - [ ] doors: https://developer.chrome.com/blog/a-customizable-select

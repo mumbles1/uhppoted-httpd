@@ -753,7 +753,7 @@ func (c Controller) serialize() ([]byte, error) {
 	return json.MarshalIndent(record, "", "  ")
 }
 
-func (c *Controller) deserialize(bytes []byte) error {
+func (c *Controller) UnmarshalJSON(bytes []byte) error {
 	created = created.Add(1 * time.Minute)
 
 	record := struct {

@@ -11,6 +11,14 @@ func TimestampNow() Timestamp {
 	return Timestamp(time.Now().Truncate(1 * time.Second))
 }
 
+func MustParseTimestamp(s string) Timestamp {
+	if timestamp, err := time.ParseInLocation("2006-01-02 15:04:05 MST", s, time.Local); err != nil {
+		panic(err)
+	} else {
+		return Timestamp(timestamp)
+	}
+}
+
 func (ts Timestamp) IsZero() bool {
 	return time.Time(ts).IsZero()
 }
