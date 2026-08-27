@@ -146,8 +146,7 @@ func (h *HTTPD) Run(mode types.RunMode, options Options, interrupt chan os.Signa
 				tls.TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,
 				tls.TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,
 			},
-			PreferServerCipherSuites: true,
-			MinVersion:               tls.VersionTLS12,
+			MinVersion: tls.VersionTLS12,
 		}
 
 		if h.RequireClientCertificate {
