@@ -1,7 +1,6 @@
-<!--
-![build](https://github.com/uhppoted/uhppoted-httpd/workflows/build/badge.svg)
-![build](https://github.com/uhppoted/uhppoted-httpd/workflows/ghcr/badge.svg)
--->
+![build](https://img.shields.io/badge/dynamic/json?url=https://gist.github.com/twystd/2609d9356470acaf904386ce4a74f54e/raw/uhppoted-httpd.json&query=$.message&label=build&color=brightgreen)
+![docker](https://img.shields.io/badge/dynamic/json?url=https://gist.github.com/twystd/776a0d0a0d7ff1ca9a16749477381351/raw/uhppoted-httpd.json&query=$.message&label=docker&color=brightgreen)
+
 
 # uhppoted-httpd
 
