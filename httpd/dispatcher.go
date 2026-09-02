@@ -14,40 +14,15 @@ import (
 )
 
 func (d *dispatcher) exec(w http.ResponseWriter, r *http.Request, f func(map[string]any) (any, error)) {
-	ch := make(chan struct{})
-	ctx, cancel := context.WithTimeout(d.context, d.timeout)
+	acceptsGzip := strings.Contains(strings.ToLower(r.Header.Get("Accept-Encoding")), "gzip")
+	contentType := strings.ToLower(strings.TrimSpace(strings.Split(r.Header.Get("Content-Type"), ";")[0]))
+	body := map[string]any{}
 
-	defer cancel()
-
-	go func() {
-		defer close(ch)
-
-		acceptsGzip := false
-		contentType := ""
-
-		for k, h := range r.Header {
-			if strings.TrimSpace(strings.ToLower(k)) == "content-type" {
-				for _, v := range h {
-					contentType = strings.TrimSpace(strings.ToLower(v))
-				}
-			}
-
-			if strings.TrimSpace(strings.ToLower(k)) == "accept-encoding" {
-				for _, v := range h {
-					if strings.Contains(strings.TrimSpace(strings.ToLower(v)), "gzip") {
-						acceptsGzip = true
-					}
-				}
-			}
-		}
-
-		body := map[string]any{}
-
-		switch contentType {
+	switch contentType {
 		case "application/x-www-form-urlencoded":
 			if err := r.ParseForm(); err != nil {
 				warnf("HTTPD", "%v", err)
-				http.Error(w, "Error reading request", http.StatusInternalServerError)
+				http.Error(w, "Error reading request", http.StatusBadRequest)
 				return
 			}
 
@@ -72,87 +47,68 @@ func (d *dispatcher) exec(w http.ResponseWriter, r *http.Request, f func(map[str
 		default:
 			http.Error(w, fmt.Sprintf("Invalid request content-type (%v)", contentType), http.StatusBadRequest)
 			return
-		}
-
-		response, err := f(body)
-		if err != nil && errors.Is(err, auth.ErrUnauthorised) {
-			warnf("HTTPD", "%v", err)
-			http.Error(w, err.Error(), http.StatusUnauthorized)
-			return
-		} else if err != nil {
-			warnf("HTTPD", "%v", err)
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		b, err := json.Marshal(response)
-		if err != nil {
-			warnf("HTTPD", "%v", err)
-			http.Error(w, "Internal error generating response", http.StatusInternalServerError)
-			return
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-
-		if acceptsGzip && len(b) > GZIP_MINIMUM {
-			w.Header().Set("Content-Encoding", "gzip")
-
-			gz := gzip.NewWriter(w)
-			gz.Write(b)
-			gz.Close()
-		} else {
-			w.Write(b)
-		}
-	}()
-
-	select {
-	case <-ctx.Done():
-		warnf("HTTPD", "%v", ctx.Err())
-		http.Error(w, "Timeout waiting for response from system", http.StatusInternalServerError)
-		return
-
-	case <-ch:
 	}
+
+	d.respond(w, acceptsGzip, func() (any, error) { return f(body) })
 }
 
 func (d *dispatcher) exec2(w http.ResponseWriter, r *http.Request, f func() (any, error)) {
 	acceptsGzip := parseHeader(r)
-	ch := make(chan struct{})
-	ctx, cancel := context.WithTimeout(d.context, d.timeout)
+	d.respond(w, acceptsGzip, f)
+}
 
+type dispatchResult struct {
+	response any
+	err      error
+}
+
+// respond is the only function that writes to w. Controller operations run in a
+// worker and report their result over a buffered channel, so a timed-out worker
+// can finish without racing a timeout response or blocking forever.
+func (d *dispatcher) respond(w http.ResponseWriter, acceptsGzip bool, f func() (any, error)) {
+	ch := make(chan dispatchResult, 1)
+	ctx, cancel := context.WithTimeout(d.context, d.timeout)
 	defer cancel()
 
 	go func() {
-		defer close(ch)
-
-		if response, err := f(); err != nil {
-			warnf("HTTPD", "%v", err)
-		} else if response == nil {
-			// nothing to do
-		} else if b, err := json.Marshal(response); err != nil {
-			warnf("HTTPD", "%v", err)
-			http.Error(w, "Internal error generating response", http.StatusInternalServerError)
-		} else {
-			w.Header().Set("Content-Type", "application/json")
-
-			if acceptsGzip && len(b) > GZIP_MINIMUM {
-				w.Header().Set("Content-Encoding", "gzip")
-
-				gz := gzip.NewWriter(w)
-				gz.Write(b)
-				gz.Close()
-			} else {
-				w.Write(b)
-			}
-		}
+		response, err := f()
+		ch <- dispatchResult{response: response, err: err}
 	}()
 
 	select {
 	case <-ctx.Done():
 		warnf("HTTPD", "%v", ctx.Err())
-		http.Error(w, "Timeout waiting for response from system", http.StatusInternalServerError)
-		return
+		http.Error(w, "Timeout waiting for response from system", http.StatusGatewayTimeout)
 
-	case <-ch:
+	case result := <-ch:
+		if result.err != nil && errors.Is(result.err, auth.ErrUnauthorised) {
+			warnf("HTTPD", "%v", result.err)
+			http.Error(w, result.err.Error(), http.StatusUnauthorized)
+		} else if result.err != nil {
+			warnf("HTTPD", "%v", result.err)
+			http.Error(w, result.err.Error(), http.StatusBadRequest)
+		} else if result.response != nil {
+			writeJSON(w, acceptsGzip, result.response)
+		}
 	}
+}
+
+func writeJSON(w http.ResponseWriter, acceptsGzip bool, response any) {
+	b, err := json.Marshal(response)
+	if err != nil {
+		warnf("HTTPD", "%v", err)
+		http.Error(w, "Internal error generating response", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	if acceptsGzip && len(b) > GZIP_MINIMUM {
+		w.Header().Set("Content-Encoding", "gzip")
+		gz := gzip.NewWriter(w)
+		_, _ = gz.Write(b)
+		_ = gz.Close()
+		return
+	}
+
+	_, _ = w.Write(b)
 }
