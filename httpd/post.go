@@ -123,26 +123,28 @@ func (d *dispatcher) logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *dispatcher) synchronize(w http.ResponseWriter, r *http.Request, f func() error) {
-	ch := make(chan struct{})
+	ch := make(chan error, 1)
 	ctx, cancel := context.WithTimeout(d.context, d.timeout)
 
 	defer cancel()
 
 	go func() {
-		if err := f(); err != nil {
-			warnf("HTTPD", "%v", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-
-		close(ch)
+		ch <- f()
 	}()
 
 	select {
 	case <-ctx.Done():
 		warnf("HTTPD", "%v", ctx.Err())
-		http.Error(w, "Timeout waiting for response from system", http.StatusInternalServerError)
+		http.Error(w, "Timeout waiting for response from system", http.StatusGatewayTimeout)
 
-	case <-ch:
+	case err := <-ch:
+		if err != nil {
+			warnf("HTTPD", "%v", err)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
 

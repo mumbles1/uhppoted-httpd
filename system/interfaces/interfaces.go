@@ -271,15 +271,23 @@ func (ii *Interfaces) SetDoor(controller types.IController, door uint8, mode lib
 	}
 }
 
-func (ii *Interfaces) SetDoorControl(controller types.IController, door uint8, mode lib.ControlState) {
-	if lan, ok := ii.LAN(); ok {
-		if err := lan.setDoor(controller, door, mode, 0); err != nil {
-			log.Warnf("%v", err)
-		} else if oid, ok := controller.Door(door); ok {
-			catalog.PutV(oid, DoorControl, mode)
-			catalog.PutV(oid, DoorControlModified, false)
-		}
+func (ii *Interfaces) SetDoorControl(controller types.IController, door uint8, mode lib.ControlState) error {
+	lan, ok := ii.LAN()
+	if !ok {
+		return fmt.Errorf("no LAN interface configured")
 	}
+
+	if err := lan.setDoor(controller, door, mode, 0); err != nil {
+		log.Warnf("%v", err)
+		return err
+	}
+
+	if oid, ok := controller.Door(door); ok {
+		catalog.PutV(oid, DoorControl, mode)
+		catalog.PutV(oid, DoorControlModified, false)
+	}
+
+	return nil
 }
 
 func (ii *Interfaces) SetDoorDelay(controller types.IController, door uint8, delay uint8) {

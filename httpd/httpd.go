@@ -109,6 +109,7 @@ func (h *HTTPD) Run(mode types.RunMode, options Options, interrupt chan os.Signa
 	mux.HandleFunc("/synchronize/ACL", d.dispatch)
 	mux.HandleFunc("/synchronize/datetime", d.dispatch)
 	mux.HandleFunc("/synchronize/doors", d.dispatch)
+	mux.HandleFunc("/api/", d.api)
 
 	mux.HandleFunc("/", d.getWithAuth)
 	mux.HandleFunc("/usr/", d.getNoAuth) // NTS: for custom user pages
