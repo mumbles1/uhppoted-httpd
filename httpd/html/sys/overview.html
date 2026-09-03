@@ -116,7 +116,9 @@
           <button type="button" class="icon-button" id="card-editor-close" aria-label="Close">&times;</button>
         </div>
         <div class="form-grid">
-          <label class="wide"><span>Management group / folder</span><input name="managementGroup" type="text" list="management-group-options" placeholder="Select an existing group or enter a new one"><datalist id="management-group-options"></datalist></label>
+          <label class="wide"><span>Management group / folder</span><select name="managementGroup"></select></label>
+          <label class="wide hidden" id="card-management-group-new"><span>New management group name</span><input name="managementGroupNew" type="text" placeholder="Enter a new group name"></label>
+          <datalist id="management-group-options"></datalist>
           <label class="wide"><span>Full name</span><input name="name" type="text" placeholder="Jane Smith" required></label>
           <p class="field-help wide">An exact full-name match is treated as the same person and automatically uses that person&rsquo;s existing management group.</p>
           <label class="wide"><span>Credential label (optional)</span><input name="label" type="text" placeholder="Front gate card or Remote 2"></label>
@@ -185,7 +187,8 @@
         <p class="field-help" id="person-editor-summary"></p>
         <div class="form-grid">
           <label class="wide"><span>Full name</span><input name="name" type="text" required></label>
-          <label class="wide"><span>Management group / folder</span><input name="managementGroup" type="text" list="management-group-options" placeholder="Select an existing group or enter a new one"></label>
+          <label class="wide"><span>Management group / folder</span><select name="managementGroup"></select></label>
+          <label class="wide hidden" id="person-management-group-new"><span>New management group name</span><input name="managementGroupNew" type="text" placeholder="Enter a new group name"></label>
         </div>
         <div class="dialog-actions">
           <button type="button" class="secondary" id="person-editor-cancel">Cancel</button>
