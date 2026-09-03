@@ -1,7 +1,8 @@
 package system
 
 import (
-	"sync"
+	"errors"
+	"fmt"
 
 	lib "codeberg.org/uhppoted/uhppoted-core/types"
 
@@ -13,13 +14,16 @@ import (
 
 func (s *system) synchronizeACL() error {
 	controllers := s.controllers.AsIControllers()
+	if len(controllers) == 0 {
+		return fmt.Errorf("no configured controllers")
+	}
 
 	if acl, err := s.permissions(controllers); err != nil {
-		warnf("ACL", "%v", err)
+		return err
 	} else if diff, err := s.interfaces.CompareACL(controllers, acl, s.withPIN); err != nil {
-		warnf("ACL", "%v", err)
+		return err
 	} else if diff == nil {
-		warnf("ACL", "invalid ACL diff (%v)", diff)
+		return fmt.Errorf("controller returned an invalid ACL comparison")
 	} else {
 		list := map[uint32]struct{}{}
 
@@ -37,25 +41,24 @@ func (s *system) synchronizeACL() error {
 			}
 		}
 
-		var wg sync.WaitGroup
-
-		for _, c := range controllers {
-			wg.Add(1)
-
-			controller := c
-			go func(v types.IController) {
-				defer wg.Done()
-
-				for card := range list {
-					s.updateCardPermissions(controller, card)
-				}
-			}(controller)
+		// An explicit synchronization must write the complete desired ACL, even
+		// when a controller reports an incomplete or stale comparison result.
+		for _, card := range s.cards.List() {
+			if card.CardID != 0 && !card.IsDeleted() {
+				list[card.CardID] = struct{}{}
+			}
 		}
 
-		wg.Wait()
+		var failures []error
+		for _, c := range controllers {
+			for card := range list {
+				if err := s.updateCardPermissions(c, card); err != nil {
+					failures = append(failures, fmt.Errorf("controller %v credential %v: %w", c.ID(), card, err))
+				}
+			}
+		}
+		return errors.Join(failures...)
 	}
-
-	return nil
 }
 
 func (s *system) compareACL() {
@@ -108,9 +111,9 @@ func (s *system) compareACL() {
 }
 
 // NTS: revoke all if card is nil because card number may have changed and the old card will no longer have access
-func (s *system) updateCardPermissions(controller types.IController, cardID uint32) {
+func (s *system) updateCardPermissions(controller types.IController, cardID uint32) error {
 	if cardID == 0 {
-		return
+		return nil
 	}
 
 	PIN := uint32(0)
@@ -182,7 +185,7 @@ func (s *system) updateCardPermissions(controller types.IController, cardID uint
 			allowed, forbidden, err := sys.rules.Eval(*card, sys.doors)
 			if err != nil {
 				warnf("ACL", "%v", err)
-				return
+				return err
 			}
 
 			for _, door := range allowed {
@@ -204,13 +207,13 @@ func (s *system) updateCardPermissions(controller types.IController, cardID uint
 	}
 
 	if card == nil || card.IsDeleted() || unconfigured {
-		s.interfaces.DeleteCard(controller, cardID)
+		return s.interfaces.DeleteCard(controller, cardID)
 	} else if from.IsZero() && sys.acl.defaultStartDate.IsZero() {
 		warnf("ACL", "%v  excluding card %v (missing start date)", controller.ID(), card.CardID)
-		s.interfaces.DeleteCard(controller, cardID)
+		return s.interfaces.DeleteCard(controller, cardID)
 	} else if to.IsZero() && sys.acl.defaultEndDate.IsZero() {
 		warnf("ACL", "%v  excluding card %v (missing end date)", controller.ID(), card.CardID)
-		s.interfaces.DeleteCard(controller, cardID)
+		return s.interfaces.DeleteCard(controller, cardID)
 	} else {
 		if from.IsZero() {
 			from = sys.acl.defaultStartDate
@@ -220,7 +223,7 @@ func (s *system) updateCardPermissions(controller types.IController, cardID uint
 			to = sys.acl.defaultEndDate
 		}
 
-		s.interfaces.PutCard(controller, cardID, PIN, from, to, acl, firstcard)
+		return s.interfaces.PutCard(controller, cardID, PIN, from, to, acl, firstcard)
 	}
 }
 
