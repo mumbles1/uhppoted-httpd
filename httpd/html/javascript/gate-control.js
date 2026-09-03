@@ -15,6 +15,8 @@ const cardForm = document.getElementById('card-form')
 const routes = ['overview', 'controllers', 'doors', 'cards', 'groups', 'events', 'logs']
 
 let loading = false
+let emptyCardRetries = 0
+let emptyCardRetryTimer = null
 
 function currentRoute() {
   const name = window.location.pathname.split('/').pop()?.replace('.html', '') || 'overview'
@@ -583,9 +585,17 @@ async function load() {
     }
     if (!response.ok) throw new Error((await response.text()) || `Request failed (${response.status})`)
     const snapshot = await response.json()
-    for (const [name, values] of Object.entries(snapshot)) DB.updated(name, values)
+    for (const [name, values] of Object.entries(snapshot)) DB.replace(name, values)
     setConnection(true, config.mode === 'monitor' ? 'Monitor mode' : 'System online')
     render()
+    if (currentRoute() === 'cards' && records(DB.cards).length === 0 && emptyCardRetries < 2) {
+      emptyCardRetries += 1
+      clearTimeout(emptyCardRetryTimer)
+      emptyCardRetryTimer = setTimeout(load, emptyCardRetries * 500)
+    } else if (records(DB.cards).length > 0) {
+      emptyCardRetries = 0
+      clearTimeout(emptyCardRetryTimer)
+    }
   } catch (error) {
     setConnection(false, 'System unavailable')
     showNotice(error.message || 'Unable to load access-control data.', true)
