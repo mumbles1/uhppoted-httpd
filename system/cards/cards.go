@@ -45,8 +45,8 @@ func (cc *Cards) CSV() ([]byte, error) {
 		slices.Sort(groups)
 		fc, cd := "", ""
 		if card.CardID <= 0xffffff {
-			fc = fmt.Sprintf("%d", card.CardID/65536)
-			cd = fmt.Sprintf("%d", card.CardID%65536)
+			fc = fmt.Sprintf("%d", card.CardID/100000)
+			cd = fmt.Sprintf("%d", card.CardID%100000)
 		}
 		if err := w.Write([]string{card.Kind(), card.Name(), fc, cd, fmt.Sprintf("%d", card.CardID), fmt.Sprintf("%v", card.From()), fmt.Sprintf("%v", card.To()), strings.Join(groups, "; ")}); err != nil {
 			return nil, err
