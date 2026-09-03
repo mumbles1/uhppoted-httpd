@@ -43,6 +43,7 @@
             <h1 id="page-title">Overview</h1>
           </div>
           <div class="topbar-actions">
+            <button class="primary gate-control-return" id="gate-control-button">← Gate Control</button>
             <button class="secondary" id="help-button">Help</button>
             <button class="secondary" id="refresh-button">Refresh</button>
             <span class="user-chip">{{$.context.User}}</span>
@@ -326,6 +327,7 @@
       window.gateControl = {
         mode: {{printf "%q" $.context.Mode}},
         user: {{printf "%q" $.context.User}},
+        gateControlURL: {{printf "%q" $.context.GateControlURL}},
         canManageUsers: {{$.context.CanManageUsers}}
       }
     </script>
