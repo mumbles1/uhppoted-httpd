@@ -137,17 +137,14 @@ function doorRows(list = controllerDoors()) {
     const target = door ? `data-door="${escapeHTML(door.OID)}"` : `data-controller="${escapeHTML(controller?.deviceID)}" data-channel="${channel}"`
     return `<tr>
       <td class="name-cell"><strong>${display(doorName)}</strong><small>${display(controllerName)}${controller?.deviceID ? ` · ${escapeHTML(controller.deviceID)}` : ''}</small></td>
-      <td>${display(door?.mode?.mode, door ? 'Unknown' : 'Not configured')}</td>
+      <td>${display(({ 'normally open': 'Open', 'normally closed': 'Close', controlled: 'Controlled' })[door?.mode?.mode] || door?.mode?.mode, door ? 'Unknown' : 'Not configured')}</td>
       <td>${door ? `${display(door.delay?.delay, '0')}s` : '—'}</td>
       <td>${door ? (door.keypad ? 'Enabled' : 'Disabled') : '—'}</td>
       <td>${statusBadge(door?.mode?.status || door?.status || controller?.status)}</td>
       <td><div class="door-actions">
-        ${door
-          ? `<button class="secondary" data-edit-door="${escapeHTML(door.OID)}" ${disabled}>Configure</button>`
-          : `<button class="secondary" data-add-door data-controller-oid="${escapeHTML(controller?.OID)}" data-channel="${channel}" ${disabled}>Add door</button>`}
-        <button class="primary" ${target} data-mode="normally open" ${disabled}>Unlock</button>
+        <button class="primary" ${target} data-mode="normally open" ${disabled}>Open</button>
         <button class="secondary" ${target} data-mode="controlled" ${disabled}>Controlled</button>
-        <button class="danger" ${target} data-mode="normally closed" ${disabled}>Lock</button>
+        <button class="danger" ${target} data-mode="normally closed" ${disabled}>Close</button>
       </div></td>
     </tr>`
   })
@@ -210,9 +207,6 @@ function render() {
     default: app.innerHTML = overview()
   }
 
-  if (currentRoute() === 'doors') {
-    app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<button class="primary" data-add-door ${config.mode === 'monitor' ? 'disabled' : ''}>Add door</button>`)
-  }
   if (currentRoute() === 'cards') {
     app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<button class="primary" data-add-card ${config.mode === 'monitor' ? 'disabled' : ''}>Add card</button>`)
   }
