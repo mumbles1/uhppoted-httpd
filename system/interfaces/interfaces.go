@@ -263,6 +263,41 @@ func (ii *Interfaces) SetTime(controller types.IController, t time.Time) {
 	}
 }
 
+func (ii *Interfaces) RelayStatus(controllers []types.IController) map[uint32]map[uint8]struct {
+	DoorOpen    bool `json:"door-open"`
+	RelayActive bool `json:"relay-active"`
+} {
+	result := map[uint32]map[uint8]struct {
+		DoorOpen    bool `json:"door-open"`
+		RelayActive bool `json:"relay-active"`
+	}{}
+	lan, ok := ii.LAN()
+	if !ok {
+		return result
+	}
+
+	var mutex sync.Mutex
+	var wg sync.WaitGroup
+	for _, controller := range controllers {
+		controller := controller
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			states, err := lan.relayStatus(controller)
+			if err != nil {
+				log.Warnf("%v", err)
+				return
+			}
+			mutex.Lock()
+			result[controller.ID()] = states
+			mutex.Unlock()
+		}()
+	}
+	wg.Wait()
+
+	return result
+}
+
 func (ii *Interfaces) SetDoor(controller types.IController, door uint8, mode lib.ControlState, delay uint8) {
 	if lan, ok := ii.LAN(); ok {
 		if err := lan.setDoor(controller, door, mode, delay); err != nil {
