@@ -721,12 +721,46 @@ function editController(event) {
   controllerForm.elements.deviceID.value = controller.deviceID || ''
   controllerForm.elements.address.value = controller.address?.configured || controller.address?.address || ''
   controllerForm.elements.protocol.value = controller.protocol === 'tcp' ? 'tcp' : 'udp'
+  controllerForm.elements.datetime.value = controllerDateTimeValue(controller.datetime?.datetime)
   controllerForm.elements.interlock.value = controller.interlock || '0'
   controllerForm.elements.antipassback.value = controller.antipassback?.antipassback || '0'
   document.getElementById('controller-editor-title').textContent = controller.name || `Controller ${controller.deviceID}`
   renderControllerDoors(controller)
 
   controllerDialog.showModal()
+}
+
+function localDateTimeValue() {
+  const now = new Date()
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 19)
+}
+
+function controllerDateTimeValue(value) {
+  const match = `${value || ''}`.match(/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})(?::(\d{2}))?/)
+  return match ? `${match[1]}T${match[2]}:${match[3] || '00'}` : localDateTimeValue()
+}
+
+async function setControllerTime() {
+  const oid = controllerForm.dataset.oid
+  const datetime = controllerForm.elements.datetime.value
+  if (!oid || !datetime) {
+    showNotice('Choose a controller date and time first.', true)
+    return
+  }
+  const button = document.getElementById('controller-time-set')
+  button.disabled = true
+  try {
+    const response = await fetch('/api/v1/controllers/time', {
+      method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ controller: oid, datetime }),
+    })
+    if (!response.ok) throw new Error((await response.text()) || `Controller time update failed (${response.status})`)
+    showNotice('Controller date and time update sent.')
+  } catch (error) {
+    showNotice(error.message || 'Controller time update failed.', true)
+  } finally {
+    button.disabled = false
+  }
 }
 
 async function saveController(event) {
@@ -867,6 +901,8 @@ groupForm.addEventListener('submit', saveGroup)
 doorForm.elements.controller.addEventListener('change', () => refreshDoorChannels())
 document.getElementById('controller-editor-close').addEventListener('click', () => controllerDialog.close())
 document.getElementById('controller-editor-cancel').addEventListener('click', () => controllerDialog.close())
+document.getElementById('controller-time-now').addEventListener('click', () => { controllerForm.elements.datetime.value = localDateTimeValue() })
+document.getElementById('controller-time-set').addEventListener('click', setControllerTime)
 document.getElementById('door-editor-close').addEventListener('click', () => {
   doorDialog.close()
   delete doorDialog.dataset.returnController
