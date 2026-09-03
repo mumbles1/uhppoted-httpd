@@ -15,6 +15,8 @@ type IController interface {
 	TimeZone() *time.Location
 	Protocol() string
 	Door(uint8) (schema.OID, bool)
+	Interlock() types.Interlock
+	AntiPassback() types.AntiPassback
 
 	DateTimeOk() bool
 }
