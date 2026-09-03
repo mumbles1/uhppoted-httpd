@@ -431,6 +431,8 @@ function doors(o) {
       mode: { mode: '', configured: '', status: 'unknown', err: '' },
       keypad: false,
       passcodes: '',
+      readerEntry: '',
+      readerExit: '',
       firstcard: {
         startTime: '',
         endTime: '',
@@ -510,6 +512,14 @@ function doors(o) {
 
     case `${base}.5`:
       v.passcodes = o.value
+      break
+
+    case `${base}.7.1`:
+      v.readerEntry = o.value
+      break
+
+    case `${base}.7.2`:
+      v.readerExit = o.value
       break
 
     case `${base}.6.1`:
