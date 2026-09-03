@@ -263,6 +263,11 @@ func (s *system) refresh() {
 	}
 }
 
+// Refresh queues an immediate controller discovery, status, event and ACL refresh.
+func Refresh() {
+	sys.refresh()
+}
+
 func (s *system) synchronize() {
 	infof("system", "checking system synchronization")
 	controllers := sys.controllers.AsIControllers()
