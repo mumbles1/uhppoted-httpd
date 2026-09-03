@@ -46,6 +46,7 @@ button { cursor: pointer; }
 .secondary:hover { border-color: #39638d; background: #18314d; }
 .primary { border-color: #178adc; background: #087ac6; }
 .primary:hover { background: #1197eb; }
+.gate-control-return { white-space: nowrap; }
 .danger { border-color: #73404b; color: #ffb7bf; background: #3a1d27; }
 .danger:hover { background: #52232f; }
 button:disabled { cursor: not-allowed; opacity: .45; }
@@ -225,7 +226,8 @@ tbody tr:hover td { background: #10233a; }
   .topbar h1 { font-size: 21px; }
   .eyebrow { font-size: 9px; letter-spacing: .12em; }
   .topbar-actions { grid-column: 1 / -1; width: 100%; margin-left: 0; gap: 6px; }
-  .topbar-actions button { flex: 1 1 0; }
+  .topbar-actions button { flex: 1 1 0; min-width: 0; padding-inline: 7px; font-size: 12px; }
+  .topbar-actions .gate-control-return { flex-grow: 1.45; }
   .menu-button { width: 44px; height: 44px; padding: 0; place-items: center; }
   .secondary, .primary, .danger { min-height: 44px; }
   #app { padding: 14px 10px max(18px, env(safe-area-inset-bottom)); }
