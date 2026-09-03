@@ -21,6 +21,7 @@ import (
 type Card struct {
 	catalog.CatalogCard
 	name   string
+	kind   string
 	pin    uint32
 	from   lib.Date
 	to     lib.Date
@@ -98,6 +99,17 @@ func (c Card) Groups() []schema.OID {
 	return groups
 }
 
+func (c Card) Name() string { return c.name }
+
+func (c Card) Kind() string {
+	switch c.kind {
+	case "rf-remote", "keypad-code":
+		return c.kind
+	default:
+		return "card"
+	}
+}
+
 func (c Card) IsValid() bool {
 	return c.validate() == nil
 }
@@ -132,6 +144,7 @@ func (c *Card) AsObjects(a *auth.Authorizator) []schema.Object {
 		list = append(list, kv{CardFrom, from})
 		list = append(list, kv{CardTo, to})
 		list = append(list, kv{CardPIN, c.pin})
+		list = append(list, kv{CardKind, c.Kind()})
 
 		groups := catalog.GetGroups()
 		re := regexp.MustCompile(`^(.*?)(\.[0-9]+)$`)
@@ -292,6 +305,19 @@ func (c *Card) set(a *auth.Authorizator, oid schema.OID, value string, dbc db.DB
 			list = append(list, kv{CardTo, c.to})
 		}
 
+	case oid == c.OID.Append(CardKind):
+		kind := strings.TrimSpace(strings.ToLower(value))
+		if kind != "card" && kind != "rf-remote" && kind != "keypad-code" {
+			return nil, fmt.Errorf("invalid credential type")
+		}
+		if err := CanUpdate(a, c, "kind", kind); err != nil {
+			return nil, err
+		}
+		c.log(dbc, uid, "update", "kind", c.Kind(), kind, "Updated credential type from %v to %v", c.Kind(), kind)
+		c.kind = kind
+		c.modified = types.TimestampNow()
+		list = append(list, kv{CardKind, c.Kind()})
+
 	case schema.OID(c.OID.Append(CardGroups)).Contains(oid):
 		if m := regexp.MustCompile(`^(?:.*?)\.([0-9]+)$`).FindStringSubmatch(string(oid)); len(m) > 1 {
 			gid := m[1]
@@ -411,6 +437,7 @@ func (c Card) serialize() ([]byte, error) {
 		From     lib.Date        `json:"from"`
 		To       lib.Date        `json:"to"`
 		Groups   []schema.OID    `json:"groups"`
+		Kind     string          `json:"kind,omitempty"`
 		Created  types.Timestamp `json:"created"`
 		Modified types.Timestamp `json:"modified"`
 	}{
@@ -421,6 +448,7 @@ func (c Card) serialize() ([]byte, error) {
 		From:     c.from,
 		To:       c.to,
 		Groups:   []schema.OID{},
+		Kind:     c.Kind(),
 		Created:  c.created.UTC(),
 		Modified: c.modified.UTC(),
 	}
@@ -447,6 +475,7 @@ func (c *Card) deserialize(bytes []byte) error {
 		From     lib.Date        `json:"from"`
 		To       lib.Date        `json:"to"`
 		Groups   []schema.OID    `json:"groups"`
+		Kind     string          `json:"kind,omitempty"`
 		Created  types.Timestamp `json:"created"`
 		Modified types.Timestamp `json:"modified"`
 	}{
@@ -460,6 +489,7 @@ func (c *Card) deserialize(bytes []byte) error {
 
 	c.OID = record.OID
 	c.name = strings.TrimSpace(record.Name)
+	c.kind = record.Kind
 	c.CardID = uint32(record.Card)
 	c.pin = uint32(record.PIN)
 	c.from = record.From
@@ -486,6 +516,7 @@ func (c *Card) clone() *Card {
 			CardID: c.CardID,
 		},
 		name:   c.name,
+		kind:   c.kind,
 		pin:    c.pin,
 		from:   c.from,
 		to:     c.to,
