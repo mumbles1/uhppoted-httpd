@@ -178,8 +178,9 @@ func (d *dispatcher) getWithAuth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if path == "/" {
-		http.Redirect(w, r, "/sys/overview.html", http.StatusFound)
-		return
+		// Treat the root as the overview in this request. This avoids an extra
+		// redirect (and its blank browser paint) before authentication.
+		path = "/sys/overview.html"
 	}
 
 	if !strings.HasPrefix(path, "/") {
