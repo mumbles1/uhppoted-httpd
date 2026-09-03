@@ -239,16 +239,74 @@ function managementGroups() {
   return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true }))
 }
 
+function normalizedPersonName(name) {
+  return `${name || ''}`.trim().replace(/\s+/g, ' ').toLocaleLowerCase()
+}
+
+function canonicalPeople() {
+  const people = new Map()
+  records(DB.cards)
+    .sort((a, b) => `${a.OID}`.localeCompare(`${b.OID}`, undefined, { numeric: true }))
+    .forEach((card) => {
+      const key = normalizedPersonName(card.name)
+      if (!key || people.has(key)) return
+      people.set(key, {
+        name: `${card.name || ''}`.trim().replace(/\s+/g, ' '),
+        managementGroup: `${card.managementGroup || ''}`.trim(),
+      })
+    })
+  return people
+}
+
 function refreshManagementGroupOptions() {
   document.getElementById('management-group-options').innerHTML = managementGroups()
     .map((group) => `<option value="${escapeHTML(group.name)}"></option>`).join('')
 }
 
+function populateManagementGroupSelect(form, selected = '') {
+  const groups = managementGroups()
+  const select = form.elements.managementGroup
+  const match = groups.find((group) => group.name.toLocaleLowerCase() === `${selected || ''}`.trim().toLocaleLowerCase())
+  select.innerHTML = `<option value="">Ungrouped</option>${groups.map((group) => `<option value="${escapeHTML(group.name)}">${escapeHTML(group.name)}</option>`).join('')}<option value="__new__">Create new group&hellip;</option>`
+  select.value = match?.name || ''
+  form.elements.managementGroupNew.value = ''
+  updateManagementGroupNewField(form)
+}
+
+function updateManagementGroupNewField(form) {
+  const field = form.elements.managementGroupNew.closest('label')
+  const creating = form.elements.managementGroup.value === '__new__'
+  field.classList.toggle('hidden', !creating)
+  form.elements.managementGroupNew.required = creating
+  if (creating) form.elements.managementGroupNew.focus()
+}
+
+function selectedManagementGroup(form) {
+  if (form.elements.managementGroup.value !== '__new__') return form.elements.managementGroup.value.trim()
+  const name = form.elements.managementGroupNew.value.trim()
+  if (!name) throw new Error('Enter a name for the new management group.')
+  const existing = managementGroups().find((group) => group.name.toLocaleLowerCase() === name.toLocaleLowerCase())
+  return existing?.name || name
+}
+
+function setManagementGroupValue(form, value) {
+  const name = `${value || ''}`.trim()
+  const option = [...form.elements.managementGroup.options].find((item) => item.value.toLocaleLowerCase() === name.toLocaleLowerCase())
+  if (option || !name) {
+    form.elements.managementGroup.value = option?.value || ''
+    form.elements.managementGroupNew.value = ''
+  } else {
+    form.elements.managementGroup.value = '__new__'
+    form.elements.managementGroupNew.value = name
+  }
+  updateManagementGroupNewField(form)
+}
+
 function existingPerson(name, excludeOID = '') {
-  const normalized = `${name || ''}`.trim().toLocaleLowerCase()
+  const normalized = normalizedPersonName(name)
   if (!normalized) return null
   return records(DB.cards)
-    .filter((card) => card.OID !== excludeOID && `${card.name || ''}`.trim().toLocaleLowerCase() === normalized)
+    .filter((card) => card.OID !== excludeOID && normalizedPersonName(card.name) === normalized)
     .sort((a, b) => `${a.OID}`.localeCompare(`${b.OID}`, undefined, { numeric: true }))[0] || null
 }
 
@@ -256,7 +314,7 @@ function useExistingPersonGroup() {
   const match = existingPerson(cardForm.elements.name.value, cardForm.dataset.oid)
   if (!match) return
   cardForm.elements.name.value = `${match.name || ''}`.trim()
-  cardForm.elements.managementGroup.value = `${match.managementGroup || ''}`.trim()
+  setManagementGroupValue(cardForm, match.managementGroup)
 }
 
 function renderManagementGroups() {
@@ -323,18 +381,20 @@ async function removeManagementGroup(event) {
 
 function credentialTree() {
   const query = credentialSearch.trim().toLowerCase()
+  const canonical = canonicalPeople()
   const cards = records(DB.cards)
     .filter((card) => !query || credentialSearchText(card).includes(query))
     .sort((a, b) => `${a.managementGroup || ''}\u0000${a.name || ''}\u0000${a.label || ''}\u0000${a.number || ''}`.localeCompare(`${b.managementGroup || ''}\u0000${b.name || ''}\u0000${b.label || ''}\u0000${b.number || ''}`, undefined, { sensitivity: 'base', numeric: true }))
   const managementGroups = new Map()
 
   cards.forEach((card) => {
-    const groupName = `${card.managementGroup || ''}`.trim() || 'Ungrouped'
+    const person = canonical.get(normalizedPersonName(card.name))
+    const groupName = `${person?.managementGroup || card.managementGroup || ''}`.trim() || 'Ungrouped'
     const groupKey = groupName.toLocaleLowerCase()
     if (!managementGroups.has(groupKey)) managementGroups.set(groupKey, { name: groupName, people: new Map() })
     const group = managementGroups.get(groupKey)
-    const personName = `${card.name || ''}`.trim() || 'Unassigned person'
-    const personKey = personName.toLocaleLowerCase()
+    const personName = person?.name || `${card.name || ''}`.trim().replace(/\s+/g, ' ') || 'Unassigned person'
+    const personKey = normalizedPersonName(personName)
     if (!group.people.has(personKey)) group.people.set(personKey, { name: personName, cards: [] })
     group.people.get(personKey).cards.push(card)
   })
@@ -389,7 +449,7 @@ function openPersonEditor(event) {
   refreshManagementGroupOptions()
   personForm.dataset.oids = JSON.stringify(oids)
   personForm.elements.name.value = `${cards[0].name || ''}`.trim()
-  personForm.elements.managementGroup.value = `${cards[0].managementGroup || ''}`.trim()
+  populateManagementGroupSelect(personForm, cards[0].managementGroup)
   document.getElementById('person-editor-summary').textContent = `Changes apply to all ${cards.length} credential${cards.length === 1 ? '' : 's'} assigned to this person.`
   personDialog.showModal()
 }
@@ -401,12 +461,12 @@ async function savePerson(event) {
   try {
     const oids = new Set(JSON.parse(personForm.dataset.oids || '[]'))
     const cards = [...oids].map((oid) => DB.cards.get(oid)).filter(Boolean)
-    let name = personForm.elements.name.value.trim()
-    let managementGroup = personForm.elements.managementGroup.value.trim()
+    let name = personForm.elements.name.value.trim().replace(/\s+/g, ' ')
+    let managementGroup = selectedManagementGroup(personForm)
     if (!cards.length) throw new Error('That person no longer has any credentials.')
     if (!name) throw new Error('Full name is required.')
     const match = records(DB.cards)
-      .filter((card) => !oids.has(card.OID) && `${card.name || ''}`.trim().toLocaleLowerCase() === name.toLocaleLowerCase())
+      .filter((card) => !oids.has(card.OID) && normalizedPersonName(card.name) === normalizedPersonName(name))
       .sort((a, b) => `${a.OID}`.localeCompare(`${b.OID}`, undefined, { numeric: true }))[0]
     if (match) {
       name = `${match.name || ''}`.trim()
@@ -591,7 +651,7 @@ function overview() {
   const doors = controllerDoors()
   const cards = records(DB.cards)
   const groups = records(DB.groups)
-  const fullNames = new Set(cards.map((card) => `${card.name || ''}`.trim().toLowerCase()).filter(Boolean)).size
+  const fullNames = new Set(cards.map((card) => normalizedPersonName(card.name)).filter(Boolean)).size
   const managementGroupCount = new Set(cards.map((card) => `${card.managementGroup || ''}`.trim().toLowerCase()).filter(Boolean)).size
   return `<div class="stats">
     <a class="stat" href="/sys/controllers.html"><span>Controllers</span><strong>${controllers.length}</strong></a>
@@ -1077,7 +1137,7 @@ function editCard(event) {
   const defaults = defaultCardDates()
   cardForm.dataset.oid = card?.OID || ''
   refreshManagementGroupOptions()
-  cardForm.elements.managementGroup.value = card?.managementGroup || ''
+  populateManagementGroupSelect(cardForm, card?.managementGroup)
   cardForm.elements.name.value = card?.name || ''
   cardForm.elements.label.value = card?.label || ''
   cardForm.elements.kind.value = card?.kind || 'card'
@@ -1280,8 +1340,8 @@ async function saveCard(event) {
   const existing = oid ? DB.cards.get(oid) : null
 
   try {
-    let managementGroup = cardForm.elements.managementGroup.value.trim()
-    let name = cardForm.elements.name.value.trim()
+    let managementGroup = selectedManagementGroup(cardForm)
+    let name = cardForm.elements.name.value.trim().replace(/\s+/g, ' ')
     const label = cardForm.elements.label.value.trim()
     const number = cardForm.elements.number.value.trim()
     const personMatch = existingPerson(name, existing?.OID)
@@ -1289,7 +1349,7 @@ async function saveCard(event) {
       name = `${personMatch.name || ''}`.trim()
       managementGroup = `${personMatch.managementGroup || ''}`.trim()
       cardForm.elements.name.value = name
-      cardForm.elements.managementGroup.value = managementGroup
+      setManagementGroupValue(cardForm, managementGroup)
     }
     if (!cardForm.elements.from.value || !cardForm.elements.to.value || cardForm.elements.to.value < cardForm.elements.from.value) {
       throw new Error('Valid until must be on or after Valid from.')
@@ -1590,6 +1650,8 @@ doorForm.addEventListener('submit', saveDoor)
 cardForm.addEventListener('submit', saveCard)
 personForm.addEventListener('submit', savePerson)
 credentialBulkForm.addEventListener('submit', saveBulkCredentialAccess)
+cardForm.elements.managementGroup.addEventListener('change', () => updateManagementGroupNewField(cardForm))
+personForm.elements.managementGroup.addEventListener('change', () => updateManagementGroupNewField(personForm))
 cardForm.elements.number.addEventListener('input', () => populateFacilityCard(cardForm.elements.number.value))
 cardForm.elements.name.addEventListener('change', useExistingPersonGroup)
 cardForm.elements.facilityCode.addEventListener('input', populateDecimalCard)
