@@ -263,21 +263,21 @@ function eventCard(event) {
 }
 
 function formatCredential(value) {
-  const wiegand = decodeWiegand26(value)
+  const wiegand = decodeFacilityCard(value)
   if (!wiegand || `${value}`.trim() === '0') return null
   return { raw: `${value}`.trim(), ...wiegand }
 }
 
-function decodeWiegand26(value) {
+function decodeFacilityCard(value) {
   const raw = `${value ?? ''}`.trim()
   if (!raw) return null
   const number = Number(raw)
-  if (!Number.isSafeInteger(number) || number < 0 || number > 0xffffff) return null
-  return { facilityCode: Math.floor(number / 65536), cardNumber: number % 65536 }
+  if (!Number.isSafeInteger(number) || number < 0 || number > 25599999) return null
+  return { facilityCode: Math.floor(number / 100000), cardNumber: number % 100000 }
 }
 
 function populateFacilityCard(value) {
-  const wiegand = decodeWiegand26(value)
+  const wiegand = decodeFacilityCard(value)
   cardForm.elements.facilityCode.value = wiegand?.facilityCode ?? ''
   cardForm.elements.cardNumber.value = wiegand?.cardNumber ?? ''
 }
@@ -288,8 +288,8 @@ function populateDecimalCard() {
   if (facilityCode === '' || cardNumber === '') return
   const fc = Number(facilityCode)
   const cn = Number(cardNumber)
-  if (Number.isInteger(fc) && fc >= 0 && fc <= 255 && Number.isInteger(cn) && cn >= 0 && cn <= 65535) {
-    cardForm.elements.number.value = `${fc * 65536 + cn}`
+  if (Number.isInteger(fc) && fc >= 0 && fc <= 255 && Number.isInteger(cn) && cn >= 0 && cn <= 99999) {
+    cardForm.elements.number.value = `${fc * 100000 + cn}`
   }
 }
 
@@ -976,7 +976,6 @@ async function manualRefresh() {
       method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ datetime: localDateTime }),
     })
     if (!response.ok) throw new Error((await response.text()) || `Refresh failed (${response.status})`)
-    await new Promise((resolve) => setTimeout(resolve, 1200))
     await load()
     showNotice('Controller data and clock refreshed.')
   } catch (error) {
