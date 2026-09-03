@@ -550,10 +550,33 @@ function renderCardGroups(card, selected = null) {
 
 function defaultCardDates() {
   const from = new Date()
-  const to = new Date(from)
-  to.setFullYear(to.getFullYear() + 1)
   const format = (date) => `${date.getFullYear()}-${`${date.getMonth() + 1}`.padStart(2, '0')}-${`${date.getDate()}`.padStart(2, '0')}`
-  return { from: format(from), to: format(to) }
+  const fromValue = format(from)
+  return { from: fromValue, to: addYearsToDate(fromValue, 40) }
+}
+
+function addYearsToDate(value, years) {
+  const match = `${value || ''}`.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (!match) return ''
+  const year = Number(match[1]) + years
+  const month = Number(match[2])
+  const day = Math.min(Number(match[3]), new Date(year, month, 0).getDate())
+  return `${year}-${`${month}`.padStart(2, '0')}-${`${day}`.padStart(2, '0')}`
+}
+
+function updateValidUntil({ forceDefault = false } = {}) {
+  const from = cardForm.elements.from.value
+  const until = cardForm.elements.to
+  until.min = from
+  if (from && (forceDefault || !until.value || until.value < from)) {
+    until.value = addYearsToDate(from, 40)
+    cardForm.dataset.untilAutomatic = 'true'
+  }
+}
+
+function updateCredentialPINVisibility() {
+  const enabled = records(DB.doors).some((door) => Boolean(door.keypad))
+  document.getElementById('card-pin-field').classList.toggle('hidden', !enabled)
 }
 
 function editCard(event) {
@@ -567,6 +590,9 @@ function editCard(event) {
   cardForm.elements.PIN.value = card?.PIN || ''
   cardForm.elements.from.value = card?.from || defaults.from
   cardForm.elements.to.value = card?.to || defaults.to
+  cardForm.dataset.untilAutomatic = card ? 'false' : 'true'
+  updateValidUntil()
+  updateCredentialPINVisibility()
 
   renderCardGroups(card)
 
@@ -721,7 +747,9 @@ async function saveCard(event) {
   const existing = oid ? DB.cards.get(oid) : null
 
   try {
-    if (cardForm.elements.to.value < cardForm.elements.from.value) throw new Error('Valid until must be on or after Valid from.')
+    if (!cardForm.elements.from.value || !cardForm.elements.to.value || cardForm.elements.to.value < cardForm.elements.from.value) {
+      throw new Error('Valid until must be on or after Valid from.')
+    }
     if (existing) oid = await currentCardOID(existing)
     if (!oid) {
       const created = await postConfiguration('/cards', { created: [{ oid: '<new>', value: '' }], updated: [], deleted: [] })
@@ -1014,6 +1042,11 @@ cardForm.addEventListener('submit', saveCard)
 cardForm.elements.number.addEventListener('input', () => populateFacilityCard(cardForm.elements.number.value))
 cardForm.elements.facilityCode.addEventListener('input', populateDecimalCard)
 cardForm.elements.cardNumber.addEventListener('input', populateDecimalCard)
+cardForm.elements.from.addEventListener('change', () => updateValidUntil({ forceDefault: cardForm.dataset.untilAutomatic === 'true' }))
+cardForm.elements.to.addEventListener('change', () => {
+  cardForm.dataset.untilAutomatic = 'false'
+  updateValidUntil()
+})
 groupForm.addEventListener('submit', saveGroup)
 doorForm.elements.controller.addEventListener('change', () => refreshDoorChannels())
 document.getElementById('controller-editor-close').addEventListener('click', () => controllerDialog.close())
