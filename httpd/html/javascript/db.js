@@ -197,7 +197,7 @@ function interfaces(o) {
 
   if (!DB.interfaces.has(base)) {
     DB.interfaces.set(base, {
-      OID: oid,
+      OID: base,
       type: 'LAN',
       name: 'LAN',
       bind: '',
@@ -251,7 +251,7 @@ function controllers(o) {
 
   if (!DB.controllers.has(base)) {
     DB.controllers.set(base, {
-      OID: oid,
+      OID: base,
       created: '',
       deleted: '',
       name: '',
@@ -392,7 +392,7 @@ function doors(o) {
 
   if (!DB.doors.has(base)) {
     DB.doors.set(base, {
-      OID: oid,
+      OID: base,
       created: '',
       deleted: '',
       name: '',
@@ -539,7 +539,7 @@ function cards(o) {
 
   if (!DB.cards.has(base)) {
     DB.cards.set(base, {
-      OID: oid,
+      OID: base,
       created: '',
       deleted: '',
       name: '',
@@ -628,7 +628,7 @@ function groups(o) {
 
   if (!DB.groups.has(base)) {
     DB.groups.set(base, {
-      OID: oid,
+      OID: base,
       created: '',
       deleted: '',
       name: '',
@@ -714,7 +714,7 @@ function events(o) {
 
   if (!DB.tables.events.events.has(base)) {
     DB.tables.events.events.set(base, {
-      OID: oid,
+      OID: base,
       timestamp: '',
       deviceID: '',
       index: 0,
@@ -809,7 +809,7 @@ function logs(o) {
 
   if (!DB.tables.logs.logs.has(base)) {
     DB.tables.logs.logs.set(base, {
-      OID: oid,
+      OID: base,
       timestamp: '',
       uid: '',
       item: {
@@ -871,7 +871,7 @@ function users(o) {
 
   if (!DB.tables.users.users.has(base)) {
     DB.tables.users.users.set(base, {
-      OID: oid,
+      OID: base,
       name: '',
       uid: '',
       role: '',

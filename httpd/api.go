@@ -58,13 +58,25 @@ func (d *dispatcher) api(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		d.exec(w, r, func(body map[string]any) (any, error) {
-			door, ok := body["door"].(string)
-			if !ok || strings.TrimSpace(door) == "" {
-				return nil, fmt.Errorf("door is required")
-			}
 			mode, ok := body["mode"].(string)
 			if !ok || strings.TrimSpace(mode) == "" {
 				return nil, fmt.Errorf("mode is required")
+			}
+
+			if controller, ok := body["controller"].(string); ok && strings.TrimSpace(controller) != "" {
+				channel, ok := body["channel"].(float64)
+				if !ok || channel < 1 || channel > 4 || channel != float64(uint8(channel)) {
+					return nil, fmt.Errorf("channel must be an integer from 1 to 4")
+				}
+				if err := system.ControlControllerDoor(controller, uint8(channel), mode); err != nil {
+					return nil, err
+				}
+				return map[string]any{"ok": true, "controller": controller, "channel": uint8(channel), "mode": mode}, nil
+			}
+
+			door, ok := body["door"].(string)
+			if !ok || strings.TrimSpace(door) == "" {
+				return nil, fmt.Errorf("door or controller and channel are required")
 			}
 			if err := system.ControlDoor(uid, role, door, mode); err != nil {
 				return nil, err
