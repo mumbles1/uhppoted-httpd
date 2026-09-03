@@ -1,315 +1,179 @@
-![build](https://img.shields.io/badge/dynamic/json?url=https://gist.github.com/twystd/2609d9356470acaf904386ce4a74f54e/raw/uhppoted-httpd.json&query=$.message&label=build&color=brightgreen)
-![docker](https://img.shields.io/badge/dynamic/json?url=https://gist.github.com/twystd/776a0d0a0d7ff1ca9a16749477381351/raw/uhppoted-httpd.json&query=$.message&label=docker&color=brightgreen)
+# Access Control - HTTP
 
+A Docker-first web console for UHPPOTE TCP/IP access controllers. This fork builds on `uhppoted-httpd` with a redesigned desktop/mobile interface and controller-backed workflows for controllers, relays, credentials, access levels and events.
 
-# uhppoted-httpd
+> This is an independently maintained fork. It does not modify or publish to the original author's repository. The upstream project is [uhppoted/uhppoted-httpd](https://github.com/uhppoted/uhppoted-httpd).
 
-`uhppoted-httpd` implements an HTTP server that provides a browser based user interface for managing an access control
-system based on UHPPOTE TCP/IP controllers. It is intended to supplement the existing command line tools and application
-integrations.
+## Screenshots
 
-**SECURITY NOTICE**
+The screenshots use sample names and controller data.
 
-Versions _v0.8.8_ and earlier have a bug in the authentication logic that allows a deleted user to log in unless
-the system has been restarted. This has been fixed in version v0.8.9+.
+### Overview
 
-## Status
+![Access Control HTTP overview](documentation/screenshots/overview-desktop.svg)
 
-Supported operating systems:
-- Linux
-- MacOS
-- Windows
-- RaspberryPi (ARM/ARM7/ARM6)
+### Credential management
 
-## Raison d'être
+![Credential directory](documentation/screenshots/credentials-desktop.svg)
 
-_CAVEAT EMPTOR_
+### Phone layout
 
-1. Although _uhppoted-httpd_ does provide a functional and usable user interface for managing a small'ish access
-   control system, the out-of-the-box look and feel is (deliberately) workaday, low key and plain with the intention
-   of being a base for your own customisation (with your own logos, themes, functionality, etc) rather than a 
-   finished, shippable product.
+<img src="documentation/screenshots/overview-mobile.svg" alt="Access Control HTTP mobile overview" width="390">
 
-2. Also, please be aware that at this stage in its career, it is primarily a testbed for validating the design and
-   implementation of the other `uhppoted` components when integrated into a working system. It is also intended to
-   become a platform for exploring some alternative ideas around user interfaces and system architectures.
+## What this build includes
 
-3. It is intended as an adminstrative tool for use by system administrators (i.e. not card users) - it exposes far
-   more functionality than is comfortable (or even safe) for untrusted users. Systems intended for use 
-   by not-completely-trusted users should rather build on the REST and MQTT services.
+- Responsive Access Control - HTTP theme, login screen and mobile card layouts
+- Page-aware Help button and a built-in Help & Tips guide
+- LAN controller discovery and controller configuration
+- Live relay state, reader names and Open, Close and Controlled actions
+- Credential management for cards, RF remotes and keypad codes
+- Facility code (FC) and card decimal (CD) entry using `FC × 100000 + CD`
+- Credential folders, consolidated people and duplicate credential protection
+- Permanent Level 0 No Access and Level 1 24/7 access
+- Controller-enforced access schedules that continue while the web app is offline
+- Event search by credential, FC/CD, controller ID, name and credential type
+- Safe controller import with Merge and Override choices
+- Timestamped backup, download, import and restore workflows
+- Administrator-managed login accounts
+- Persistent JSON, CSV, audit and backup data under `/data`
 
-4. By default, _uhppoted-httpd_ redirects to a _setup_ page to create an _admin_ user if none exists. This behaviour
-   can (and should) be disabled by setting the _httpd.security.no-setup_ config value to `true` in _uhppoted.conf_
-   once an _admin_ user has been created.
+## CasaOS / Docker Compose
 
-## Release Notes
+UHPPOTE discovery uses UDP broadcast on port 60000. For a controller on the same LAN, use host networking. Bridge networking can serve the web page but usually prevents broadcast discovery and may also interfere with controller replies.
 
-### Current Release
+CasaOS installs this as one custom-app container:
 
-**[v0.9.0](https://codeberg.org/uhppoted/uhppoted-httpd/releases/tag/v0.9.0) - 2026-01-27**
-1. Updated to Go 1.25.
-2. Updated dependencies for security patches.
-
-
-## Installation
-
-Executables for all the supported operating systems are packaged in the _codeberg.org_ [releases](https://codeberg.org/uhppoted/uhppoted-httpd/releases)
-section. Installation is straightforward - download the archive and extract it to a directory of your choice.
-
-To install `uhppoted-httpd` as a system service:
-```
-   cd <uhppoted directory>
-   sudo uhppoted-httpd daemonize
+```yaml
+name: access-control-http
+services:
+  access-control-http:
+    image: ghcr.io/mumbles1/uhppoted-httpd:latest
+    container_name: access-control-http
+    restart: unless-stopped
+    network_mode: host
+    environment:
+      TZ: America/Chicago
+      UHPPOTED_CREDENTIALS_CSV: /data/credentials.csv
+    volumes:
+      - /DATA/AppData/uhppoted-httpd:/data
 ```
 
-`uhppoted-httpd help` will list the available commands and associated options (documented below).
+Open `http://<casaos-ip>:8080`. The container also exposes 8443 when HTTPS is configured. With `network_mode: host`, do not add Docker port mappings; the service binds directly to the CasaOS host ports.
 
-The `daemonize` command will create all the necessary files for `uhppoted-httpd` if they do not exist already:
+In CasaOS, `/DATA/AppData/uhppoted-httpd` belongs under **Volumes**, not **Devices**. Mapping it as a device produces the Docker error “not a device node.”
 
-- `uhppoted.conf`
-- access lists
-- GRULES files
-- HTML files
+## First sign-in and login accounts
 
+On a new persistent data folder, open the web interface and complete the administrator setup. After sign-in, administrators can use **Login Accounts** to:
 
-### Docker
+- add or edit a user;
+- change a password;
+- assign User or Administrator role;
+- unlock a locked account;
+- revoke OTP enrollment; and
+- delete an account, except for the final administrator.
 
-A public _Docker_ image is published to [docker.io](https://hub.docker.com/repository/docker/uhppoted/httpd/general). 
+Account records persist in `/data/system/users.json`. Passwords are stored as salted hashes, not readable plaintext. On CasaOS that file is:
 
-The image is configured to use the `/usr/local/etc/uhppoted/uhppoted.conf` file for configuration information.
-
-#### `docker compose`
-
-A sample Docker `compose` configuration is provided in the [`docker/compose`](docker) folder. 
-
-To run the example, download and extract the [compose.zip](docker) scripts and supporting files into folder
-of your choice and then:
-```
-cd <compose folder>
-docker compose up
+```text
+/DATA/AppData/uhppoted-httpd/system/users.json
 ```
 
-And open URL http://localhost:8080 in your browser of choice.
+Do not hand-edit it while the container is running. Use **Login Accounts** or restore a known-good backup.
 
-The default image is configured for HTTP only but the example compose.yml file uses _bind_ mounts to map the local folder to
-override the default configuration, HTML and system files to enable TLS and use the local filesystem for e.g. develoment.
+## Basic setup
 
-Alternatively, copy the uhppoted.conf file, TLS keys and certificates and HTML to a Docker volume and remove the bind mounts
-from _compose.yml_. The expected folder structure is:
-```
-/
-  usr
-    local
-      etc
-        uhppoted
-          - uhppoted.conf
-          httpd
-            - ca.cert
-            - uhppoted.key
-            - uhppoted.cert
-            - acl.grl
-            - auth.json
-            grules
-              - ...
-            system
-              - ...
-            html
-              - ...
+1. Open **Controllers** and run discovery.
+2. Configure the controller address, clock and physical relay assignments.
+3. Name and configure the mapped relays from the controller dialog.
+4. Create an **Access Level**, or use the built-in 24/7 level.
+5. Add a **Credential** and assign at least one access level.
+6. Confirm the success message says the controller synchronized.
+7. Test the physical reader and verify the result under **Events**.
+
+Local saves and controller synchronization are separate outcomes. If the UI reports that data was saved locally but synchronization failed, do not assume the physical controller received the change.
+
+## Credentials and card numbers
+
+The factory Windows application represents facility/card pairs using a combined decimal controller ID:
+
+```text
+controller ID = (facility code × 100000) + card decimal
 ```
 
-#### `docker run`
+For example, FC `150` and CD `184` become controller ID `15000184`. The UI displays FC before CD and blocks duplicate controller IDs. Exact full names are consolidated under one person, allowing one person to own multiple credentials.
 
-To start an HTTPD server using Docker `run`:
-```
-docker pull uhppoted/httpd:latest
-docker run --publish 8080:8080 --publish 8443:8443 --name httpd --mount source=uhppoted,target=/var/uhppoted --rm uhppoted/httpd
-```
+Every credential must have an access level. **No Access** is exclusive and cannot be combined with another level.
 
-And open URL http://localhost:8080 in your browser of choice.
+## Persistent data and backups
 
+Mounting `/DATA/AppData/uhppoted-httpd:/data` keeps configuration and records outside the image so container updates do not erase them.
 
-#### `docker build`
-
-For inclusion in a Dockerfile:
-```
-FROM ghcr.io/uhppoted/httpd:latest
-```
-
-
-### Building from source
-
-Required tools:
-- [Go 1.21+](https://go.dev)
-- [sass](https://sass-lang.com)
-- _make_ (optional but recommended)
-- [eslint](https://eslint.org) (optional but recommended)
-- [eslint-config-standard](https://www.npmjs.com/package/eslint-config-standard) (optional but recommended)
-
-**NOTES:**
-
-1. `apt install sass` on Ubuntu installs `ruby-sass` which was marked **[obsolete](https://sass-lang.com/ruby-sass)**
-in 2019. Please follow the installation instructions on the [Sass homepage](https://sass-lang.com) to install
-the current version._
-
-2. The _make_ build uses `eslint` and `eslint_config_standard`. `eslint_config_standard` is a **dev** dependency and
-should be installed locally in the project:
-
-    * Initial project setup:
-```
-git clone https://codeberg.org/uhppoted/uhppoted-httpd.git
-cd uhppoted-httpd
-npm install eslint-config-standard
-```
-   * To build using the included Makefile:
-```
-cd uhppoted-httpd
-make build
-```
-   * Without using `make`:
-```
-cd uhppoted-httpd
-sass --no-source-map sass/themes/light:httpd/html/css/default
-sass --no-source-map sass/themes/light:httpd/html/css/light
-sass --no-source-map sass/themes/dark:httpd/html/css/dark
-cp httpd/html/images/light/* httpd/html/images/default
-go build -trimpath -o bin/ ./...
+```text
+/DATA/AppData/uhppoted-httpd/
+├── auth.json
+├── credentials.csv
+├── audit/
+│   └── audit.log
+├── backups/
+│   └── access-control-YYYYMMDD-HHMMSS.zip
+└── system/
+    ├── controllers.json
+    ├── doors.json
+    ├── cards.json
+    ├── groups.json
+    ├── events.json
+    ├── logs.json
+    └── users.json
 ```
 
-The above commands build the `uhppoted-httpd` executable to the `bin` directory.
+Use **Overview → Backups and restore** to create timestamped backups, download them, import an archive or restore an existing archive. Restore creates a safety backup first.
 
+**Import from controller** is read-only until the preview is applied. It never deletes controller credentials. Matching credentials can be merged with local metadata or overridden with controller values, and a timestamped backup is created before applying the import.
 
-#### External dependencies
+## Updating
 
-| *Dependency*                                                            | *Description*                        |
-| ----------------------------------------------------------------------- | -------------------------------------|
-| [jwt/v3](https://github.com/cristalhq/jwt/v3)                           | JWT implementation                   |
-| [grule-rule-engine](https://github.com/hyperjumptech/grule-rule-engine) | Rules engine                         |
-| github.com/google/uuid                                                  | UUID type implementation             |
+1. Create a backup from the Overview page.
+2. Pull `ghcr.io/mumbles1/uhppoted-httpd:latest` in CasaOS.
+3. Recreate or update the single container without deleting `/DATA/AppData/uhppoted-httpd`.
+4. Refresh the browser and verify controller connectivity.
 
-## uhppoted-httpd
+The image is public and supports anonymous pulls. Pin a digest instead of `latest` if you need fully repeatable deployments.
 
-Usage: ```uhppoted-httpd <command> <options>```
+## Troubleshooting
 
-Supported commands:
+### Controller is not discovered
 
-- `help`
-- `version`
-- `run`
-- `daemonize`
-- `undaemonize`
-- `config`
+- Use `network_mode: host`.
+- Confirm the controller and CasaOS host are on the same LAN/VLAN.
+- Allow UDP 60000 through the host firewall.
+- Avoid Docker bridge mode for broadcast discovery.
 
-Defaults to `run` if the command it not provided i.e. ```uhppoted-httpd <options>``` is equivalent to 
-```uhppoted-httpd run <options>```.
+### Web UI opens but changes do not reach the controller
 
-### `run`
+- Verify the configured controller IP and device ID.
+- Set the controller clock from **Controllers → Configure**.
+- Watch the save result for a controller synchronization error.
+- Confirm the factory application is not simultaneously changing the same controller.
 
-Runs the `uhppoted-httpd` HTTP server. Default command, intended for use as a system service that runs in the 
-background. 
+### Relay status is unavailable
 
-Command line:
+The controller must be reachable and the logical relay must be assigned to a physical controller channel. Status is not inferred from locally saved settings.
 
-` uhppoted-httpd [--debug] [--console] [--config <file>] `
+### Data disappears after an update
 
-```
-  --config      Sets the uhppoted.conf file to use for controller configurations. 
-                Defaults to the communal uhppoted.conf file shared by all the uhppoted modules.
-  --lockfile    (optional) Lockfile used to prevent running multiple copies of the _uhppoted-httpd_ service. 
-                Defaults to _uhppoted-httpd.pid" (in the system _temp_ folder) if not provided.
-  --console     Runs the HTTP server endpoint as a console application, logging events to the console.
-  --debug       Displays verbose debugging information, in particular the communications with the 
-                UHPPOTE controllers
-```
+Confirm the host folder is mounted as a volume at `/data` and that CasaOS did not recreate the app without that mapping.
 
-### `daemonize`
+## Development
 
-Registers `uhppoted-httpd` as a system service that will be started on system boot. The command creates the necessary
-system specific service configuration files and service manager entries. On Linux it defaults to using the 
-`uhppoted:uhppoted` user:group - this can be changed with the `--user` option
+The backend remains Go so it can use the mature UHPPOTE protocol implementation directly. The custom browser UI is plain modern JavaScript, HTML and CSS served by the Go application.
 
-Command line:
+Typical source build requirements are Go, Sass and Make. The production container is built and published by the mirror workflow in [mumbles1/uhppoted-docker-mirrors](https://github.com/mumbles1/uhppoted-docker-mirrors).
 
-`uhppoted-httpd daemonize [--user <user>]`
+## Security
 
-### `undaemonize`
+This is an administrative controller interface. Keep it on a trusted LAN or behind a properly secured reverse proxy/VPN. Do not expose HTTP port 8080 directly to the public internet. Back up `/DATA/AppData/uhppoted-httpd` and protect that folder because it contains system configuration, credential records and authentication hashes.
 
-Unregisters `uhppoted-httpd` as a system service, but does not delete any created log or configuration files. 
+## License and upstream
 
-Command line:
-
-`uhppoted-httpd undaemonize`
-
-### `config`
-
-Displays the current system configuration. Primarily intended as a convenience for scripts but can also be used to
-create a _uhppoted.conf_ file by directing the output to a file (e.g. `uhppoted-http config > /etc/uhppoted/uhppoted.conf`)
-
-Command line:
-
-`uhppoted-httpd config`
-
-
-## Supporting files
-
-### `uhppoted.conf`
-
-`uhppoted.conf` is the communal configuration file shared by all the `uhppoted` project modules and is (or will 
-eventually be) documented in [uhppoted](https://codeberg.org/uhppoted/uhppoted). The `daemonize` command will 
-create a `uhppoted.conf` file if one does not exist, or update the existing file with the default configuration.
-
-The configuration for `uhppoted-httpd` is defined in the [_HTTPD_](https://codeberg.org/uhppoted/uhppoted-httpd/blob/master/documentation/uhppoted.conf.md) section.
-
-### HTML files
-
-By default, the static files for the user interface are served from a file system embedded in the application
-executable. For customisation, the static files can be relocated to an external folder, as described here:
-
-- [HTML](https://codeberg.org/uhppoted/uhppoted-httpd/blob/master/documentation/HTML.md)
-
-### `auth.json`
-
-Coarse-grained authorisation for HTTP request is set by the entries in the `auth.json` file, which maps URLs and
-user roles to GET/POST rights. Detailed description of the file can be found here:
-
-- [auth.json](https://codeberg.org/uhppoted/uhppoted-httpd/blob/master/documentation/auth.json.md)
-
-
-### `acl.grl`
-
-The `acl.grl` file implements rule based access for cards to supplement the relatively simple grid-based access
-control supported by the combination of card + groups + doors. The `acl.grl` file is documented in more detail 
-[here](https://codeberg.org/uhppoted/uhppoted-httpd/blob/master/documentation/acl.grl.md).
-
-### GRULES files
-
-The _grules_ files implement rule based fine-grained authorisation for view, create, update and delete operations
-on individual entities.. The _grules_ files are documented in more detail [here](https://codeberg.org/uhppoted/uhppoted-httpd/blob/master/documentation/grules.md).
-
-### JSON files
-
-The system data is (currently) stored as a set of JSON files, described (https://codeberg.org/uhppoted/uhppoted-httpd/blob/master/documentation/db.md).
-
-## Notes
-
-1. `uhppoted-http` supports using OTP as an **alternative** to password based login. On that grounds that the 
-   most asked question so far has been _"I've forgotten the admin password, how do I ..."_ it seems that once the system
-   is setup and configured most users access it sufficiently infrequently for a secure password to be onerous. Login with
-   OTP is a convenient alternative using something like e.g. Google Authenticator. Please note that is is less secure than
-   using password-only access (of necessity, OTP secret keys are stored in plaintext on the server) so OTP should only be
-   enabled if the server is secured.
-
-2. At login, `uhppoted-http` will automatically redirect to a _setup_ page to create an _admin_ user if one does not already 
-   exist (this supersedes the automatic creation of the default _admin_ user by _daemonize_). Although enabled by default,
-   this behaviour can (and should) be disabled by setting the _httpd.security.no-setup_ config value to `true` in _uhppoted.conf_
-   once an _admin_ user has been created.
-
-3. The _admin_ role is configurable by setting the _httpd.security.admin.role_ value in _uhppoted.conf_ (it defaults to _admin_).
-   Changing the _admin_ role requires the _auth.json_ file to be updated with the new role.
-
-4. **SECURITY** : versions v0.8.8 and earlier have a bug in the authentication mechanism that allows a deleted user to
-   log back in unless the system has been restarted. Fixed in the _main_ branch and (as yet unreleased) version v0.8.9.
-
-
-
-
-
+This fork retains the upstream project license and attribution. See [LICENSE](LICENSE) and the [upstream project](https://github.com/uhppoted/uhppoted-httpd) for the original implementation and protocol ecosystem.
