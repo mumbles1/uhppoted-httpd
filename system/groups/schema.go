@@ -11,6 +11,7 @@ const GroupModified = schema.Modified
 const GroupName = schema.GroupName
 const GroupDoors = schema.GroupDoors
 const GroupFirstCard = schema.GroupFirstCard
+const GroupSchedule = schema.GroupSchedule
 
 const DoorName = schema.DoorName
 
@@ -22,4 +23,5 @@ var lookup = map[schema.Suffix]string{
 	GroupName:      "group.name",
 	GroupDoors:     "group.doors",
 	GroupFirstCard: "group.firstcard",
+	GroupSchedule:  "group.schedule",
 }
