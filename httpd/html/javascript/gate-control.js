@@ -60,7 +60,7 @@ function showNotice(message, error = false) {
 function updateNavigation() {
   const route = currentRoute()
   document.querySelectorAll('[data-route]').forEach((link) => link.classList.toggle('active', link.dataset.route === route))
-  document.getElementById('page-title').textContent = route === 'overview' ? 'Overview' : route === 'logs' ? 'Audit log' : route[0].toUpperCase() + route.slice(1)
+  document.getElementById('page-title').textContent = route === 'overview' ? 'Overview' : route === 'logs' ? 'Audit log' : route === 'doors' ? 'Relays' : route[0].toUpperCase() + route.slice(1)
 
   const counts = {
     overview: records(DB.controllers).length + controllerDoors().length,
@@ -187,7 +187,7 @@ function overview() {
   const groups = records(DB.groups)
   return `<div class="stats">
     <div class="stat"><span>Controllers</span><strong>${controllers.length}</strong></div>
-    <div class="stat"><span>Doors</span><strong>${doors.length}</strong></div>
+    <div class="stat"><span>Relays</span><strong>${doors.length}</strong></div>
     <div class="stat"><span>Active cards</span><strong>${cards.length}</strong></div>
     <div class="stat"><span>Access groups</span><strong>${groups.length}</strong></div>
   </div>
@@ -201,7 +201,7 @@ function render() {
   updateNavigation()
   switch (currentRoute()) {
     case 'controllers': app.innerHTML = panel('Controllers', 'Controller health and configuration', ['Controller', 'ID', 'Protocol', 'Cards', 'Events', 'Status', ''], controllerRows()); break
-    case 'doors': app.innerHTML = panel('Doors', config.mode === 'monitor' ? 'Monitor mode — controls are disabled' : 'Live door state and controls', ['Door', 'Mode', 'Delay', 'Keypad', 'Status', 'Controls'], doorRows()); break
+    case 'doors': app.innerHTML = panel('Relays', config.mode === 'monitor' ? 'Monitor mode — controls are disabled' : 'Live relay state and controls', ['Relay / door', 'Mode', 'Delay', 'Keypad', 'Status', 'Controls'], doorRows()); break
     case 'cards': app.innerHTML = panel('Cards', 'Cardholders and validity periods', ['Cardholder', 'Card number', 'Valid from', 'Valid to', 'Groups', 'Status', ''], cardRows()); break
     case 'groups': app.innerHTML = panel('Groups', 'Door access assignments', ['Group', 'Doors', 'First-card', 'Status'], groupRows()); break
     case 'events': app.innerHTML = panel('Events', 'Recent controller events', ['Time', 'Controller', 'Door', 'Card', 'Access', 'Reason'], eventRows()); break
@@ -249,8 +249,8 @@ function editDoor(event) {
   }
 
   doorForm.dataset.oid = door?.OID || ''
-  doorForm.dataset.originalController = assigned.controller?.OID || ''
-  doorForm.dataset.originalChannel = assigned.channel || ''
+  doorForm.dataset.originalController = door ? (assigned.controller?.OID || '') : ''
+  doorForm.dataset.originalChannel = door ? (assigned.channel || '') : ''
   doorForm.elements.name.value = door?.name || ''
   doorForm.elements.mode.value = door?.mode?.configured || door?.mode?.mode || 'controlled'
   doorForm.elements.delay.value = door?.delay?.configured || door?.delay?.delay || '5'
