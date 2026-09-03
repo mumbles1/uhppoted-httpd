@@ -23,7 +23,14 @@ type Interfaces struct {
 	ch   chan types.EventsList
 }
 
+type RelayState struct {
+	DoorOpen    bool `json:"door-open"`
+	RelayActive bool `json:"relay-active"`
+	Stale       bool `json:"stale,omitempty"`
+}
+
 var guards = sync.Map{}
+var relayStates sync.Map
 var guard sync.RWMutex
 
 func NewInterfaces(ch chan types.EventsList) Interfaces {
@@ -265,14 +272,8 @@ func (ii *Interfaces) SetTime(controller types.IController, t time.Time) error {
 	return fmt.Errorf("no LAN interface configured")
 }
 
-func (ii *Interfaces) RelayStatus(controllers []types.IController) map[uint32]map[uint8]struct {
-	DoorOpen    bool `json:"door-open"`
-	RelayActive bool `json:"relay-active"`
-} {
-	result := map[uint32]map[uint8]struct {
-		DoorOpen    bool `json:"door-open"`
-		RelayActive bool `json:"relay-active"`
-	}{}
+func (ii *Interfaces) RelayStatus(controllers []types.IController) map[uint32]map[uint8]RelayState {
+	result := map[uint32]map[uint8]RelayState{}
 	lan, ok := ii.LAN()
 	if !ok {
 		return result
@@ -288,7 +289,12 @@ func (ii *Interfaces) RelayStatus(controllers []types.IController) map[uint32]ma
 			states, err := lan.relayStatus(controller)
 			if err != nil {
 				log.Warnf("%v", err)
-				return
+				states = cachedRelayStatus(controller.ID())
+				if states == nil {
+					return
+				}
+			} else {
+				cacheRelayStatus(controller.ID(), states)
 			}
 			mutex.Lock()
 			result[controller.ID()] = states
@@ -298,6 +304,32 @@ func (ii *Interfaces) RelayStatus(controllers []types.IController) map[uint32]ma
 	wg.Wait()
 
 	return result
+}
+
+func cacheRelayStatus(controller uint32, states map[uint8]RelayState) {
+	copy := map[uint8]RelayState{}
+	for door, state := range states {
+		state.Stale = false
+		copy[door] = state
+	}
+	relayStates.Store(controller, copy)
+}
+
+func cachedRelayStatus(controller uint32) map[uint8]RelayState {
+	value, ok := relayStates.Load(controller)
+	if !ok {
+		return nil
+	}
+	states, ok := value.(map[uint8]RelayState)
+	if !ok {
+		return nil
+	}
+	copy := map[uint8]RelayState{}
+	for door, state := range states {
+		state.Stale = true
+		copy[door] = state
+	}
+	return copy
 }
 
 func (ii *Interfaces) SetDoor(controller types.IController, door uint8, mode lib.ControlState, delay uint8) error {
