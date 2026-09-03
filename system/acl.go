@@ -17,6 +17,9 @@ func (s *system) synchronizeACL() error {
 	if len(controllers) == 0 {
 		return fmt.Errorf("no configured controllers")
 	}
+	if err := s.synchronizeTimeProfiles(controllers); err != nil {
+		return err
+	}
 
 	if acl, err := s.permissions(controllers); err != nil {
 		return err
@@ -137,6 +140,7 @@ func (s *system) updateCardPermissions(controller types.IController, cardID uint
 	type permission struct {
 		allowed   bool
 		firstcard bool
+		profile   uint8
 	}
 
 	permissions := map[schema.OID]permission{}
@@ -155,11 +159,23 @@ func (s *system) updateCardPermissions(controller types.IController, cardID uint
 		groups := card.Groups()
 		for _, g := range groups {
 			if group, ok := s.groups.Group(g); ok {
+				profile, err := group.AccessProfile()
+				if err != nil {
+					return err
+				}
 				for oid, allowed := range group.Doors {
 					p := permissions[oid]
+					if allowed && p.allowed && p.profile != profile && p.profile != 1 && profile != 1 {
+						return fmt.Errorf("credential %v has conflicting timed access levels for the same relay", cardID)
+					}
+					resolved := p.profile
+					if allowed && (!p.allowed || profile == 1) {
+						resolved = profile
+					}
 					permissions[oid] = permission{
 						allowed:   p.allowed || allowed,
 						firstcard: p.firstcard || ((p.allowed || allowed) && group.FirstCard),
+						profile:   resolved,
 					}
 				}
 			}
@@ -170,7 +186,7 @@ func (s *system) updateCardPermissions(controller types.IController, cardID uint
 				p, ok := permissions[oid]
 				if ok {
 					if p.allowed {
-						acl[d] = 1
+						acl[d] = p.profile
 					}
 
 					if s.withFirstCard && p.firstcard {
@@ -249,16 +265,22 @@ func (s *system) permissions(controllers []types.IController) (acl.ACL, error) {
 	}
 
 	// ... populate ACL from cards + groups + doors
-	grant := func(card uint32, controller uint32, door uint8) {
+	grant := func(card uint32, controller uint32, door uint8, profile uint8) error {
 		if card > 0 && controller > 0 && door >= 1 && door <= 4 {
 			if _, ok := acl[controller]; ok {
 				if _, ok := acl[controller][card]; ok {
-					if _, ok := acl[controller][card].Doors[door]; ok {
-						acl[controller][card].Doors[door] = 1
+					if current, ok := acl[controller][card].Doors[door]; ok {
+						if current != 0 && current != profile && current != 1 && profile != 1 {
+							return fmt.Errorf("credential %v has conflicting timed access levels for controller %v door %v", card, controller, door)
+						}
+						if current == 0 || profile == 1 {
+							acl[controller][card].Doors[door] = profile
+						}
 					}
 				}
 			}
 		}
+		return nil
 	}
 
 	revoke := func(card uint32, controller uint32, door uint8) {
@@ -307,12 +329,18 @@ func (s *system) permissions(controllers []types.IController) (acl.ACL, error) {
 
 		for _, g := range membership {
 			if group, ok := groups.Group(g); ok {
+				profile, err := group.AccessProfile()
+				if err != nil {
+					return nil, err
+				}
 				for d, allowed := range group.Doors {
 					if door, ok := doors.Door(d); ok && allowed {
 						controller := catalog.GetDoorDeviceID(door.OID)
 						doorID := catalog.GetDoorDeviceDoor(door.OID)
 
-						grant(card, controller, doorID)
+						if err := grant(card, controller, doorID, profile); err != nil {
+							return nil, err
+						}
 					}
 				}
 
@@ -352,7 +380,9 @@ func (s *system) permissions(controllers []types.IController) (acl.ACL, error) {
 			for _, door := range allowed {
 				device := catalog.GetDoorDeviceID(door.OID)
 				doorID := catalog.GetDoorDeviceDoor(door.OID)
-				grant(card, device, doorID)
+				if err := grant(card, device, doorID, 1); err != nil {
+					return nil, err
+				}
 			}
 
 			for _, door := range forbidden {
@@ -364,4 +394,24 @@ func (s *system) permissions(controllers []types.IController) (acl.ACL, error) {
 	}
 
 	return acl, nil
+}
+
+func (s *system) synchronizeTimeProfiles(controllers []types.IController) error {
+	var failures []error
+	for _, group := range s.groups.List() {
+		profile, err := group.TimeProfile()
+		if err != nil {
+			failures = append(failures, err)
+			continue
+		}
+		if profile == nil {
+			continue
+		}
+		for _, controller := range controllers {
+			if err := s.interfaces.SetTimeProfile(controller, *profile); err != nil {
+				failures = append(failures, fmt.Errorf("controller %v access level %v: %w", controller.ID(), group.Name, err))
+			}
+		}
+	}
+	return errors.Join(failures...)
 }
