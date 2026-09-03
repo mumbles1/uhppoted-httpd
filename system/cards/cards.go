@@ -1,11 +1,14 @@
 package cards
 
 import (
+	"bytes"
 	"cmp"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"maps"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 
@@ -16,6 +19,42 @@ import (
 	"codeberg.org/uhppoted/uhppoted-httpd/system/db"
 	"codeberg.org/uhppoted/uhppoted-httpd/types"
 )
+
+func (cc *Cards) CSV() ([]byte, error) {
+	guard.RLock()
+	defer guard.RUnlock()
+
+	list := slices.Collect(maps.Values(cc.cards))
+	slices.SortStableFunc(list, func(a, b *Card) int { return cmp.Compare(a.CardID, b.CardID) })
+
+	var buffer bytes.Buffer
+	w := csv.NewWriter(&buffer)
+	if err := w.Write([]string{"type", "name", "facility_code", "credential_decimal", "controller_id", "valid_from", "valid_until", "access_groups"}); err != nil {
+		return nil, err
+	}
+	for _, card := range list {
+		if card.IsDeleted() {
+			continue
+		}
+		groups := []string{}
+		for _, oid := range card.Groups() {
+			if name := catalog.GetV(oid, schema.GroupName); name != nil {
+				groups = append(groups, fmt.Sprintf("%v", name))
+			}
+		}
+		slices.Sort(groups)
+		fc, cd := "", ""
+		if card.CardID <= 0xffffff {
+			fc = fmt.Sprintf("%d", card.CardID/65536)
+			cd = fmt.Sprintf("%d", card.CardID%65536)
+		}
+		if err := w.Write([]string{card.Kind(), card.Name(), fc, cd, fmt.Sprintf("%d", card.CardID), fmt.Sprintf("%v", card.From()), fmt.Sprintf("%v", card.To()), strings.Join(groups, "; ")}); err != nil {
+			return nil, err
+		}
+	}
+	w.Flush()
+	return buffer.Bytes(), w.Error()
+}
 
 type Cards struct {
 	cards map[schema.OID]*Card
