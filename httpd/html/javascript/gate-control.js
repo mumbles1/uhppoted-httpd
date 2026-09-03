@@ -1344,6 +1344,7 @@ async function saveCard(event) {
     let name = cardForm.elements.name.value.trim().replace(/\s+/g, ' ')
     const label = cardForm.elements.label.value.trim()
     const number = cardForm.elements.number.value.trim()
+    const selectedGroups = selectedCardGroups()
     const personMatch = existingPerson(name, existing?.OID)
     if (personMatch) {
       name = `${personMatch.name || ''}`.trim()
@@ -1356,6 +1357,9 @@ async function saveCard(event) {
     }
     if (records(DB.cards).some((card) => card.OID !== existing?.OID && `${card.number}`.trim() === number)) {
       throw new Error('A credential with that number already exists.')
+    }
+    if (!selectedGroups.size) {
+      throw new Error('Select at least one access level. Use Level 0 for no access.')
     }
     if (existing) oid = await currentCardOID(existing)
     if (!oid) {
@@ -1379,8 +1383,7 @@ async function saveCard(event) {
 
     for (const group of records(DB.groups)) {
       const membershipOID = cardGroupOID(oid, group.OID)
-      const field = document.querySelector(`[data-card-group="${group.OID}"]`)
-      const selected = Boolean(field?.checked)
+      const selected = selectedGroups.has(group.OID)
       if (membershipOID && selected !== cardInGroup(existing, group)) updates.push({ oid: membershipOID, value: `${selected}` })
     }
     if (updates.length) {
