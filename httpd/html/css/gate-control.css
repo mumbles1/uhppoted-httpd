@@ -23,7 +23,7 @@ button { cursor: pointer; }
 .app-shell { display: grid; grid-template-columns: 260px minmax(0, 1fr); min-height: 100vh; }
 .sidebar { position: sticky; top: 0; height: 100vh; padding: 24px 16px; background: linear-gradient(180deg, #0c1a2c 0%, #091421 100%); border-right: 1px solid var(--line); display: flex; flex-direction: column; z-index: 20; }
 .brand { display: flex; align-items: center; gap: 12px; padding: 0 8px 26px; }
-.brand-mark { width: 42px; height: 42px; border-radius: 12px; display: grid; place-items: center; color: #04101d; font-weight: 900; background: linear-gradient(145deg, #64c9ff, #1b88db); box-shadow: 0 8px 30px #0b86d94d; }
+.brand-mark { width: 42px; height: 42px; flex: 0 0 auto; border-radius: 12px; box-shadow: 0 8px 30px #0b86d94d; }
 .brand strong, .brand small { display: block; }
 .brand strong { font-size: 18px; letter-spacing: -.02em; }
 .brand small { margin-top: 2px; color: var(--muted); font-size: 12px; }
@@ -157,7 +157,34 @@ tbody tr:hover td { background: #10233a; }
 }
 
 @media (max-width: 520px) {
-  .form-grid .field-pair { gap: 8px; }
+  .sidebar { width: min(88vw, 300px); padding-top: max(20px, env(safe-area-inset-top)); }
+  .topbar { min-height: 74px; gap: 11px; padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 12px max(12px, env(safe-area-inset-left)); }
+  .topbar h1 { font-size: 21px; }
+  .eyebrow { font-size: 9px; letter-spacing: .12em; }
+  .topbar-actions { gap: 6px; }
+  .menu-button { width: 44px; height: 44px; padding: 0; place-items: center; }
+  .secondary, .primary, .danger { min-height: 44px; }
+  #app { padding: 14px 10px max(18px, env(safe-area-inset-bottom)); }
+  .notice { margin: 10px 10px 0; }
+  .stats { grid-template-columns: 1fr; gap: 10px; }
+  .stat { min-height: 88px; padding: 15px; }
+  .stat strong { margin-top: 6px; font-size: 25px; }
+  .panel-heading { min-height: 64px; padding: 12px; }
+  .panel-tools { flex-direction: column; align-items: stretch; }
+  th, td { padding: 12px 10px; }
+  .door-actions { flex-wrap: wrap; }
+  .door-actions button { min-height: 40px; }
+  .editor-dialog { width: 100vw; height: 100dvh; max-height: 100dvh; border-width: 0; border-radius: 0; }
+  .editor-dialog form { min-height: 100%; padding: max(16px, env(safe-area-inset-top)) 14px max(16px, env(safe-area-inset-bottom)); }
+  .dialog-heading { margin-bottom: 18px; }
+  .dialog-heading h2 { font-size: 20px; }
+  .icon-button { width: 44px; height: 44px; }
+  .form-grid { gap: 12px; }
+  .form-grid .field-pair { grid-template-columns: 1fr; gap: 12px; }
+  .form-grid input, .form-grid select, .controller-door-field button { min-height: 46px; font-size: 16px; }
+  .dialog-actions { flex-wrap: wrap; position: sticky; bottom: 0; margin: 22px -14px -16px; padding: 12px 14px max(12px, env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: #0b1829f2; }
+  .dialog-actions button { flex: 1 1 110px; }
+  .dialog-actions .delete-action { flex-basis: 100%; margin-right: 0; }
   .controller-door-field { grid-template-columns: 1fr; }
   .controller-time-action { flex-direction: column; align-items: stretch; }
 }

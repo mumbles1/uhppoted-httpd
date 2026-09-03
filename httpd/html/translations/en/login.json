@@ -8,7 +8,7 @@
             "Hint": "Password"
         },
         "Ok": {
-            "Label": "Ok"
+            "Label": "Sign in"
         },
         "Unauthorized": "Invalid user ID or password"
     }
