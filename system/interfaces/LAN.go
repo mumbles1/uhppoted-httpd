@@ -231,6 +231,9 @@ func (l *LAN) search(controllers []types.IController) ([]uint32, error) {
 
 // A long-running function i.e. expects to be invoked from an external goroutine
 func (l *LAN) refresh(c types.IController) {
+	lock(c.ID())
+	defer unlock(c.ID())
+
 	log.Infof("%-10v refreshing LAN controller status", c.ID())
 
 	api := l.api([]types.IController{c})
@@ -253,6 +256,11 @@ func (l *LAN) refresh(c types.IController) {
 	} else {
 		catalog.PutV(c.OID(), ControllerTouched, time.Now())
 		catalog.PutV(c.OID(), ControllerDateTimeCurrent, status.SystemDateTime)
+		states := map[uint8]RelayState{}
+		for door := uint8(1); door <= 4; door++ {
+			states[door] = RelayState{DoorOpen: status.DoorState[door], RelayActive: status.RelayState&(1<<(door-1)) != 0}
+		}
+		cacheRelayStatus(c.ID(), states)
 	}
 
 	if cards, err := api.GetCardRecords(uhppoted.GetCardRecordsRequest{DeviceID: deviceID}); err != nil {
@@ -293,6 +301,9 @@ func (l *LAN) refresh(c types.IController) {
 }
 
 func (l *LAN) getEvents(c types.IController, intervals []types.Interval) {
+	lock(c.ID())
+	defer unlock(c.ID())
+
 	api := l.api([]types.IController{c})
 	deviceID := c.ID()
 	oid := c.OID()
@@ -412,10 +423,7 @@ func (l *LAN) setTime(c types.IController, t time.Time) error {
 	return nil
 }
 
-func (l *LAN) relayStatus(c types.IController) (map[uint8]struct {
-	DoorOpen    bool `json:"door-open"`
-	RelayActive bool `json:"relay-active"`
-}, error) {
+func (l *LAN) relayStatus(c types.IController) (map[uint8]RelayState, error) {
 	lock(c.ID())
 	defer unlock(c.ID())
 
@@ -427,17 +435,10 @@ func (l *LAN) relayStatus(c types.IController) (map[uint8]struct {
 		return nil, fmt.Errorf("got nil response to get-status request for %v", c.ID())
 	}
 
-	states := map[uint8]struct {
-		DoorOpen    bool `json:"door-open"`
-		RelayActive bool `json:"relay-active"`
-	}{}
+	states := map[uint8]RelayState{}
 	for door := uint8(1); door <= 4; door++ {
-		states[door] = struct {
-			DoorOpen    bool `json:"door-open"`
-			RelayActive bool `json:"relay-active"`
-		}{DoorOpen: status.DoorState[door], RelayActive: status.RelayState&(1<<(door-1)) != 0}
+		states[door] = RelayState{DoorOpen: status.DoorState[door], RelayActive: status.RelayState&(1<<(door-1)) != 0}
 	}
-
 	return states, nil
 }
 
