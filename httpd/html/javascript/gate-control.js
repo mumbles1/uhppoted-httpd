@@ -589,7 +589,7 @@ async function load() {
   } catch (error) {
     setConnection(false, 'System unavailable')
     showNotice(error.message || 'Unable to load access-control data.', true)
-    if (!app.children.length || app.querySelector('.loading-card')) app.innerHTML = empty('Gate Access could not load system data. Use Refresh to try again.')
+    if (!app.children.length || app.querySelector('.loading-card')) app.innerHTML = empty('Access Control - HTTP could not load system data. Use Refresh to try again.')
   } finally {
     loading = false
     document.getElementById('refresh-button').disabled = false
