@@ -12,7 +12,7 @@
 }
 
 html.login,
-html.login body { min-width: 320px; min-height: 100%; margin: 0; background: var(--login-bg); }
+html.login body { width: 100%; min-width: 0; min-height: 100%; margin: 0; overflow-x: hidden; background: var(--login-bg); }
 html.login body { color: var(--login-text); }
 html.login body #content.login-shell {
   position: relative;
@@ -43,14 +43,18 @@ html.login main.login-main {
   grid-column: 1;
   grid-row: 1;
   width: 100%;
+  min-width: 0;
   margin: 0;
   padding: 40px 20px;
+  box-sizing: border-box;
   display: grid;
   place-items: center;
   overflow: auto;
 }
 html.login .login-card {
   width: min(100%, 430px);
+  min-width: 0;
+  box-sizing: border-box;
   border: 1px solid var(--login-line);
   border-radius: 18px;
   overflow: hidden;
