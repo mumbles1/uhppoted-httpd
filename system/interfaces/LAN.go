@@ -697,6 +697,16 @@ func (l *LAN) compareACL(controllers []types.IController, permissions acl.ACL, w
 	return compare, nil
 }
 
+func (l *LAN) controllerACL(controllers []types.IController) (acl.ACL, []error) {
+	devices := []uhppote.Device{}
+	api := l.api(controllers)
+	for _, device := range api.UHPPOTE.DeviceList() {
+		devices = append(devices, device)
+	}
+
+	return acl.GetACL(api.UHPPOTE, devices)
+}
+
 func (l *LAN) status() types.Status {
 	return types.StatusOk
 }
@@ -782,3 +792,4 @@ func (l *LAN) deserialize(bytes []byte) error {
 func (l *LAN) log(dbc db.DBC, uid string, op string, OID schema.OID, field string, before, after any, format string, fields ...any) {
 	dbc.Log(uid, op, OID, "interface", "LAN", l.Name, field, before, after, format, fields...)
 }
+	
