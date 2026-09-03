@@ -129,7 +129,6 @@ func (d *dispatcher) getJS(w http.ResponseWriter, r *http.Request) {
 	context := map[string]any{
 		"WithPIN":       d.options.WithPIN,
 		"WithFirstCard": d.options.WithFirstCard,
-		"CanManageUsers": d.authorised(uid, role, "/users"),
 	}
 
 	t, err := text.New(name).Funcs(functions).ParseFS(d.fs, filepath)
@@ -204,6 +203,7 @@ func (d *dispatcher) getWithAuth(w http.ResponseWriter, r *http.Request) {
 		"Theme":         parseSettings(r),
 		"Mode":          d.mode,
 		"User":          uid,
+		"CanManageUsers": d.authorised(uid, role, "/users"),
 		"Options":       options,
 		"WithPIN":       d.options.WithPIN,
 		"WithFirstCard": d.options.WithFirstCard,
