@@ -107,11 +107,23 @@ function empty(message) {
   return `<div class="empty">${escapeHTML(message)}</div>`
 }
 
+function mobileTableRows(headers, rows) {
+  return rows.map((row) => {
+    let column = 0
+    return row.replace(/<td([^>]*)>/g, (_match, attributes) => {
+      const label = headers[column] || ''
+      column += 1
+      return `<td${attributes} data-label="${escapeHTML(label)}">`
+    })
+  })
+}
+
 function panel(title, subtitle, headers, rows) {
   if (!rows.length) return `<section class="panel"><div class="panel-heading"><div><h2>${escapeHTML(title)}</h2><p>${escapeHTML(subtitle)}</p></div></div>${empty(`No ${title.toLowerCase()} are available.`)}</section>`
+  const labelledRows = mobileTableRows(headers, rows)
   return `<section class="panel">
     <div class="panel-heading"><div><h2>${escapeHTML(title)}</h2><p>${escapeHTML(subtitle)}</p></div></div>
-    <div class="table-wrap"><table><thead><tr>${headers.map((header) => `<th>${escapeHTML(header)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>
+    <div class="table-wrap"><table><thead><tr>${headers.map((header) => `<th>${escapeHTML(header)}</th>`).join('')}</tr></thead><tbody>${labelledRows.join('')}</tbody></table></div>
   </section>`
 }
 
@@ -218,7 +230,7 @@ function filterGroups(event) {
   const groups = records(DB.groups).filter((group) => !query || `${group.name} ${group.OID}`.toLowerCase().includes(query))
   const body = app.querySelector('tbody')
   if (!body) return
-  body.innerHTML = groups.length ? groupRows(groups).join('') : '<tr><td colspan="6">No access levels match your search.</td></tr>'
+  body.innerHTML = groups.length ? mobileTableRows(['Access level', 'Relays', 'Time restriction', 'First-card', 'Status', ''], groupRows(groups)).join('') : '<tr><td colspan="6">No access levels match your search.</td></tr>'
   body.querySelectorAll('[data-edit-group]').forEach((button) => button.addEventListener('click', editGroup))
 }
 
@@ -268,7 +280,7 @@ function refreshEventRows() {
   const body = app.querySelector('tbody')
   if (!body) return
   const events = filteredEvents()
-  body.innerHTML = events.length ? eventRows(events).join('') : '<tr><td colspan="8">No events match your search and filter.</td></tr>'
+  body.innerHTML = events.length ? mobileTableRows(['Event #', 'Time', 'Controller', 'Door', 'Credential', 'Type', 'Access', 'Reason'], eventRows(events)).join('') : '<tr><td colspan="8">No events match your search and filter.</td></tr>'
   bindEventCredentialRows(body)
 }
 
