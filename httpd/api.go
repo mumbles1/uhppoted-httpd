@@ -2,7 +2,9 @@ package httpd
 
 import (
 	"fmt"
+	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -34,6 +36,102 @@ func (d *dispatcher) api(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch {
+	case r.URL.Path == "/api/v1/controllers/import" && r.Method == http.MethodGet:
+		if !d.apiAuthorised(w, uid, role, "/controllers", "/doors", "/cards", "/groups") {
+			return
+		}
+		d.exec2(w, r, func() (any, error) {
+			return system.ReadControllerImport()
+		})
+
+	case r.URL.Path == "/api/v1/controllers/import" && r.Method == http.MethodPost:
+		if !d.apiAuthorised(w, uid, role, "/controllers", "/doors", "/cards", "/groups") {
+			return
+		}
+		d.exec(w, r, func(body map[string]any) (any, error) {
+			confirmed, _ := body["confirmed"].(bool)
+			if !confirmed {
+				return nil, fmt.Errorf("controller import confirmation is required")
+			}
+			return system.ApplyControllerImport(uid, role)
+		})
+
+	case r.URL.Path == "/api/v1/backups" && r.Method == http.MethodGet:
+		if !d.apiAuthorised(w, uid, role, "/controllers", "/doors", "/cards", "/groups") {
+			return
+		}
+		d.exec2(w, r, func() (any, error) {
+			return system.ListBackups()
+		})
+
+	case r.URL.Path == "/api/v1/backups" && r.Method == http.MethodPost:
+		if !d.apiAuthorised(w, uid, role, "/controllers", "/doors", "/cards", "/groups") {
+			return
+		}
+		d.exec(w, r, func(body map[string]any) (any, error) {
+			reason, _ := body["reason"].(string)
+			backup, err := system.CreateBackup(reason)
+			if err != nil {
+				return nil, err
+			}
+			return map[string]any{"ok": true, "backup": backup, "directory": system.BackupDirectory()}, nil
+		})
+
+	case r.URL.Path == "/api/v1/backups/download" && r.Method == http.MethodGet:
+		if !d.apiAuthorised(w, uid, role, "/controllers", "/doors", "/cards", "/groups") {
+			return
+		}
+		path, err := system.BackupPath(r.URL.Query().Get("name"))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "application/zip")
+		w.Header().Set("Content-Disposition", fmt.Sprintf(`attachment; filename=%q`, r.URL.Query().Get("name")))
+		http.ServeFile(w, r, path)
+
+	case r.URL.Path == "/api/v1/backups/import" && r.Method == http.MethodPost:
+		if !d.apiAuthorised(w, uid, role, "/controllers", "/doors", "/cards", "/groups") {
+			return
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, 33<<20)
+		if err := r.ParseMultipartForm(33 << 20); err != nil {
+			http.Error(w, "Invalid or oversized backup upload", http.StatusBadRequest)
+			return
+		}
+		file, _, err := r.FormFile("backup")
+		if err != nil {
+			http.Error(w, "Backup file is required", http.StatusBadRequest)
+			return
+		}
+		defer file.Close()
+		backup, err := system.StoreBackup(io.Reader(file))
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		writeJSON(w, parseHeader(r), map[string]any{"ok": true, "backup": backup})
+
+	case r.URL.Path == "/api/v1/backups/restore" && r.Method == http.MethodPost:
+		if !d.apiAuthorised(w, uid, role, "/controllers", "/doors", "/cards", "/groups") {
+			return
+		}
+		d.exec(w, r, func(body map[string]any) (any, error) {
+			name, _ := body["name"].(string)
+			if strings.TrimSpace(name) == "" {
+				return nil, fmt.Errorf("backup name is required")
+			}
+			safety, err := system.RestoreBackup(name)
+			if err != nil {
+				return nil, err
+			}
+			go func() {
+				time.Sleep(750 * time.Millisecond)
+				os.Exit(0)
+			}()
+			return map[string]any{"ok": true, "restartScheduled": true, "safetyBackup": safety}, nil
+		})
+
 	case r.URL.Path == "/api/v1/refresh" && r.Method == http.MethodPost:
 		if !d.apiAuthorised(w, uid, role, "/interfaces", "/controllers", "/doors", "/cards", "/groups", "/events", "/logs") {
 			return
@@ -174,3 +272,4 @@ func (d *dispatcher) apiAuthorised(w http.ResponseWriter, uid, role string, path
 	}
 	return true
 }
+	

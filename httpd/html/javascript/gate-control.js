@@ -14,6 +14,8 @@ const cardDialog = document.getElementById('card-dialog')
 const cardForm = document.getElementById('card-form')
 const groupDialog = document.getElementById('group-dialog')
 const groupForm = document.getElementById('group-form')
+const backupDialog = document.getElementById('backup-dialog')
+const controllerImportDialog = document.getElementById('controller-import-dialog')
 const routes = ['overview', 'controllers', 'doors', 'cards', 'groups', 'events', 'logs']
 const accessWeekdays = [
   ['monday', 'Mon'], ['tuesday', 'Tue'], ['wednesday', 'Wed'], ['thursday', 'Thu'],
@@ -388,6 +390,9 @@ function render() {
   if (currentRoute() === 'cards') {
     app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<div class="panel-tools"><a class="secondary button-link" href="/api/v1/credentials.csv" download>Download CSV</a><button class="secondary" data-export-credentials>Save CSV</button><button class="primary" data-add-card ${config.mode === 'monitor' ? 'disabled' : ''}>Add credential</button></div>`)
   }
+  if (currentRoute() === 'controllers') {
+    app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<div class="panel-tools"><button class="secondary" data-open-backups>Backups</button><button class="primary" data-import-controller>Import from controller</button></div>`)
+  }
   if (currentRoute() === 'groups') {
     app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<div class="panel-tools"><input class="panel-search" data-group-search type="search" placeholder="Search access levels" aria-label="Search access levels" value="${escapeHTML(groupSearch)}"><button class="primary" data-add-group ${config.mode === 'monitor' ? 'disabled' : ''}>Add access level</button></div>`)
   }
@@ -407,7 +412,114 @@ function render() {
   document.querySelector('[data-event-search]')?.addEventListener('input', (event) => { eventSearch = event.currentTarget.value; refreshEventRows() })
   document.querySelector('[data-event-type-filter]')?.addEventListener('change', (event) => { eventTypeFilter = event.currentTarget.value; refreshEventRows() })
   document.querySelector('[data-export-credentials]')?.addEventListener('click', exportCredentials)
+  document.querySelector('[data-open-backups]')?.addEventListener('click', openBackups)
+  document.querySelector('[data-import-controller]')?.addEventListener('click', previewControllerImport)
   if (currentRoute() === 'groups' && groupSearch) filterGroups({ currentTarget: { value: groupSearch } })
+}
+
+function formatBytes(value) {
+  const bytes = Number(value) || 0
+  if (bytes < 1024) return `${bytes} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KiB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MiB`
+}
+
+async function loadBackups() {
+  const list = document.getElementById('backup-list')
+  list.innerHTML = '<span class="spinner"></span> Loading backups&hellip;'
+  const response = await fetch('/api/v1/backups', { credentials: 'same-origin', cache: 'no-store' })
+  if (!response.ok) throw new Error((await response.text()) || `Unable to load backups (${response.status})`)
+  const backups = await response.json()
+  list.innerHTML = backups.length ? backups.map((backup) => `<div class="backup-row"><span><strong>${display(backup.name)}</strong><small>${display(new Date(backup.createdAt).toLocaleString())} &middot; ${display(formatBytes(backup.size))}</small></span><span class="backup-actions"><a class="secondary button-link" href="/api/v1/backups/download?name=${encodeURIComponent(backup.name)}" download>Download</a><button type="button" class="danger" data-restore-backup="${escapeHTML(backup.name)}">Restore</button></span></div>`).join('') : empty('No backups have been created yet.')
+  list.querySelectorAll('[data-restore-backup]').forEach((button) => button.addEventListener('click', restoreBackup))
+}
+
+async function openBackups() {
+  backupDialog.showModal()
+  try {
+    await loadBackups()
+  } catch (error) {
+    showNotice(error.message || 'Unable to load backups.', true)
+  }
+}
+
+async function createBackup() {
+  const button = document.getElementById('backup-create')
+  button.disabled = true
+  try {
+    const result = await postConfiguration('/api/v1/backups', { reason: 'manual backup' })
+    showNotice(`Backup created: ${result.backup.name}`)
+    await loadBackups()
+  } catch (error) {
+    showNotice(error.message || 'Backup failed.', true)
+  } finally {
+    button.disabled = false
+  }
+}
+
+async function importBackup(event) {
+  const file = event.currentTarget.files?.[0]
+  if (!file) return
+  const form = new FormData()
+  form.append('backup', file)
+  try {
+    const response = await fetch('/api/v1/backups/import', { method: 'POST', credentials: 'same-origin', body: form })
+    if (!response.ok) throw new Error((await response.text()) || `Backup import failed (${response.status})`)
+    const result = await response.json()
+    showNotice(`Backup validated and stored as ${result.backup.name}. Review it below before restoring.`)
+    await loadBackups()
+  } catch (error) {
+    showNotice(error.message || 'Backup import failed.', true)
+  } finally {
+    event.currentTarget.value = ''
+  }
+}
+
+async function restoreBackup(event) {
+  const name = event.currentTarget.dataset.restoreBackup
+  if (!window.confirm(`Restore ${name}? A safety backup will be created first and Access Control - HTTP will restart automatically.`)) return
+  event.currentTarget.disabled = true
+  try {
+    await postConfiguration('/api/v1/backups/restore', { name })
+    showNotice('Backup restored. Access Control - HTTP is restarting&hellip;')
+    backupDialog.close()
+    setTimeout(() => window.location.reload(), 3500)
+  } catch (error) {
+    showNotice(error.message || 'Restore failed.', true)
+    event.currentTarget.disabled = false
+  }
+}
+
+async function previewControllerImport() {
+  const preview = document.getElementById('controller-import-preview')
+  const apply = document.getElementById('controller-import-apply')
+  preview.innerHTML = '<span class="spinner"></span> Reading controller credentials&hellip;'
+  apply.disabled = true
+  controllerImportDialog.showModal()
+  try {
+    const response = await fetch('/api/v1/controllers/import', { credentials: 'same-origin', cache: 'no-store' })
+    if (!response.ok) throw new Error((await response.text()) || `Controller read failed (${response.status})`)
+    const result = await response.json()
+    preview.innerHTML = `<div class="import-summary"><strong>${result.supported} ready to import</strong><span>${result.skipped} skipped for safety &middot; ${result.controllers} controller(s)</span></div>${(result.warnings || []).map((warning) => `<p class="import-warning">${display(warning)}</p>`).join('')}<div class="import-records">${(result.credentials || []).map((credential) => `<div class="import-record ${credential.supported ? '' : 'unsupported'}"><span><strong>Credential ${display(credential.cardNumber)}</strong><small>${display(credential.from)} to ${display(credential.to)} &middot; ${credential.relays.length} relay(s)</small></span><span>${credential.supported ? '<span class="badge">Ready</span>' : `<span class="badge warn">Skipped</span><small>${display(credential.warning)}</small>`}</span></div>`).join('') || empty('No credentials were returned by the controller.')}</div>`
+    apply.disabled = result.supported < 1
+  } catch (error) {
+    preview.innerHTML = `<div class="dialog-notice error">${display(error.message || 'Controller read failed.')}</div>`
+  }
+}
+
+async function applyControllerImport() {
+  if (!window.confirm('Apply the supported controller credentials to the local database? This will not write to or delete anything from the controller.')) return
+  const button = document.getElementById('controller-import-apply')
+  button.disabled = true
+  try {
+    const result = await postConfiguration('/api/v1/controllers/import', { confirmed: true })
+    controllerImportDialog.close()
+    await load()
+    showNotice(`Controller import complete: ${result.added} added, ${result.updated} updated, ${result.skipped} skipped. Safety backup: ${result.safetyBackup.name}.`)
+  } catch (error) {
+    showNotice(error.message || 'Controller import failed.', true)
+    button.disabled = false
+  }
 }
 
 async function exportCredentials() {
@@ -1173,6 +1285,9 @@ document.getElementById('card-group-add').addEventListener('click', () => editGr
 document.getElementById('group-editor-close').addEventListener('click', () => groupDialog.close())
 document.getElementById('group-editor-cancel').addEventListener('click', () => groupDialog.close())
 document.getElementById('group-editor-delete').addEventListener('click', deleteGroup)
+document.getElementById('backup-create').addEventListener('click', createBackup)
+document.getElementById('backup-file').addEventListener('change', importBackup)
+document.getElementById('controller-import-apply').addEventListener('click', applyControllerImport)
 document.getElementById('menu-button').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'))
 document.getElementById('signout-button').addEventListener('click', async () => {
   await fetch('/logout', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}' })
@@ -1181,3 +1296,4 @@ document.getElementById('signout-button').addEventListener('click', async () => 
 
 load()
 setInterval(load, 15000)
+  

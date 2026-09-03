@@ -171,6 +171,37 @@
       </form>
     </dialog>
 
+    <dialog id="backup-dialog" class="editor-dialog">
+      <form method="dialog">
+        <div class="dialog-heading">
+          <div><p class="eyebrow">DATA PROTECTION</p><h2>Backups and restore</h2></div>
+          <button type="submit" class="icon-button" aria-label="Close">&times;</button>
+        </div>
+        <p class="field-help">Backups are stored persistently in <strong>/DATA/AppData/uhppoted-httpd/backups</strong>. Restoring automatically creates a safety backup first.</p>
+        <div class="data-actions">
+          <button type="button" class="primary" id="backup-create">Backup now</button>
+          <label class="secondary button-link file-button">Import backup<input id="backup-file" type="file" accept=".zip,application/zip"></label>
+        </div>
+        <div id="backup-list" class="backup-list"></div>
+        <div class="dialog-actions"><button type="submit" class="secondary">Close</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="controller-import-dialog" class="editor-dialog">
+      <form method="dialog">
+        <div class="dialog-heading">
+          <div><p class="eyebrow">SAFE CONTROLLER IMPORT</p><h2>Import from controller</h2></div>
+          <button type="submit" class="icon-button" aria-label="Close">&times;</button>
+        </div>
+        <p class="field-help">This reads the configured controllers only. It never writes to them, never deletes local credentials, and makes a timestamped backup before applying.</p>
+        <div id="controller-import-preview" class="import-preview"><span class="spinner"></span> Reading controller credentials&hellip;</div>
+        <div class="dialog-actions">
+          <button type="submit" class="secondary">Cancel</button>
+          <button type="button" class="primary" id="controller-import-apply" disabled>Apply safe import</button>
+        </div>
+      </form>
+    </dialog>
+
     <script>
       window.gateControl = {
         mode: {{printf "%q" $.context.Mode}},
@@ -180,3 +211,4 @@
     <script type="module" src="/javascript/gate-control.js"></script>
   </body>
 </html>
+  
