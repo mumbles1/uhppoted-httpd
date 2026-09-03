@@ -2,6 +2,7 @@ package system
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -263,9 +264,32 @@ func (s *system) refresh() {
 	}
 }
 
-// Refresh queues an immediate controller discovery, status, event and ACL refresh.
+// Refresh performs an immediate controller discovery, status, event and ACL
+// refresh. The interactive API must not return before the controller work has
+// actually run: queuing it made the Refresh button consistently display stale
+// data and allowed a later, unrelated task to mask failures.
 func Refresh() {
-	sys.refresh()
+	controllers := sys.controllers.AsIControllers()
+	found := sys.interfaces.Search(controllers)
+	sys.controllers.Found(found)
+
+	controllers = sys.controllers.AsIControllers()
+	sys.interfaces.Refresh(controllers)
+
+	ids := make([]uint32, 0, len(controllers))
+	for _, controller := range controllers {
+		ids = append(ids, controller.ID())
+	}
+
+	missing := sys.events.Missing(2, ids...)
+	sys.interfaces.GetEvents(controllers, missing)
+
+	// Event delivery uses an unbuffered interface channel. Yield briefly after
+	// the hand-off so the consumer can commit the received batch before the API
+	// snapshot is reloaded.
+	time.Sleep(50 * time.Millisecond)
+	sys.sweep()
+	sys.compareACL()
 }
 
 func (s *system) synchronize() {
@@ -348,24 +372,24 @@ func SynchronizeDateTime() error {
 
 func SynchronizeDateTimeAt(now time.Time) error {
 	controllers := sys.controllers.AsIControllers()
+	if len(controllers) == 0 {
+		return fmt.Errorf("no configured controllers")
+	}
+	var failures []error
 
 	for _, c := range controllers {
-		controller := c
-		go func() {
-			sys.interfaces.SetTime(controller, now)
-		}()
+		if err := sys.interfaces.SetTime(c, now); err != nil {
+			failures = append(failures, fmt.Errorf("controller %v date/time: %w", c.ID(), err))
+		}
 	}
 
-	return nil
+	return errors.Join(failures...)
 }
 
 func SynchronizeControllerDateTime(oid schema.OID, now time.Time) error {
 	for _, controller := range sys.controllers.AsIControllers() {
 		if controller.OID() == oid {
-			go func() {
-				sys.interfaces.SetTime(controller, now)
-			}()
-			return nil
+			return sys.interfaces.SetTime(controller, now)
 		}
 	}
 
@@ -374,29 +398,36 @@ func SynchronizeControllerDateTime(oid schema.OID, now time.Time) error {
 
 func SynchronizeDoors(withFirstCard bool) error {
 	controllers := sys.controllers.AsIControllers()
+	if len(controllers) == 0 {
+		return fmt.Errorf("no configured controllers")
+	}
+	var failures []error
 
-	for _, c := range controllers {
-		controller := c
-
+	for _, controller := range controllers {
+		if err := sys.interfaces.SetInterlock(controller, controller.Interlock()); err != nil {
+			failures = append(failures, fmt.Errorf("controller %v interlock: %w", controller.ID(), err))
+		}
+		if err := sys.interfaces.SetAntiPassback(controller, controller.AntiPassback()); err != nil {
+			failures = append(failures, fmt.Errorf("controller %v anti-passback: %w", controller.ID(), err))
+		}
 		for _, d := range []uint8{1, 2, 3, 4} {
 			if oid, ok := controller.Door(d); ok {
 				if door, ok := sys.doors.Door(oid); ok {
-					doorID := d
-
-					go func(id uint8, door doors.Door) {
-						sys.interfaces.SetDoor(controller, id, door.Mode(), door.Delay())
-
-						if withFirstCard && !door.FirstCard().IsZero() {
-							warnf("system", "synchronizing first-card configuration for door %v", door)
-							sys.interfaces.SetFirstCard(controller, d, door.FirstCard())
+					if err := sys.interfaces.SetDoor(controller, d, door.Mode(), door.Delay()); err != nil {
+						failures = append(failures, fmt.Errorf("controller %v door %v: %w", controller.ID(), d, err))
+					}
+					if withFirstCard && !door.FirstCard().IsZero() {
+						warnf("system", "synchronizing first-card configuration for door %v", door)
+						if err := sys.interfaces.SetFirstCard(controller, d, door.FirstCard()); err != nil {
+							failures = append(failures, fmt.Errorf("controller %v door %v first-card: %w", controller.ID(), d, err))
 						}
-					}(doorID, door)
+					}
 				}
 			}
 		}
 	}
 
-	return nil
+	return errors.Join(failures...)
 }
 
 func (s *system) Update(oid schema.OID, field schema.Suffix, value any) {
@@ -408,7 +439,9 @@ func (s *system) Update(oid schema.OID, field schema.Suffix, value any) {
 			for _, c := range controllers {
 				controller := c
 				go func() {
-					s.updateCardPermissions(controller, card)
+					if err := s.updateCardPermissions(controller, card); err != nil {
+						warnf("ACL", "controller %v credential %v: %v", controller.ID(), card, err)
+					}
 				}()
 			}
 		}
@@ -429,7 +462,9 @@ func (s *system) Update(oid schema.OID, field schema.Suffix, value any) {
 			for _, c := range controllers {
 				controller := c
 				go func() {
-					s.updateCardPermissions(controller, cardID)
+					if err := s.updateCardPermissions(controller, cardID); err != nil {
+						warnf("ACL", "controller %v credential %v: %v", controller.ID(), cardID, err)
+					}
 				}()
 			}
 		}
@@ -450,7 +485,9 @@ func (s *system) Update(oid schema.OID, field schema.Suffix, value any) {
 			if c.OID() == oid {
 				controller := c
 				go func() {
-					s.interfaces.SetInterlock(controller, value.(lib.Interlock))
+					if err := s.interfaces.SetInterlock(controller, value.(lib.Interlock)); err != nil {
+						warnf("system", "controller %v interlock: %v", controller.ID(), err)
+					}
 				}()
 				return
 			}
@@ -461,7 +498,9 @@ func (s *system) Update(oid schema.OID, field schema.Suffix, value any) {
 			if c.OID() == oid {
 				controller := c
 				go func() {
-					s.interfaces.SetAntiPassback(controller, value.(lib.AntiPassback))
+					if err := s.interfaces.SetAntiPassback(controller, value.(lib.AntiPassback)); err != nil {
+						warnf("system", "controller %v anti-passback: %v", controller.ID(), err)
+					}
 				}()
 				return
 			}
@@ -571,7 +610,9 @@ func (s *system) Update(oid schema.OID, field schema.Suffix, value any) {
 
 						if s.withFirstCard {
 							f := func() {
-								s.interfaces.SetFirstCard(controller, door, firstcard)
+								if err := s.interfaces.SetFirstCard(controller, door, firstcard); err != nil {
+									warnf("system", "controller %v door %v first-card: %v", controller.ID(), door, err)
+								}
 							}
 
 							// NTS: batch update in pending
