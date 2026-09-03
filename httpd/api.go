@@ -1,6 +1,7 @@
 package httpd
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -53,7 +54,24 @@ func (d *dispatcher) api(w http.ResponseWriter, r *http.Request) {
 			if !confirmed {
 				return nil, fmt.Errorf("controller import confirmation is required")
 			}
-			return system.ApplyControllerImport(uid, role)
+			resolutions := map[uint32]system.ControllerImportResolution{}
+			if value, ok := body["resolutions"]; ok {
+				bytes, err := json.Marshal(value)
+				if err != nil {
+					return nil, fmt.Errorf("invalid controller import resolutions")
+				}
+				var values map[string]system.ControllerImportResolution
+				if err := json.Unmarshal(bytes, &values); err != nil {
+					return nil, fmt.Errorf("invalid controller import resolutions")
+				}
+				for card, resolution := range values {
+					var number uint32
+					if _, err := fmt.Sscan(card, &number); err == nil && number != 0 {
+						resolutions[number] = resolution
+					}
+				}
+			}
+			return system.ApplyControllerImport(uid, role, resolutions)
 		})
 
 	case r.URL.Path == "/api/v1/backups" && r.Method == http.MethodGet:
