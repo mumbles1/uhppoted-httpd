@@ -37,8 +37,21 @@ func (d *dispatcher) api(w http.ResponseWriter, r *http.Request) {
 		if !d.apiAuthorised(w, uid, role, "/interfaces", "/controllers", "/doors", "/cards", "/groups", "/events", "/logs") {
 			return
 		}
-		system.Refresh()
-		writeJSON(w, parseHeader(r), map[string]any{"ok": true, "queued": true})
+		d.exec(w, r, func(body map[string]any) (any, error) {
+			datetime, ok := body["datetime"].(string)
+			if !ok || strings.TrimSpace(datetime) == "" {
+				return nil, fmt.Errorf("browser datetime is required")
+			}
+			now, err := time.ParseInLocation("2006-01-02T15:04:05", datetime, time.Local)
+			if err != nil {
+				return nil, fmt.Errorf("invalid browser datetime")
+			}
+			system.Refresh()
+			if err := system.SynchronizeDateTimeAt(now); err != nil {
+				return nil, err
+			}
+			return map[string]any{"ok": true, "queued": true, "datetime": datetime}, nil
+		})
 
 	case r.URL.Path == "/api/v1/snapshot" && r.Method == http.MethodGet:
 		if !d.apiAuthorised(w, uid, role, "/interfaces", "/controllers", "/doors", "/cards", "/groups", "/events", "/logs") {
