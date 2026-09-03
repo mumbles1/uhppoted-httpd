@@ -226,7 +226,22 @@ func (d *dispatcher) getWithAuth(w http.ResponseWriter, r *http.Request) {
 		cookies.Clear(w, cookies.OTPCookie)
 	}
 
-	d.translate(path, context, authorised, w, acceptsGzip)
+	// The management pages are now a single application shell. Preserve the
+	// requested URL for authorisation and deep-linking, but render the same
+	// reliable Gate Control UI for each section.
+	renderPath := path
+	switch path {
+	case "/sys/overview.html",
+		"/sys/controllers.html",
+		"/sys/doors.html",
+		"/sys/cards.html",
+		"/sys/groups.html",
+		"/sys/events.html",
+		"/sys/logs.html":
+		renderPath = "/sys/overview.html"
+	}
+
+	d.translate(renderPath, context, authorised, w, acceptsGzip)
 }
 
 func (d *dispatcher) translate(file string, context map[string]any, authorised map[string]bool, w http.ResponseWriter, acceptsGzip bool) {
