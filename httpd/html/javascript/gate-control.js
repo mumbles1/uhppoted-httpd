@@ -20,6 +20,8 @@ let loading = false
 let emptyCardRetries = 0
 let emptyCardRetryTimer = null
 let groupSearch = ''
+let eventSearch = ''
+let eventTypeFilter = 'all'
 let relayStatus = {}
 
 function currentRoute() {
@@ -64,7 +66,7 @@ function showNotice(message, error = false) {
 function updateNavigation() {
   const route = currentRoute()
   document.querySelectorAll('[data-route]').forEach((link) => link.classList.toggle('active', link.dataset.route === route))
-  document.getElementById('page-title').textContent = route === 'overview' ? 'Overview' : route === 'logs' ? 'Audit log' : route === 'doors' ? 'Relays' : route[0].toUpperCase() + route.slice(1)
+  document.getElementById('page-title').textContent = route === 'overview' ? 'Overview' : route === 'logs' ? 'Audit log' : route === 'doors' ? 'Relays' : route === 'cards' ? 'Credentials' : route[0].toUpperCase() + route.slice(1)
 
   const counts = {
     overview: records(DB.controllers).length + controllerDoors().length,
@@ -170,7 +172,7 @@ function cardRows(list = records(DB.cards)) {
     const memberships = [...(card.groups?.values?.() || [])].filter((group) => group.member).length
     const credential = formatCredential(card.number)
     return `<tr>
-      <td class="name-cell"><strong>${display(card.name, 'Unnamed cardholder')}</strong><small>${display(card.OID)}</small></td>
+      <td class="name-cell"><strong>${display(card.name, 'Unnamed credential')}</strong><small>${display(credentialTypeLabel(card.kind))} · ${display(card.OID)}</small></td>
       <td>${credential ? `<span class="name-cell"><strong>FC ${credential.facilityCode} · CD ${credential.cardNumber}</strong><small>Controller ID ${escapeHTML(credential.raw)}</small></span>` : display(card.number)}</td><td>${display(card.from)}</td><td>${display(card.to)}</td><td>${memberships}</td><td>${statusBadge(card.status)}</td>
       <td><button class="secondary" data-edit-card="${escapeHTML(card.OID)}" ${config.mode === 'monitor' ? 'disabled' : ''}>Configure</button></td>
     </tr>`
@@ -196,8 +198,41 @@ function filterGroups(event) {
 
 function eventRows(list = records(DB.events())) {
   return list.sort((a, b) => `${b.timestamp}`.localeCompare(`${a.timestamp}`)).map((event) => `<tr>
-    <td>${display(event.index)}</td><td>${display(formatEventTime(event.timestamp))}</td><td>${display(event.deviceName, event.deviceID)}</td><td>${eventDoor(event)}</td><td>${eventCard(event)}</td><td>${event.granted === 'true' ? '<span class="badge">Granted</span>' : '<span class="badge warn">Denied</span>'}</td><td>${display(event.reason, event.eventType)}</td>
+    <td>${display(event.index)}</td><td>${display(formatEventTime(event.timestamp))}</td><td>${display(event.deviceName, event.deviceID)}</td><td>${eventDoor(event)}</td><td>${eventCard(event)}</td><td>${display(eventCredentialType(event))}</td><td>${event.granted === 'true' ? '<span class="badge">Granted</span>' : '<span class="badge warn">Denied</span>'}</td><td>${display(event.reason, event.eventType)}</td>
   </tr>`)
+}
+
+function credentialTypeLabel(kind) {
+  return ({ card: 'Card', 'rf-remote': 'RF Remote', 'keypad-code': 'Keypad Code', unknown: 'Unknown' })[kind] || 'Card'
+}
+
+function credentialForEvent(event) {
+  return records(DB.cards).find((card) => `${card.number}` === `${event.card}`)
+}
+
+function eventCredentialType(event) {
+  const credential = credentialForEvent(event)
+  return credential ? credentialTypeLabel(credential.kind) : 'Unknown'
+}
+
+function filteredEvents() {
+  const query = eventSearch.trim().toLowerCase()
+  return records(DB.events()).filter((event) => {
+    const credentialRecord = credentialForEvent(event)
+    const kind = credentialRecord?.kind || 'unknown'
+    if (eventTypeFilter !== 'all' && kind !== eventTypeFilter) return false
+    if (!query) return true
+    const decoded = formatCredential(event.card)
+    return [event.index, event.timestamp, formatEventTime(event.timestamp), event.deviceID, event.deviceName, event.door, event.doorName, event.direction, event.card, event.cardName, credentialRecord?.name, decoded?.facilityCode, decoded?.cardNumber, credentialTypeLabel(kind), event.reason, event.eventType]
+      .some((value) => `${value ?? ''}`.toLowerCase().includes(query))
+  })
+}
+
+function refreshEventRows() {
+  const body = app.querySelector('tbody')
+  if (!body) return
+  const events = filteredEvents()
+  body.innerHTML = events.length ? eventRows(events).join('') : '<tr><td colspan="8">No events match your search and filter.</td></tr>'
 }
 
 function eventDoor(event) {
@@ -223,7 +258,7 @@ function eventCard(event) {
   if (name && credential) return `<span class="name-cell"><strong>${escapeHTML(name)}</strong><small>FC ${credential.facilityCode} · CD ${credential.cardNumber} · Controller ID ${escapeHTML(credential.raw)}</small></span>`
   if (credential) return `<span class="name-cell"><strong>FC ${credential.facilityCode} · CD ${credential.cardNumber}</strong><small>Controller ID ${escapeHTML(credential.raw)}</small></span>`
   if (name && number && number !== '0') return `<span class="name-cell"><strong>${escapeHTML(name)}</strong><small>Controller ID ${escapeHTML(number)}</small></span>`
-  if (number && number !== '0') return `<span class="name-cell"><strong>Card ${escapeHTML(number)}</strong></span>`
+  if (number && number !== '0') return `<span class="name-cell"><strong>Credential ${escapeHTML(number)}</strong></span>`
   return display(number && number !== '0' ? number : '', '—')
 }
 
@@ -270,32 +305,37 @@ function overview() {
   return `<div class="stats">
     <div class="stat"><span>Controllers</span><strong>${controllers.length}</strong></div>
     <div class="stat"><span>Relays</span><strong>${doors.length}</strong></div>
-    <div class="stat"><span>Active cards</span><strong>${cards.length}</strong></div>
+    <div class="stat"><span>Active credentials</span><strong>${cards.length}</strong></div>
     <div class="stat"><span>Access groups</span><strong>${groups.length}</strong></div>
   </div>
   <div class="two-column">
-    ${panel('Controllers', 'Connected access-control hardware', ['Controller', 'ID', 'Protocol', 'Cards', 'Events', 'Status', ''], controllerRows(controllers))}
-    ${panel('Recent events', 'Latest controller activity', ['Event #', 'Time', 'Controller', 'Door', 'Card', 'Access', 'Reason'], eventRows().slice(0, 8))}
+    ${panel('Controllers', 'Connected access-control hardware', ['Controller', 'ID', 'Protocol', 'Credentials', 'Events', 'Status', ''], controllerRows(controllers))}
+    ${panel('Recent events', 'Latest controller activity', ['Event #', 'Time', 'Controller', 'Door', 'Credential', 'Type', 'Access', 'Reason'], eventRows().slice(0, 8))}
   </div>`
 }
 
 function render() {
   updateNavigation()
   switch (currentRoute()) {
-    case 'controllers': app.innerHTML = panel('Controllers', 'Controller health and configuration', ['Controller', 'ID', 'Protocol', 'Cards', 'Events', 'Status', ''], controllerRows()); break
+    case 'controllers': app.innerHTML = panel('Controllers', 'Controller health and configuration', ['Controller', 'ID', 'Protocol', 'Credentials', 'Events', 'Status', ''], controllerRows()); break
     case 'doors': app.innerHTML = panel('Relays', config.mode === 'monitor' ? 'Monitor mode — controls are disabled' : 'Live relay state and controls', ['Relay / door', 'Mode', 'Delay', 'Keypad', 'Status', 'Controls'], doorRows()); break
-    case 'cards': app.innerHTML = panel('Cards', 'Cardholders and validity periods', ['Cardholder', 'Card number', 'Valid from', 'Valid to', 'Groups', 'Status', ''], cardRows()); break
+    case 'cards': app.innerHTML = panel('Credentials', 'Cards, RF remotes, and keypad codes', ['Name', 'Credential number', 'Valid from', 'Valid to', 'Groups', 'Status', ''], cardRows()); break
     case 'groups': app.innerHTML = panel('Groups', 'Relay access assignments', ['Group', 'Relays', 'First-card', 'Status', ''], groupRows()); break
-    case 'events': app.innerHTML = panel('Events', 'Recent controller events', ['Event #', 'Time', 'Controller', 'Door', 'Card', 'Access', 'Reason'], eventRows()); break
+    case 'events': app.innerHTML = panel('Events', 'Recent controller events', ['Event #', 'Time', 'Controller', 'Door', 'Credential', 'Type', 'Access', 'Reason'], eventRows()); break
     case 'logs': app.innerHTML = panel('Audit log', 'Recent configuration changes', ['Time', 'User', 'Item', 'Details'], logRows()); break
     default: app.innerHTML = overview()
   }
 
   if (currentRoute() === 'cards') {
-    app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<button class="primary" data-add-card ${config.mode === 'monitor' ? 'disabled' : ''}>Add card</button>`)
+    app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<div class="panel-tools"><a class="secondary button-link" href="/api/v1/credentials.csv" download>Download CSV</a><button class="secondary" data-export-credentials>Save CSV</button><button class="primary" data-add-card ${config.mode === 'monitor' ? 'disabled' : ''}>Add credential</button></div>`)
   }
   if (currentRoute() === 'groups') {
     app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<div class="panel-tools"><input class="panel-search" data-group-search type="search" placeholder="Search groups" aria-label="Search groups" value="${escapeHTML(groupSearch)}"><button class="primary" data-add-group ${config.mode === 'monitor' ? 'disabled' : ''}>Add access group</button></div>`)
+  }
+  if (currentRoute() === 'events') {
+    app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<div class="panel-tools"><input class="panel-search" data-event-search type="search" placeholder="Search events" aria-label="Search events" value="${escapeHTML(eventSearch)}"><select class="panel-search" data-event-type-filter aria-label="Filter credential type"><option value="all">All credential types</option><option value="rf-remote">RF Remote</option><option value="card">Card</option><option value="keypad-code">Keypad Code</option><option value="unknown">Unknown</option></select></div>`)
+    const filter = document.querySelector('[data-event-type-filter]')
+    if (filter) filter.value = eventTypeFilter
   }
 
   document.querySelectorAll('[data-mode][data-door], [data-mode][data-controller][data-channel]').forEach((button) => button.addEventListener('click', controlDoor))
@@ -304,7 +344,21 @@ function render() {
   document.querySelectorAll('[data-add-card], [data-edit-card]').forEach((button) => button.addEventListener('click', editCard))
   document.querySelectorAll('[data-add-group], [data-edit-group]').forEach((button) => button.addEventListener('click', editGroup))
   document.querySelector('[data-group-search]')?.addEventListener('input', filterGroups)
+  document.querySelector('[data-event-search]')?.addEventListener('input', (event) => { eventSearch = event.currentTarget.value; refreshEventRows() })
+  document.querySelector('[data-event-type-filter]')?.addEventListener('change', (event) => { eventTypeFilter = event.currentTarget.value; refreshEventRows() })
+  document.querySelector('[data-export-credentials]')?.addEventListener('click', exportCredentials)
   if (currentRoute() === 'groups' && groupSearch) filterGroups({ currentTarget: { value: groupSearch } })
+}
+
+async function exportCredentials() {
+  try {
+    const response = await fetch('/api/v1/credentials/export', { method: 'POST', credentials: 'same-origin' })
+    if (!response.ok) throw new Error((await response.text()) || `CSV export failed (${response.status})`)
+    const result = await response.json()
+    showNotice(`Credentials CSV saved to ${result.path}.`)
+  } catch (error) {
+    showNotice(error.message || 'Credentials CSV export failed.', true)
+  }
 }
 
 function doorAssignment(doorOID) {
@@ -491,7 +545,7 @@ function renderCardGroups(card, selected = null) {
       const checked = selected ? selected.has(group.OID) : cardInGroup(card, group)
       return `<label class="choice"><input type="checkbox" data-card-group="${escapeHTML(group.OID)}" ${checked ? 'checked' : ''}><span>${display(group.name, `Group ${group.OID}`)}</span></label>`
     }).join('')
-    : empty('No access groups are available. Add one here, then assign it to this card.')
+    : empty('No access groups are available. Add one here, then assign it to this credential.')
 }
 
 function defaultCardDates() {
@@ -507,6 +561,7 @@ function editCard(event) {
   const defaults = defaultCardDates()
   cardForm.dataset.oid = card?.OID || ''
   cardForm.elements.name.value = card?.name || ''
+  cardForm.elements.kind.value = card?.kind || 'card'
   cardForm.elements.number.value = card?.number || ''
   populateFacilityCard(card?.number)
   cardForm.elements.PIN.value = card?.PIN || ''
@@ -515,7 +570,7 @@ function editCard(event) {
 
   renderCardGroups(card)
 
-  document.getElementById('card-editor-title').textContent = card ? (card.name || 'Configure card') : 'Add card'
+  document.getElementById('card-editor-title').textContent = card ? (card.name || 'Configure credential') : 'Add credential'
   document.getElementById('card-editor-delete').classList.toggle('hidden', !card)
   cardDialog.showModal()
 }
@@ -596,9 +651,9 @@ async function saveGroup(event) {
     if (returnCard && cardDialog.open) {
       const card = cardForm.dataset.oid ? DB.cards.get(cardForm.dataset.oid) : null
       renderCardGroups(card, selections)
-      showNotice('Access group created and selected. Save the card to apply its access.')
+      showNotice('Access group created and selected. Save the credential to apply its access.')
     } else {
-      showNotice(existing ? 'Access group saved. Save or update cards to apply membership changes.' : 'Access group added.')
+      showNotice(existing ? 'Access group saved. Save or update credentials to apply membership changes.' : 'Access group added.')
       render()
     }
   } catch (error) {
@@ -613,7 +668,7 @@ async function deleteGroup() {
   const group = oid ? DB.groups.get(oid) : null
   if (!group) return
   const name = group.name || `Group ${oid}`
-  if (!window.confirm(`Delete ${name}? Cards assigned only to this group will lose access.`)) return
+  if (!window.confirm(`Delete ${name}? Credentials assigned only to this group will lose access.`)) return
 
   const deleteButton = document.getElementById('group-editor-delete')
   const saveButton = document.getElementById('group-editor-save')
@@ -628,7 +683,7 @@ async function deleteGroup() {
     await postConfiguration('/groups', { created: [], updated: [], deleted: [oid] })
     await synchronizeHardware('/synchronize/ACL', 'Access rules')
     groupDialog.close()
-    showNotice(`${name} deleted and card access synchronized.`)
+    showNotice(`${name} deleted and credential access synchronized.`)
     await load()
   } catch (error) {
     showNotice(error.message || 'Access group deletion failed.', true)
@@ -643,7 +698,7 @@ async function currentCardOID(card) {
 
   for (let attempt = 0; attempt < 4; attempt += 1) {
     const response = await fetch('/api/v1/snapshot', { credentials: 'same-origin', cache: 'no-store' })
-    if (!response.ok) throw new Error((await response.text()) || `Unable to refresh cards (${response.status})`)
+    if (!response.ok) throw new Error((await response.text()) || `Unable to refresh credentials (${response.status})`)
     const snapshot = await response.json()
     relayStatus = snapshot.relayStatus || {}
     const number = (snapshot.cards || []).find((item) => {
@@ -655,7 +710,7 @@ async function currentCardOID(card) {
     if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, 350 * (attempt + 1)))
   }
 
-  throw new Error('The card list is refreshing. Please save again in a moment.')
+  throw new Error('The credential list is refreshing. Please save again in a moment.')
 }
 
 async function saveCard(event) {
@@ -679,6 +734,7 @@ async function saveCard(event) {
       if (!existing || `${value ?? ''}` !== `${original ?? ''}`) updates.push({ oid: `${oid}${suffix}`, value: `${value ?? ''}` })
     }
     changed(schema.cards.name, cardForm.elements.name.value.trim(), existing?.name)
+    changed(schema.cards.kind, cardForm.elements.kind.value, existing?.kind || 'card')
     changed(schema.cards.card, cardForm.elements.number.value.trim(), existing?.number)
     if (schema.cards.PIN) changed(schema.cards.PIN, cardForm.elements.PIN.value.trim(), existing?.PIN)
     changed(schema.cards.from, cardForm.elements.from.value, existing?.from)
@@ -693,16 +749,16 @@ async function saveCard(event) {
     if (updates.length) {
       const saved = await postConfiguration('/cards', { created: [], updated: updates, deleted: [] })
       if (!saved.cards?.some((item) => `${item.OID || ''}`.startsWith(`${oid}.`))) {
-        throw new Error('The card changed while it was being saved. Please try again.')
+        throw new Error('The credential changed while it was being saved. Please try again.')
       }
-      await synchronizeHardware('/synchronize/ACL', 'Card')
+      await synchronizeHardware('/synchronize/ACL', 'Credential')
     }
 
     cardDialog.close()
-    showNotice(existing ? 'Card configuration saved and synchronized.' : 'Card added and synchronized.')
+    showNotice(existing ? 'Credential configuration saved and synchronized.' : 'Credential added and synchronized.')
     await load()
   } catch (error) {
-    showNotice(error.message || 'Card configuration failed.', true)
+    showNotice(error.message || 'Credential configuration failed.', true)
   } finally {
     saveButton.disabled = false
   }
@@ -712,7 +768,7 @@ async function deleteCard() {
   const oid = cardForm.dataset.oid
   const card = oid ? DB.cards.get(oid) : null
   if (!card) return
-  const name = card.name || `Card ${card.number || oid}`
+  const name = card.name || `Credential ${card.number || oid}`
   if (!window.confirm(`Delete ${name}? This revokes all group access and cannot be undone.`)) return
 
   const deleteButton = document.getElementById('card-editor-delete')
@@ -721,12 +777,12 @@ async function deleteCard() {
   saveButton.disabled = true
   try {
     await postConfiguration('/cards', { created: [], updated: [], deleted: [oid] })
-    await synchronizeHardware('/synchronize/ACL', 'Card')
+    await synchronizeHardware('/synchronize/ACL', 'Credential')
     cardDialog.close()
     showNotice(`${name} deleted and synchronized.`)
     await load()
   } catch (error) {
-    showNotice(error.message || 'Card deletion failed.', true)
+    showNotice(error.message || 'Credential deletion failed.', true)
   } finally {
     deleteButton.disabled = false
     saveButton.disabled = false
