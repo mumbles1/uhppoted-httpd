@@ -1,7 +1,7 @@
 {
-    "name": "uhppoted",
-    "short_name": "uhppoted",
-    "background_color": "#ffffff",
-    "theme_color": "#ffffff",
+    "name": "Gate Access",
+    "short_name": "Gate Access",
+    "background_color": "#08111f",
+    "theme_color": "#08111f",
     "display": "fullscreen"
 }

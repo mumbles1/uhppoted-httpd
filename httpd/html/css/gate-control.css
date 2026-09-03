@@ -104,6 +104,7 @@ tbody tr:hover td { background: #10233a; }
 .door-mapping-heading h3 { margin: 0; font-size: 15px; }
 .door-mapping-heading p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 24px; }
+.dialog-actions .delete-action { margin-right: auto; }
 
 @media (max-width: 1050px) {
   .stats { grid-template-columns: repeat(2, minmax(140px, 1fr)); }

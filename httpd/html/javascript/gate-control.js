@@ -256,6 +256,7 @@ function editDoor(event) {
   doorForm.elements.controller.value = assigned.controller?.OID || ''
   refreshDoorChannels(assigned.channel)
   document.getElementById('door-editor-title').textContent = door ? (door.name || 'Configure door') : 'Add door'
+  document.getElementById('door-editor-delete').classList.toggle('hidden', !door)
   doorDialog.showModal()
 }
 
@@ -314,6 +315,43 @@ async function saveDoor(event) {
   } catch (error) {
     showNotice(error.message || 'Door configuration failed.', true)
   } finally {
+    saveButton.disabled = false
+  }
+}
+
+async function deleteDoor() {
+  const oid = doorForm.dataset.oid
+  const door = oid ? DB.doors.get(oid) : null
+  if (!door) return
+
+  const name = door.name || `Door ${oid}`
+  if (!window.confirm(`Delete ${name}? This removes its controller assignment and cannot be undone.`)) return
+
+  const deleteButton = document.getElementById('door-editor-delete')
+  const saveButton = document.getElementById('door-editor-save')
+  deleteButton.disabled = true
+  saveButton.disabled = true
+
+  try {
+    const assignmentUpdates = []
+    for (const controller of records(DB.controllers)) {
+      for (const [channel, assigned] of Object.entries(controller.doors || {})) {
+        if (assigned === oid) assignmentUpdates.push({ oid: `${controller.OID}${schema.controllers[`door${channel}`]}`, value: '' })
+      }
+    }
+
+    if (assignmentUpdates.length) {
+      await postConfiguration('/controllers', { created: [], updated: assignmentUpdates, deleted: [] })
+    }
+    await postConfiguration('/doors', { created: [], updated: [], deleted: [oid] })
+
+    doorDialog.close()
+    showNotice(`${name} deleted.`)
+    await load()
+  } catch (error) {
+    showNotice(error.message || 'Door deletion failed.', true)
+  } finally {
+    deleteButton.disabled = false
     saveButton.disabled = false
   }
 }
@@ -411,7 +449,7 @@ async function load() {
   } catch (error) {
     setConnection(false, 'System unavailable')
     showNotice(error.message || 'Unable to load access-control data.', true)
-    if (!app.children.length || app.querySelector('.loading-card')) app.innerHTML = empty('Gate Control could not load system data. Use Refresh to try again.')
+    if (!app.children.length || app.querySelector('.loading-card')) app.innerHTML = empty('Gate Access could not load system data. Use Refresh to try again.')
   } finally {
     loading = false
     document.getElementById('refresh-button').disabled = false
@@ -447,6 +485,7 @@ document.getElementById('controller-editor-close').addEventListener('click', () 
 document.getElementById('controller-editor-cancel').addEventListener('click', () => controllerDialog.close())
 document.getElementById('door-editor-close').addEventListener('click', () => doorDialog.close())
 document.getElementById('door-editor-cancel').addEventListener('click', () => doorDialog.close())
+document.getElementById('door-editor-delete').addEventListener('click', deleteDoor)
 document.getElementById('menu-button').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'))
 document.getElementById('signout-button').addEventListener('click', async () => {
   await fetch('/logout', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}' })

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <meta name="color-scheme" content="dark">
-    <title>Gate Control</title>
+    <title>Gate Access</title>
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" href="/images/favicon.svg">
     <link rel="stylesheet" href="/css/gate-control.css">
@@ -13,11 +13,11 @@
     <div class="app-shell">
       <aside class="sidebar" id="sidebar">
         <div class="brand">
-          <span class="brand-mark" aria-hidden="true">GC</span>
-          <span><strong>Gate Control</strong><small>Access Console</small></span>
+          <span class="brand-mark" aria-hidden="true">GA</span>
+          <span><strong>Gate Access</strong><small>Access Console</small></span>
         </div>
 
-        <nav aria-label="Gate Control sections">
+        <nav aria-label="Gate Access sections">
           <a href="/sys/overview.html" data-route="overview"><span>Overview</span><b id="count-overview">—</b></a>
           <a href="/sys/controllers.html" data-route="controllers"><span>Controllers</span><b id="count-controllers">—</b></a>
           <a href="/sys/doors.html" data-route="doors"><span>Doors</span><b id="count-doors">—</b></a>
@@ -95,6 +95,7 @@
           <label><span>Physical channel</span><select name="channel"><option value="">Select a controller</option></select></label>
         </div>
         <div class="dialog-actions">
+          <button type="button" class="danger delete-action hidden" id="door-editor-delete">Delete door</button>
           <button type="button" class="secondary" id="door-editor-cancel">Cancel</button>
           <button type="submit" class="primary" id="door-editor-save">Save door</button>
         </div>
