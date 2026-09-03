@@ -52,11 +52,7 @@ function auth() {
     .then((response) => {
       switch (response.status) {
         case 200:
-          if (response.redirected) {
-            window.location = response.url
-          } else {
-            window.location = '/index.html'
-          }
+          window.location.replace('/sys/overview.html')
           return
 
         case 401:
