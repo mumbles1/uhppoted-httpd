@@ -591,10 +591,12 @@ function overview() {
   const doors = controllerDoors()
   const cards = records(DB.cards)
   const groups = records(DB.groups)
+  const fullNames = new Set(cards.map((card) => `${card.name || ''}`.trim().toLowerCase()).filter(Boolean)).size
+  const managementGroupCount = new Set(cards.map((card) => `${card.managementGroup || ''}`.trim().toLowerCase()).filter(Boolean)).size
   return `<div class="stats">
     <a class="stat" href="/sys/controllers.html"><span>Controllers</span><strong>${controllers.length}</strong></a>
     <a class="stat" href="/sys/doors.html"><span>Relays</span><strong>${doors.length}</strong></a>
-    <a class="stat" href="/sys/cards.html"><span>Active credentials</span><strong>${cards.length}</strong></a>
+    <a class="stat credential-stat" href="/sys/cards.html"><span>Active credentials</span><strong>${cards.length}</strong><small><b>${fullNames}</b> full names <i>&middot;</i> <b>${managementGroupCount}</b> management groups</small></a>
     <a class="stat" href="/sys/groups.html"><span>Access levels</span><strong>${groups.length}</strong></a>
   </div>
   <div class="two-column">
