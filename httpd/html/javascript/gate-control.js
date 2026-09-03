@@ -216,7 +216,7 @@ function _cardRows(list = records(DB.cards)) {
     return `<tr>
       <td class="name-cell"><strong>${display(card.name, 'Unnamed credential')}</strong><small>${display(credentialTypeLabel(card.kind))} · ${display(card.OID)}</small></td>
       <td>${credential ? `<span class="name-cell"><strong>FC ${credential.facilityCode} · CD ${credential.cardNumber}</strong><small>Controller ID ${escapeHTML(credential.raw)}</small></span>` : display(card.number)}</td><td>${display(card.from)}</td><td>${display(card.to)}</td><td>${memberships}</td><td>${statusBadge(card.status)}</td>
-      <td><button class="secondary" data-edit-card="${escapeHTML(card.OID)}" ${config.mode === 'monitor' ? 'disabled' : ''}>Configure</button></td>
+      <td><button class="secondary" data-edit-card="${escapeHTML(card.OID)}" ${config.mode === 'monitor' ? 'disabled' : ''}>Edit credential</button></td>
     </tr>`
   })
 }
@@ -349,7 +349,7 @@ function credentialTree() {
         const credentialTitle = `${card.label || ''}`.trim() || credentialTypeLabel(card.kind)
         return `<article class="credential-leaf">
           <div class="credential-leaf-main"><strong>${display(credentialTitle)}</strong><span>${credential ? `FC ${credential.facilityCode} &middot; CD ${credential.cardNumber}` : display(card.number)}</span><small>${credential ? `Controller ID ${escapeHTML(credential.raw)} &middot; ` : ''}${memberships} access level${memberships === 1 ? '' : 's'} &middot; ${display(card.from)} to ${display(card.to)}</small></div>
-          <button class="secondary" data-edit-card="${escapeHTML(card.OID)}" ${config.mode === 'monitor' ? 'disabled' : ''}>Configure</button>
+          <button class="secondary" data-edit-card="${escapeHTML(card.OID)}" ${config.mode === 'monitor' ? 'disabled' : ''}>Edit credential</button>
         </article>`
       }).join('')
       return `<details class="credential-tree-person" open>
@@ -1081,7 +1081,7 @@ function editCard(event) {
 
   renderCardGroups(card)
 
-  document.getElementById('card-editor-title').textContent = card ? (card.name || 'Configure credential') : 'Add credential'
+  document.getElementById('card-editor-title').textContent = card ? `Edit credential${card.label ? `: ${card.label}` : ''}` : 'Add credential'
   document.getElementById('card-editor-delete').classList.toggle('hidden', !card)
   cardDialog.showModal()
 }
