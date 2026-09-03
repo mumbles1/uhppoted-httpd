@@ -20,6 +20,7 @@ let loading = false
 let emptyCardRetries = 0
 let emptyCardRetryTimer = null
 let groupSearch = ''
+let relayStatus = {}
 
 function currentRoute() {
   const name = window.location.pathname.split('/').pop()?.replace('.html', '') || 'overview'
@@ -140,12 +141,14 @@ function doorRows(list = controllerDoors()) {
     const controllerName = controller?.name || (controller?.deviceID ? `Controller ${controller.deviceID}` : 'Unassigned')
     const doorName = door?.name || (channel ? `Door ${channel}` : 'Unnamed door')
     const target = door ? `data-door="${escapeHTML(door.OID)}"` : `data-controller="${escapeHTML(controller?.deviceID)}" data-channel="${channel}"`
+    const live = relayStatus?.[controller?.deviceID]?.[channel]
+    const readers = [door?.readerEntry, door?.readerExit].filter(Boolean).join(' / ')
     return `<tr>
-      <td class="name-cell"><strong>${display(doorName)}</strong><small>${display(controllerName)}${controller?.deviceID ? ` · ${escapeHTML(controller.deviceID)}` : ''}</small></td>
+      <td class="name-cell"><strong>${display(doorName)}</strong><small>${display(controllerName)}${controller?.deviceID ? ` · ${escapeHTML(controller.deviceID)}` : ''}${readers ? ` · ${escapeHTML(readers)}` : ''}</small></td>
       <td>${display(({ 'normally open': 'Open', 'normally closed': 'Close', controlled: 'Controlled' })[door?.mode?.mode] || door?.mode?.mode, door ? 'Unknown' : 'Not configured')}</td>
       <td>${door ? `${display(door.delay?.delay, '0')}s` : '—'}</td>
       <td>${door ? (door.keypad ? 'Enabled' : 'Disabled') : '—'}</td>
-      <td>${statusBadge(door?.mode?.status || door?.status || controller?.status)}</td>
+      <td>${relayStateBadge(live, controller)}</td>
       <td><div class="door-actions">
         <button class="primary" ${target} data-mode="normally open" ${disabled}>Open</button>
         <button class="secondary" ${target} data-mode="controlled" ${disabled}>Controlled</button>
@@ -153,6 +156,13 @@ function doorRows(list = controllerDoors()) {
       </div></td>
     </tr>`
   })
+}
+
+function relayStateBadge(live, controller) {
+  if (!controller) return '<span class="badge warn">Unassigned</span>'
+  if (!live) return '<span class="badge warn">Unavailable</span>'
+  const state = live['relay-active'] ? 'Relay active' : live['door-open'] ? 'Door open' : 'Secure'
+  return `<span class="badge ${state === 'Secure' ? '' : 'warn'}">${state}</span>`
 }
 
 function cardRows(list = records(DB.cards)) {
@@ -186,8 +196,15 @@ function filterGroups(event) {
 
 function eventRows(list = records(DB.events())) {
   return list.sort((a, b) => `${b.timestamp}`.localeCompare(`${a.timestamp}`)).map((event) => `<tr>
-    <td>${display(formatEventTime(event.timestamp))}</td><td>${display(event.deviceName, event.deviceID)}</td><td>${display(event.doorName, event.door)}</td><td>${eventCard(event)}</td><td>${event.granted === 'true' ? '<span class="badge">Granted</span>' : '<span class="badge warn">Denied</span>'}</td><td>${display(event.reason, event.eventType)}</td>
+    <td>${display(event.index)}</td><td>${display(formatEventTime(event.timestamp))}</td><td>${display(event.deviceName, event.deviceID)}</td><td>${eventDoor(event)}</td><td>${eventCard(event)}</td><td>${event.granted === 'true' ? '<span class="badge">Granted</span>' : '<span class="badge warn">Denied</span>'}</td><td>${display(event.reason, event.eventType)}</td>
   </tr>`)
+}
+
+function eventDoor(event) {
+  const controller = records(DB.controllers).find((item) => `${item.deviceID}` === `${event.deviceID}`)
+  const door = controller?.doors?.[event.door] ? DB.doors.get(controller.doors[event.door]) : null
+  const reader = `${event.direction}` === 'out' ? door?.readerExit : `${event.direction}` === 'in' ? door?.readerEntry : ''
+  return `<span class="name-cell"><strong>${display(event.doorName, event.door)}</strong>${reader ? `<small>${escapeHTML(reader)}</small>` : ''}</span>`
 }
 
 function formatEventTime(value) {
@@ -258,7 +275,7 @@ function overview() {
   </div>
   <div class="two-column">
     ${panel('Controllers', 'Connected access-control hardware', ['Controller', 'ID', 'Protocol', 'Cards', 'Events', 'Status', ''], controllerRows(controllers))}
-    ${panel('Recent events', 'Latest controller activity', ['Time', 'Controller', 'Door', 'Card', 'Access', 'Reason'], eventRows().slice(0, 8))}
+    ${panel('Recent events', 'Latest controller activity', ['Event #', 'Time', 'Controller', 'Door', 'Card', 'Access', 'Reason'], eventRows().slice(0, 8))}
   </div>`
 }
 
@@ -269,7 +286,7 @@ function render() {
     case 'doors': app.innerHTML = panel('Relays', config.mode === 'monitor' ? 'Monitor mode — controls are disabled' : 'Live relay state and controls', ['Relay / door', 'Mode', 'Delay', 'Keypad', 'Status', 'Controls'], doorRows()); break
     case 'cards': app.innerHTML = panel('Cards', 'Cardholders and validity periods', ['Cardholder', 'Card number', 'Valid from', 'Valid to', 'Groups', 'Status', ''], cardRows()); break
     case 'groups': app.innerHTML = panel('Groups', 'Relay access assignments', ['Group', 'Relays', 'First-card', 'Status', ''], groupRows()); break
-    case 'events': app.innerHTML = panel('Events', 'Recent controller events', ['Time', 'Controller', 'Door', 'Card', 'Access', 'Reason'], eventRows()); break
+    case 'events': app.innerHTML = panel('Events', 'Recent controller events', ['Event #', 'Time', 'Controller', 'Door', 'Card', 'Access', 'Reason'], eventRows()); break
     case 'logs': app.innerHTML = panel('Audit log', 'Recent configuration changes', ['Time', 'User', 'Item', 'Details'], logRows()); break
     default: app.innerHTML = overview()
   }
@@ -326,6 +343,8 @@ function editDoor(event) {
   doorForm.elements.mode.value = door?.mode?.configured || door?.mode?.mode || 'controlled'
   doorForm.elements.delay.value = door?.delay?.configured || door?.delay?.delay || '5'
   doorForm.elements.keypad.checked = Boolean(door?.keypad)
+  doorForm.elements.readerEntry.value = door?.readerEntry || ''
+  doorForm.elements.readerExit.value = door?.readerExit || ''
   doorForm.elements.controller.innerHTML = ['<option value="">Unassigned</option>', ...records(DB.controllers).map((controller) => `<option value="${escapeHTML(controller.OID)}">${display(controller.name, `Controller ${controller.deviceID}`)}</option>`)].join('')
   doorForm.elements.controller.value = assigned.controller?.OID || ''
   refreshDoorChannels(assigned.channel)
@@ -375,6 +394,8 @@ async function saveDoor(event) {
     changed(schema.doors.delay, doorForm.elements.delay.value, existing?.delay?.configured || existing?.delay?.delay)
     changed(schema.doors.mode, doorForm.elements.mode.value, existing?.mode?.configured || existing?.mode?.mode)
     changed(schema.doors.keypad, `${doorForm.elements.keypad.checked}`, `${Boolean(existing?.keypad)}`)
+    changed(schema.doors.readerEntry, doorForm.elements.readerEntry.value.trim(), existing?.readerEntry)
+    changed(schema.doors.readerExit, doorForm.elements.readerExit.value.trim(), existing?.readerExit)
     if (updates.length) await postConfiguration('/doors', { created: [], updated: updates, deleted: [] })
 
     const originalController = DB.controllers.get(doorForm.dataset.originalController)
@@ -624,6 +645,7 @@ async function currentCardOID(card) {
     const response = await fetch('/api/v1/snapshot', { credentials: 'same-origin', cache: 'no-store' })
     if (!response.ok) throw new Error((await response.text()) || `Unable to refresh cards (${response.status})`)
     const snapshot = await response.json()
+    relayStatus = snapshot.relayStatus || {}
     const number = (snapshot.cards || []).find((item) => {
       const match = `${item.OID || ''}`.match(schema.cards.regex)
       return match && `${item.OID}` === `${match[1]}${schema.cards.card}` && `${item.value}` === `${card.number}`
