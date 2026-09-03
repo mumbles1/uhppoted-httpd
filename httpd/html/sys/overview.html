@@ -91,6 +91,11 @@
           <label><span>Unlock delay (seconds)</span><input name="delay" type="number" min="1" max="60" value="5" required></label>
           <label class="checkbox-field"><input name="keypad" type="checkbox"><span>Enable keypad</span></label>
         </div>
+        <div class="door-mapping-heading"><h3>Readers</h3><p>Name the two reader positions for this relay. Hardware reader-to-relay wiring remains fixed by the controller model.</p></div>
+        <div class="form-grid">
+          <label><span>Reader 1 / entry</span><input name="readerEntry" type="text" placeholder="Entry reader"></label>
+          <label><span>Reader 2 / exit</span><input name="readerExit" type="text" placeholder="Exit reader"></label>
+        </div>
         <div class="door-mapping-heading"><h3>Controller assignment</h3><p>Connect this logical door to a physical controller channel.</p></div>
         <div class="form-grid">
           <label><span>Controller</span><select name="controller"><option value="">Unassigned</option></select></label>
