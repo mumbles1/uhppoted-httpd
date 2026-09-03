@@ -14,6 +14,7 @@ const CardPIN = schema.CardPIN
 const CardFrom = schema.CardFrom
 const CardTo = schema.CardTo
 const CardGroups = schema.CardGroups
+const CardKind = schema.CardKind
 const GroupName = schema.GroupName
 
 var lookup = map[schema.Suffix]string{
@@ -27,4 +28,5 @@ var lookup = map[schema.Suffix]string{
 	CardFrom:     "card.from",
 	CardTo:       "card.to",
 	CardGroups:   "card.groups",
+	CardKind:     "credential.kind",
 }
