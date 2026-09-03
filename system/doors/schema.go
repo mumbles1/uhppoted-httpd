@@ -21,6 +21,8 @@ const DoorControlError = schema.DoorControlError
 const DoorControlModified = schema.DoorControlModified
 const DoorKeypad = schema.DoorKeypad
 const DoorPasscodes = schema.DoorPasscodes
+const DoorReaderEntry = schema.DoorReaderEntry
+const DoorReaderExit = schema.DoorReaderExit
 
 const DoorFirstCardStartTime = schema.DoorFirstCardStartTime
 const DoorFirstCardEndTime = schema.DoorFirstCardEndTime
@@ -51,6 +53,8 @@ var lookup = map[schema.Suffix]string{
 	DoorControlModified:   "door.control.modified",
 	DoorKeypad:            "door.keypad",
 	DoorPasscodes:         "door.passcodes",
+	DoorReaderEntry:       "door.readers.entry",
+	DoorReaderExit:        "door.readers.exit",
 
 	DoorFirstCardStartTime:    "door.firstcard.start-time",
 	DoorFirstCardEndTime:      "door.firstcard.end-time",
