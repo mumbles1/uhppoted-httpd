@@ -107,11 +107,23 @@ function empty(message) {
   return `<div class="empty">${escapeHTML(message)}</div>`
 }
 
+function mobileTableRows(headers, rows) {
+  return rows.map((row) => {
+    let column = 0
+    return row.replace(/<td([^>]*)>/g, (_match, attributes) => {
+      const label = headers[column] || ''
+      column += 1
+      return `<td${attributes} data-label="${escapeHTML(label)}">`
+    })
+  })
+}
+
 function panel(title, subtitle, headers, rows) {
   if (!rows.length) return `<section class="panel"><div class="panel-heading"><div><h2>${escapeHTML(title)}</h2><p>${escapeHTML(subtitle)}</p></div></div>${empty(`No ${title.toLowerCase()} are available.`)}</section>`
+  const labelledRows = mobileTableRows(headers, rows)
   return `<section class="panel">
     <div class="panel-heading"><div><h2>${escapeHTML(title)}</h2><p>${escapeHTML(subtitle)}</p></div></div>
-    <div class="table-wrap"><table><thead><tr>${headers.map((header) => `<th>${escapeHTML(header)}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>
+    <div class="table-wrap"><table><thead><tr>${headers.map((header) => `<th>${escapeHTML(header)}</th>`).join('')}</tr></thead><tbody>${labelledRows.join('')}</tbody></table></div>
   </section>`
 }
 
@@ -218,7 +230,7 @@ function filterGroups(event) {
   const groups = records(DB.groups).filter((group) => !query || `${group.name} ${group.OID}`.toLowerCase().includes(query))
   const body = app.querySelector('tbody')
   if (!body) return
-  body.innerHTML = groups.length ? groupRows(groups).join('') : '<tr><td colspan="6">No access levels match your search.</td></tr>'
+  body.innerHTML = groups.length ? mobileTableRows(['Access level', 'Relays', 'Time restriction', 'First-card', 'Status', ''], groupRows(groups)).join('') : '<tr><td colspan="6">No access levels match your search.</td></tr>'
   body.querySelectorAll('[data-edit-group]').forEach((button) => button.addEventListener('click', editGroup))
 }
 
@@ -258,8 +270,18 @@ function filteredEvents() {
     const kind = credentialRecord?.kind || 'unknown'
     if (eventTypeFilter !== 'all' && kind !== eventTypeFilter) return false
     if (!query) return true
-    const decoded = formatCredential(event.card)
-    return [event.index, event.timestamp, formatEventTime(event.timestamp), event.deviceID, event.deviceName, event.door, event.doorName, event.direction, event.card, event.cardName, credentialRecord?.name, decoded?.facilityCode, decoded?.cardNumber, credentialTypeLabel(kind), event.reason, event.eventType]
+    const credentialNumber = credentialRecord?.number || event.card
+    const decoded = formatCredential(credentialNumber)
+    return [
+      event.index, event.timestamp, formatEventTime(event.timestamp),
+      event.deviceID, `controller ${event.deviceID}`, `controller id ${event.deviceID}`, event.deviceName,
+      event.door, event.doorName, event.direction,
+      credentialNumber, `credential ${credentialNumber}`, event.cardName, credentialRecord?.name,
+      decoded?.facilityCode, decoded?.cardNumber,
+      decoded ? `fc ${decoded.facilityCode} cd ${decoded.cardNumber}` : '',
+      decoded ? `${decoded.facilityCode}-${decoded.cardNumber}` : '',
+      credentialTypeLabel(kind), event.reason, event.eventType,
+    ]
       .some((value) => `${value ?? ''}`.toLowerCase().includes(query))
   })
 }
@@ -268,7 +290,7 @@ function refreshEventRows() {
   const body = app.querySelector('tbody')
   if (!body) return
   const events = filteredEvents()
-  body.innerHTML = events.length ? eventRows(events).join('') : '<tr><td colspan="8">No events match your search and filter.</td></tr>'
+  body.innerHTML = events.length ? mobileTableRows(['Event #', 'Time', 'Controller', 'Door', 'Credential', 'Type', 'Access', 'Reason'], eventRows(events)).join('') : '<tr><td colspan="8">No events match your search and filter.</td></tr>'
   bindEventCredentialRows(body)
 }
 
@@ -370,7 +392,7 @@ function render() {
     app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<div class="panel-tools"><input class="panel-search" data-group-search type="search" placeholder="Search access levels" aria-label="Search access levels" value="${escapeHTML(groupSearch)}"><button class="primary" data-add-group ${config.mode === 'monitor' ? 'disabled' : ''}>Add access level</button></div>`)
   }
   if (currentRoute() === 'events') {
-    app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<div class="panel-tools"><input class="panel-search" data-event-search type="search" placeholder="Search events" aria-label="Search events" value="${escapeHTML(eventSearch)}"><select class="panel-search" data-event-type-filter aria-label="Filter credential type"><option value="all">All credential types</option><option value="rf-remote">RF Remote</option><option value="card">Card</option><option value="keypad-code">Keypad Code</option><option value="unknown">Unknown</option></select></div>`)
+    app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<div class="panel-tools"><input class="panel-search" data-event-search type="search" placeholder="Credential or controller ID" aria-label="Search events by credential number or controller ID" value="${escapeHTML(eventSearch)}"><select class="panel-search" data-event-type-filter aria-label="Filter credential type"><option value="all">All credential types</option><option value="rf-remote">RF Remote</option><option value="card">Card</option><option value="keypad-code">Keypad Code</option><option value="unknown">Unknown</option></select></div>`)
     const filter = document.querySelector('[data-event-type-filter]')
     if (filter) filter.value = eventTypeFilter
   }
