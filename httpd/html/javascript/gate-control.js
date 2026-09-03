@@ -429,7 +429,7 @@ async function savePerson(event) {
 }
 
 function groupRows(list = records(DB.groups)) {
-	return [...list].sort((a, b) => accessLevelOrder(a) - accessLevelOrder(b)).map((group) => {
+	return [...list].sort(accessLevelCompare).map((group) => {
 		const permitted = [...(group.doors?.values?.() || [])].filter((door) => door.allowed).length
 		const action = isPermanentAccessLevel(group) ? '<span class="badge">Permanent</span>' : `<button class="secondary" data-edit-group="${escapeHTML(group.OID)}" ${config.mode === 'monitor' ? 'disabled' : ''}>Configure</button>`
 		return `<tr><td class="name-cell"><strong>${display(group.name, 'Unnamed access level')}</strong><small>${display(group.OID)}</small></td><td>${permitted}</td><td>${displayAccessSchedule(group.schedule)}</td><td>${group.firstcard ? 'Yes' : 'No'}</td><td>${statusBadge(group.status)}</td><td>${action}</td></tr>`
@@ -438,6 +438,15 @@ function groupRows(list = records(DB.groups)) {
 
 function isPermanentAccessLevel(group) { return permanentAccessLevels.has(`${group?.OID || ''}`) }
 function accessLevelOrder(group) { return group?.OID === '0.5.254' ? -2 : group?.OID === '0.5.255' ? -1 : 0 }
+function accessLevelCompare(a, b) {
+  const permanent = accessLevelOrder(a) - accessLevelOrder(b)
+  if (permanent) return permanent
+  const aID = Number(`${a?.OID || ''}`.split('.').slice(-1)[0])
+  const bID = Number(`${b?.OID || ''}`.split('.').slice(-1)[0])
+  if (Number.isFinite(aID) && Number.isFinite(bID) && aID !== bID) return aID - bID
+  const byName = `${a?.name || ''}`.localeCompare(`${b?.name || ''}`, undefined, { numeric: true, sensitivity: 'base' })
+  return byName || `${a?.OID || ''}`.localeCompare(`${b?.OID || ''}`, undefined, { numeric: true })
+}
 
 function displayAccessSchedule(schedule) {
   if (!schedule?.enabled) return 'Any time'
@@ -967,7 +976,7 @@ function selectedCardGroups() {
 }
 
 function renderCardGroups(card, selected = null) {
-  const groups = records(DB.groups)
+  const groups = records(DB.groups).sort(accessLevelCompare)
   document.getElementById('card-group-fields').innerHTML = groups.length
     ? groups.map((group) => {
       const checked = selected ? selected.has(group.OID) : cardInGroup(card, group)
@@ -987,7 +996,7 @@ function openBulkCredentialAccess(event) {
   const label = event.currentTarget.dataset.manageLabel || 'selected branch'
   document.getElementById('credential-bulk-title').textContent = `Manage ${label}`
   document.getElementById('credential-bulk-summary').textContent = `Apply an access-level change to ${cards.length} credential${cards.length === 1 ? '' : 's'}. Credential names, numbers, and dates are not changed.`
-  const groups = records(DB.groups)
+  const groups = records(DB.groups).sort(accessLevelCompare)
   document.getElementById('credential-bulk-levels').innerHTML = groups.length
     ? groups.map((group) => `<label class="choice"><input type="checkbox" data-bulk-group="${escapeHTML(group.OID)}"><span>${display(group.name, `Access level ${group.OID}`)}</span></label>`).join('')
     : empty('No access levels are available.')
