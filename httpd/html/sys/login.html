@@ -27,7 +27,7 @@
           <div id="form">
             <fieldset id="login">
               <legend>{{.Login.Legend}}</legend>
-              <form action="/authenticate" method="POST" onsubmit="login(event)"> 
+              <form id="login-form" action="/authenticate" method="POST">
                 <div class="login-field">
                   <label for="uid">{{.Login.UserID.Hint}}</label>
                   <div class="field">
@@ -38,10 +38,8 @@
                   <label for="pwd">{{.Login.Password.Hint}}</label>
                   <div class="field">
                     <input id="pwd" name="pwd" type="password" size="28" placeholder="{{.Login.Password.Hint}}" autocomplete="current-password" required value="" />
-                    <img src="/images/{{$.context.Theme}}/eye-solid.svg"
+                    <img id="password-toggle" src="/images/{{$.context.Theme}}/eye-solid.svg"
                          alt="Show or hide password" role="button" tabindex="0"
-                         onclick="onShowHidePassword(event, 'pwd')"
-                         onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onShowHidePassword(event, 'pwd') }"
                          data-hide='/images/{{$.context.Theme}}/eye-slash-solid.svg'
                          data-show='/images/{{$.context.Theme}}/eye-solid.svg' />
                   </div>
@@ -66,8 +64,17 @@
     import { onShowHidePassword } from "/javascript/uhppoted.js"
     import { login              } from "/javascript/login.js"
 
-    window.onShowHidePassword = onShowHidePassword
-    window.login = login
+    const form = document.getElementById('login-form')
+    const passwordToggle = document.getElementById('password-toggle')
+
+    form.addEventListener('submit', login)
+    passwordToggle.addEventListener('click', event => onShowHidePassword(event, 'pwd'))
+    passwordToggle.addEventListener('keydown', event => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault()
+        onShowHidePassword(event, 'pwd')
+      }
+    })
   </script>
 
   <!-- global information initialised by Go template -->
