@@ -13,7 +13,7 @@
     <div class="app-shell">
       <aside class="sidebar" id="sidebar">
         <div class="brand">
-          <img class="brand-mark" src="/images/access-control-logo.svg" alt="" />
+          <img class="brand-mark" src="/images/{{$.context.Theme}}/logo.png" alt="UHPPOTED" />
           <span><strong>Access Control - HTTP</strong><small>UHPPOTE Console</small></span>
         </div>
 
@@ -116,8 +116,9 @@
           <button type="button" class="icon-button" id="card-editor-close" aria-label="Close">&times;</button>
         </div>
         <div class="form-grid">
-          <label class="wide"><span>Management group / folder</span><input name="managementGroup" type="text" placeholder="Smith Household A or Contractors"></label>
+          <label class="wide"><span>Management group / folder</span><input name="managementGroup" type="text" list="management-group-options" placeholder="Select an existing group or enter a new one"><datalist id="management-group-options"></datalist></label>
           <label class="wide"><span>Full name</span><input name="name" type="text" placeholder="Jane Smith" required></label>
+          <p class="field-help wide">An exact full-name match is treated as the same person and automatically uses that person&rsquo;s existing management group.</p>
           <label class="wide"><span>Credential label (optional)</span><input name="label" type="text" placeholder="Front gate card or Remote 2"></label>
           <label><span>Credential type</span><select name="kind"><option value="card">Card</option><option value="rf-remote">RF Remote</option><option value="keypad-code">Keypad Code</option></select></label>
           <label><span>Controller decimal ID</span><input name="number" type="text" inputmode="numeric" pattern="[1-9][0-9]*" placeholder="12345678" required></label>
@@ -159,6 +160,36 @@
         <div class="dialog-actions">
           <button type="button" class="secondary" id="credential-bulk-cancel">Cancel</button>
           <button type="submit" class="primary" id="credential-bulk-save">Apply changes</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="management-group-dialog" class="editor-dialog">
+      <form method="dialog">
+        <div class="dialog-heading">
+          <div><p class="eyebrow">CREDENTIAL ORGANIZATION</p><h2>Manage groups</h2></div>
+          <button type="submit" class="icon-button" aria-label="Close">&times;</button>
+        </div>
+        <p class="field-help">Rename a group to an existing group name to merge them. Removing a group keeps its credentials and moves them to Ungrouped.</p>
+        <div id="management-group-list" class="management-group-list"></div>
+        <div class="dialog-actions"><button type="submit" class="secondary">Close</button></div>
+      </form>
+    </dialog>
+
+    <dialog id="person-dialog" class="editor-dialog">
+      <form id="person-form">
+        <div class="dialog-heading">
+          <div><p class="eyebrow">PERSON CONFIGURATION</p><h2>Edit person</h2></div>
+          <button type="button" class="icon-button" id="person-editor-close" aria-label="Close">&times;</button>
+        </div>
+        <p class="field-help" id="person-editor-summary"></p>
+        <div class="form-grid">
+          <label class="wide"><span>Full name</span><input name="name" type="text" required></label>
+          <label class="wide"><span>Management group / folder</span><input name="managementGroup" type="text" list="management-group-options" placeholder="Select an existing group or enter a new one"></label>
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="secondary" id="person-editor-cancel">Cancel</button>
+          <button type="submit" class="primary" id="person-editor-save">Save person</button>
         </div>
       </form>
     </dialog>
