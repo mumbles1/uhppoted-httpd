@@ -144,7 +144,9 @@ func (c *Card) AsObjects(a *auth.Authorizator) []schema.Object {
 		list = append(list, kv{CardFrom, from})
 		list = append(list, kv{CardTo, to})
 		list = append(list, kv{CardPIN, c.pin})
-		list = append(list, kv{CardKind, c.Kind()})
+		if c.kind != "" {
+			list = append(list, kv{CardKind, c.Kind()})
+		}
 
 		groups := catalog.GetGroups()
 		re := regexp.MustCompile(`^(.*?)(\.[0-9]+)$`)
