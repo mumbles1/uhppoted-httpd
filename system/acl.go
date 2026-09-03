@@ -8,6 +8,7 @@ import (
 
 	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog"
 	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog/schema"
+	access "codeberg.org/uhppoted/uhppoted-httpd/system/groups"
 	"codeberg.org/uhppoted/uhppoted-httpd/types"
 	"codeberg.org/uhppoted/uhppoted-lib/acl"
 )
@@ -163,7 +164,7 @@ func (s *system) updateCardPermissions(controller types.IController, cardID uint
 				if err != nil {
 					return err
 				}
-				for oid, allowed := range group.Doors {
+				for oid, allowed := range group.AccessDoors() {
 					p := permissions[oid]
 					if allowed && p.allowed && p.profile != profile && p.profile != 1 && profile != 1 {
 						return fmt.Errorf("credential %v has conflicting timed access levels for the same relay", cardID)
@@ -218,6 +219,12 @@ func (s *system) updateCardPermissions(controller types.IController, cardID uint
 						acl[d] = 0
 					}
 				}
+			}
+		}
+		if hasAccessLevel(groups, access.NoAccessOID) {
+			for door := range acl {
+				acl[door] = 0
+				firstcard[door] = false
 			}
 		}
 	}
@@ -333,7 +340,7 @@ func (s *system) permissions(controllers []types.IController) (acl.ACL, error) {
 				if err != nil {
 					return nil, err
 				}
-				for d, allowed := range group.Doors {
+				for d, allowed := range group.AccessDoors() {
 					if door, ok := doors.Door(d); ok && allowed {
 						controller := catalog.GetDoorDeviceID(door.OID)
 						doorID := catalog.GetDoorDeviceDoor(door.OID)
@@ -393,7 +400,28 @@ func (s *system) permissions(controllers []types.IController) (acl.ACL, error) {
 		}
 	}
 
+	// Access level 0 is an explicit deny and therefore wins over every access
+	// level and rule assigned to the same credential.
+	for _, c := range cards {
+		if hasAccessLevel(c.Groups(), access.NoAccessOID) {
+			for controller := range acl {
+				for door := uint8(1); door <= 4; door++ {
+					revoke(c.CardID, controller, door)
+				}
+			}
+		}
+	}
+
 	return acl, nil
+}
+
+func hasAccessLevel(levels []schema.OID, wanted schema.OID) bool {
+	for _, oid := range levels {
+		if oid == wanted {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *system) synchronizeTimeProfiles(controllers []types.IController) error {
@@ -415,3 +443,4 @@ func (s *system) synchronizeTimeProfiles(controllers []types.IController) error 
 	}
 	return errors.Join(failures...)
 }
+	

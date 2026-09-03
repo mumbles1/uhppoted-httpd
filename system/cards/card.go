@@ -21,6 +21,8 @@ import (
 type Card struct {
 	catalog.CatalogCard
 	name   string
+	managementGroup string
+	label string
 	kind   string
 	pin    uint32
 	from   lib.Date
@@ -100,6 +102,8 @@ func (c Card) Groups() []schema.OID {
 }
 
 func (c Card) Name() string { return c.name }
+func (c Card) ManagementGroup() string { return c.managementGroup }
+func (c Card) Label() string { return c.label }
 
 func (c Card) Kind() string {
 	switch c.kind {
@@ -140,6 +144,12 @@ func (c *Card) AsObjects(a *auth.Authorizator) []schema.Object {
 		list = append(list, kv{CardCreated, c.created})
 		list = append(list, kv{CardDeleted, c.deleted})
 		list = append(list, kv{CardName, name})
+		if c.managementGroup != "" {
+			list = append(list, kv{CardManagementGroup, c.managementGroup})
+		}
+		if c.label != "" {
+			list = append(list, kv{CardLabel, c.label})
+		}
 		list = append(list, kv{CardNumber, c.CardID})
 		list = append(list, kv{CardFrom, from})
 		list = append(list, kv{CardTo, to})
@@ -170,6 +180,8 @@ func (c *Card) AsObjects(a *auth.Authorizator) []schema.Object {
 func (c Card) AsRuleEntity() (string, any) {
 	entity := struct {
 		Name   string
+		ManagementGroup string
+		Label string
 		Number uint32
 		PIN    uint32
 		From   string
@@ -177,6 +189,8 @@ func (c Card) AsRuleEntity() (string, any) {
 		Groups []string
 	}{
 		Name:   c.name,
+		ManagementGroup: c.managementGroup,
+		Label: c.label,
 		Number: c.CardID,
 		PIN:    c.pin,
 		From:   fmt.Sprintf("%v", c.from),
@@ -220,6 +234,24 @@ func (c *Card) set(a *auth.Authorizator, oid schema.OID, value string, dbc db.DB
 
 			list = append(list, kv{CardName, c.name})
 		}
+
+	case oid == c.OID.Append(CardManagementGroup):
+		if err := CanUpdate(a, c, "management-group", value); err != nil {
+			return nil, err
+		}
+		c.log(dbc, uid, "update", "management-group", c.managementGroup, value, "Updated credential management group from '%v' to '%v'", c.managementGroup, value)
+		c.managementGroup = strings.TrimSpace(value)
+		c.modified = types.TimestampNow()
+		list = append(list, kv{CardManagementGroup, c.managementGroup})
+
+	case oid == c.OID.Append(CardLabel):
+		if err := CanUpdate(a, c, "label", value); err != nil {
+			return nil, err
+		}
+		c.log(dbc, uid, "update", "label", c.label, value, "Updated credential label from '%v' to '%v'", c.label, value)
+		c.label = strings.TrimSpace(value)
+		c.modified = types.TimestampNow()
+		list = append(list, kv{CardLabel, c.label})
 
 	case oid == c.OID.Append(CardNumber):
 		if ok, err := regexp.MatchString("[0-9]+", value); err == nil && ok {
@@ -440,6 +472,8 @@ func (c Card) serialize() ([]byte, error) {
 		To       lib.Date        `json:"to"`
 		Groups   []schema.OID    `json:"groups"`
 		Kind     string          `json:"kind,omitempty"`
+		ManagementGroup string    `json:"management-group,omitempty"`
+		Label string              `json:"label,omitempty"`
 		Created  types.Timestamp `json:"created"`
 		Modified types.Timestamp `json:"modified"`
 	}{
@@ -451,6 +485,8 @@ func (c Card) serialize() ([]byte, error) {
 		To:       c.to,
 		Groups:   []schema.OID{},
 		Kind:     c.Kind(),
+		ManagementGroup: strings.TrimSpace(c.managementGroup),
+		Label: strings.TrimSpace(c.label),
 		Created:  c.created.UTC(),
 		Modified: c.modified.UTC(),
 	}
@@ -478,6 +514,8 @@ func (c *Card) deserialize(bytes []byte) error {
 		To       lib.Date        `json:"to"`
 		Groups   []schema.OID    `json:"groups"`
 		Kind     string          `json:"kind,omitempty"`
+		ManagementGroup string    `json:"management-group,omitempty"`
+		Label string              `json:"label,omitempty"`
 		Created  types.Timestamp `json:"created"`
 		Modified types.Timestamp `json:"modified"`
 	}{
@@ -492,6 +530,8 @@ func (c *Card) deserialize(bytes []byte) error {
 	c.OID = record.OID
 	c.name = strings.TrimSpace(record.Name)
 	c.kind = record.Kind
+	c.managementGroup = strings.TrimSpace(record.ManagementGroup)
+	c.label = strings.TrimSpace(record.Label)
 	c.CardID = uint32(record.Card)
 	c.pin = uint32(record.PIN)
 	c.from = record.From
@@ -518,6 +558,8 @@ func (c *Card) clone() *Card {
 			CardID: c.CardID,
 		},
 		name:   c.name,
+		managementGroup: c.managementGroup,
+		label: c.label,
 		kind:   c.kind,
 		pin:    c.pin,
 		from:   c.from,

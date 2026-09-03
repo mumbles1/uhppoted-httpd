@@ -99,6 +99,9 @@ func (gg *Groups) Delete(auth *auth.Authorizator, oid schema.OID, dbc db.DBC) ([
 	if gg != nil {
 		for k, g := range gg.groups {
 			if g.OID == oid {
+				if g.IsBuiltin() {
+					return nil, fmt.Errorf("access level %v is permanent and cannot be deleted", g.Name)
+				}
 				objects, err := g.delete(auth, dbc)
 				if err == nil {
 					gg.groups[k] = g
@@ -110,6 +113,46 @@ func (gg *Groups) Delete(auth *auth.Authorizator, oid schema.OID, dbc db.DBC) ([
 	}
 
 	return []schema.Object{}, nil
+}
+
+// EnsureDefaults installs and repairs the two controller-native permanent
+// access levels. Reserved OIDs keep them independent of user-created levels.
+func (gg *Groups) EnsureDefaults() {
+	if gg == nil {
+		return
+	}
+
+	now := types.TimestampNow()
+	noAccess := Group{
+		CatalogGroup: catalog.CatalogGroup{OID: NoAccessOID},
+		Name:         "0 - No Access",
+		Doors:        map[schema.OID]bool{},
+		Schedule:     Schedule{Weekdays: map[string]bool{}},
+		created:      now,
+	}
+	always := Group{
+		CatalogGroup: catalog.CatalogGroup{OID: AlwaysAccessOID},
+		Name:         "1 - 24/7 Access",
+		Doors:        map[schema.OID]bool{},
+		Schedule:     Schedule{Weekdays: map[string]bool{}},
+		created:      now,
+	}
+	for _, oid := range catalog.GetDoors() {
+		always.Doors[oid] = true
+	}
+	if existing, ok := gg.groups[NoAccessOID]; ok && !existing.created.IsZero() {
+		noAccess.created = existing.created
+	}
+	if existing, ok := gg.groups[AlwaysAccessOID]; ok && !existing.created.IsZero() {
+		always.created = existing.created
+	}
+	gg.groups[NoAccessOID] = noAccess
+	gg.groups[AlwaysAccessOID] = always
+	for _, group := range []Group{noAccess, always} {
+		catalog.PutT(group.CatalogGroup)
+		catalog.PutV(group.OID, GroupName, group.Name)
+		catalog.PutV(group.OID, GroupCreated, group.created)
+	}
 }
 
 func (gg *Groups) Load(blob json.RawMessage) error {
@@ -183,12 +226,12 @@ func (gg *Groups) EnsureImported(a *auth.Authorizator, name string, relayOIDs []
 		wanted[oid] = true
 	}
 	for _, existing := range gg.groups {
-		if existing.IsDeleted() || existing.Schedule.Enabled || existing.FirstCard || len(existing.Doors) != len(wanted) {
+		if existing.IsDeleted() || existing.OID == NoAccessOID || existing.Schedule.Enabled || existing.FirstCard || len(existing.AccessDoors()) != len(wanted) {
 			continue
 		}
 		match := true
 		for oid := range wanted {
-			if !existing.Doors[oid] {
+			if !existing.AccessDoors()[oid] {
 				match = false
 				break
 			}

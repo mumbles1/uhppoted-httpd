@@ -9,13 +9,11 @@ import (
 	"codeberg.org/uhppoted/uhppoted-httpd/auth"
 	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog/schema"
 	"codeberg.org/uhppoted/uhppoted-httpd/system/doors"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/interfaces"
 	"codeberg.org/uhppoted/uhppoted-httpd/types"
 )
 
-func RelayStatus() map[uint32]map[uint8]struct {
-	DoorOpen    bool `json:"door-open"`
-	RelayActive bool `json:"relay-active"`
-} {
+func RelayStatus() map[uint32]map[uint8]interfaces.RelayState {
 	sys.RLock()
 	controllers := sys.controllers.AsIControllers()
 	sys.RUnlock()
@@ -117,3 +115,4 @@ func parseControlMode(value string) (lib.ControlState, error) {
 		return lib.ModeUnknown, fmt.Errorf("invalid door control mode %q", value)
 	}
 }
+	

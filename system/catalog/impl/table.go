@@ -33,6 +33,9 @@ func (t *table) New(v any) schema.OID {
 loop:
 	for {
 		suffix += 1
+		if t.base == schema.GroupsOID && (suffix == 254 || suffix == 255) {
+			continue
+		}
 		oid := schema.OID(fmt.Sprintf("%v.%d", t.base, suffix))
 		for v := range t.m {
 			if v == oid {
@@ -65,7 +68,7 @@ func (t *table) Put(oid schema.OID, v any) {
 
 	t.m[oid] = &record{}
 
-	if v := uint32(index); v > t.last {
+	if v := uint32(index); v > t.last && !(t.base == schema.GroupsOID && (v == 254 || v == 255)) {
 		t.last = v
 	}
 }
@@ -95,3 +98,4 @@ func (t *table) Has(v any, oid schema.OID) bool {
 
 	return false
 }
+	

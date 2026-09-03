@@ -7,10 +7,11 @@ import (
 )
 
 func Groups(uid, role string) []schema.Object {
-	sys.RLock()
-	defer sys.RUnlock()
+	sys.Lock()
+	defer sys.Unlock()
 
 	auth := auth.NewAuthorizator(uid, role)
+	sys.groups.EnsureDefaults()
 	objects := sys.groups.AsObjects(auth)
 
 	return objects
@@ -28,6 +29,7 @@ func UpdateGroups(uid, role string, m map[string]any) (any, error) {
 	auth := auth.NewAuthorizator(uid, role)
 	dbc := db.NewDBC(sys.trail)
 	shadow := sys.groups.Clone()
+	shadow.EnsureDefaults()
 
 	for _, o := range created {
 		if objects, err := shadow.Create(auth, o.OID, o.Value, dbc); err != nil {
@@ -67,3 +69,4 @@ func UpdateGroups(uid, role string, m map[string]any) (any, error) {
 
 	return dbc.Objects(), nil
 }
+	

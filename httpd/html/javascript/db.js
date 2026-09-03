@@ -584,6 +584,8 @@ function cards(o) {
       created: '',
       deleted: '',
       name: '',
+      managementGroup: '',
+      label: '',
       kind: 'card',
       number: '',
       // {{if .WithPIN}}
@@ -616,6 +618,14 @@ function cards(o) {
 
     case `${base}${schema.cards.name}`:
       v.name = o.value
+      break
+
+    case `${base}${schema.cards.managementGroup}`:
+      v.managementGroup = o.value
+      break
+
+    case `${base}${schema.cards.label}`:
+      v.label = o.value
       break
 
     case `${base}${schema.cards.kind}`:

@@ -130,6 +130,8 @@ type Cards struct {
 	From   Suffix `json:"from"`
 	To     Suffix `json:"to"`
 	Groups Suffix `json:"groups"`
+	ManagementGroup Suffix `json:"management-group"`
+	Label Suffix `json:"label"`
 }
 
 type Groups struct {
@@ -398,6 +400,8 @@ var schema = Schema{
 		From:   CardFrom,
 		To:     CardTo,
 		Groups: CardGroups,
+		ManagementGroup: CardManagementGroup,
+		Label: CardLabel,
 	},
 
 	Groups: Groups{
@@ -556,6 +560,8 @@ const CardTo Suffix = ".4"
 const CardGroups Suffix = ".5"
 const CardPIN Suffix = ".6"
 const CardKind Suffix = ".7"
+const CardManagementGroup Suffix = ".8"
+const CardLabel Suffix = ".9"
 
 const GroupName Suffix = ".1"
 const GroupDoors Suffix = ".2"
