@@ -162,6 +162,19 @@ func (gg *Groups) Group(oid schema.OID) (Group, bool) {
 	return g, ok
 }
 
+func (gg *Groups) List() []Group {
+	guard.RLock()
+	defer guard.RUnlock()
+
+	list := []Group{}
+	for _, group := range gg.groups {
+		if !group.IsDeleted() {
+			list = append(list, group.clone())
+		}
+	}
+	return list
+}
+
 func (gg Groups) Print() {
 	serializable := []json.RawMessage{}
 	for _, g := range gg.groups {
