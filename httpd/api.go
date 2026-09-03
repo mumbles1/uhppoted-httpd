@@ -34,13 +34,18 @@ func (d *dispatcher) api(w http.ResponseWriter, r *http.Request) {
 
 	switch {
 	case r.URL.Path == "/api/v1/snapshot" && r.Method == http.MethodGet:
-		if !d.apiAuthorised(w, uid, role, "/controllers", "/doors") {
+		if !d.apiAuthorised(w, uid, role, "/interfaces", "/controllers", "/doors", "/cards", "/groups", "/events", "/logs") {
 			return
 		}
 		d.exec2(w, r, func() (any, error) {
 			return map[string]any{
+				"interfaces":  system.Interfaces(uid, role),
 				"controllers": system.Controllers(uid, role),
 				"doors":       system.Doors(uid, role),
+				"cards":       system.Cards(uid, role, 0, 10000),
+				"groups":      system.Groups(uid, role),
+				"events":      system.Events(uid, role, 0, 50),
+				"logs":        system.Logs(uid, role, 0, 50),
 			}, nil
 		})
 
