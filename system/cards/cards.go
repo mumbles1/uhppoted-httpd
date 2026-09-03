@@ -68,6 +68,9 @@ type ControllerImport struct {
 	From       lib.Date
 	To         lib.Date
 	Group      schema.OID
+	// PreserveDetails keeps the local dates and PIN for an existing card while
+	// still merging access discovered on the controller.
+	PreserveDetails bool
 }
 
 var guard sync.RWMutex
@@ -240,10 +243,12 @@ func (cc *Cards) MergeControllerImports(a *auth.Authorizator, records []Controll
 			continue
 		}
 
-		card.from = record.From
-		card.to = record.To
-		if withPIN {
-			card.pin = record.PIN
+		if !record.PreserveDetails {
+			card.from = record.From
+			card.to = record.To
+			if withPIN {
+				card.pin = record.PIN
+			}
 		}
 		if card.groups == nil {
 			card.groups = map[schema.OID]bool{}
