@@ -1,10 +1,13 @@
 import { DB, alive } from './db.js'
+import { schema } from './schema.js'
 
 const config = window.gateControl || {}
 const app = document.getElementById('app')
 const notice = document.getElementById('notice')
 const connectionDot = document.getElementById('connection-dot')
 const connectionLabel = document.getElementById('connection-label')
+const controllerDialog = document.getElementById('controller-dialog')
+const controllerForm = document.getElementById('controller-form')
 const routes = ['overview', 'controllers', 'doors', 'cards', 'groups', 'events', 'logs']
 
 let loading = false
@@ -88,7 +91,13 @@ function controllerRows(list = records(DB.controllers)) {
     <td>${display(controller.cards?.cards, '0')}</td>
     <td>${display(controller.events?.last, '0')}</td>
     <td>${statusBadge(controller.address?.status || controller.status)}</td>
+    <td><button class="secondary" data-edit-controller="${escapeHTML(controller.OID)}" ${config.mode === 'monitor' ? 'disabled' : ''}>Configure</button></td>
   </tr>`)
+}
+
+function controllerCapacity(controller) {
+  const modelDoors = Number(`${controller?.deviceID || ''}`.trim()[0])
+  return [1, 2, 4].includes(modelDoors) ? modelDoors : 4
 }
 
 function controllerForDoor(doorOID) {
@@ -100,8 +109,7 @@ function controllerDoors() {
   const assigned = new Set()
 
   records(DB.controllers).forEach((controller) => {
-    const modelDoors = Number(`${controller.deviceID || ''}`.trim()[0])
-    const capacity = [1, 2, 4].includes(modelDoors) ? modelDoors : 4
+    const capacity = controllerCapacity(controller)
     for (let channel = 1; channel <= capacity; channel += 1) {
       const doorOID = controller.doors?.[channel] || ''
       const door = doorOID ? DB.doors.get(doorOID) : null
@@ -177,7 +185,7 @@ function overview() {
     <div class="stat"><span>Access groups</span><strong>${groups.length}</strong></div>
   </div>
   <div class="two-column">
-    ${panel('Controllers', 'Connected access-control hardware', ['Controller', 'ID', 'Protocol', 'Cards', 'Events', 'Status'], controllerRows(controllers))}
+    ${panel('Controllers', 'Connected access-control hardware', ['Controller', 'ID', 'Protocol', 'Cards', 'Events', 'Status', ''], controllerRows(controllers))}
     ${panel('Recent events', 'Latest controller activity', ['Time', 'Controller', 'Door', 'Card', 'Access', 'Reason'], eventRows().slice(0, 8))}
   </div>`
 }
@@ -185,7 +193,7 @@ function overview() {
 function render() {
   updateNavigation()
   switch (currentRoute()) {
-    case 'controllers': app.innerHTML = panel('Controllers', 'Controller health and configuration', ['Controller', 'ID', 'Protocol', 'Cards', 'Events', 'Status'], controllerRows()); break
+    case 'controllers': app.innerHTML = panel('Controllers', 'Controller health and configuration', ['Controller', 'ID', 'Protocol', 'Cards', 'Events', 'Status', ''], controllerRows()); break
     case 'doors': app.innerHTML = panel('Doors', config.mode === 'monitor' ? 'Monitor mode — controls are disabled' : 'Live door state and controls', ['Door', 'Mode', 'Delay', 'Keypad', 'Status', 'Controls'], doorRows()); break
     case 'cards': app.innerHTML = panel('Cards', 'Cardholders and validity periods', ['Cardholder', 'Card number', 'Valid from', 'Valid to', 'Groups', 'Status'], cardRows()); break
     case 'groups': app.innerHTML = panel('Groups', 'Door access assignments', ['Group', 'Doors', 'First-card', 'Status'], groupRows()); break
@@ -195,6 +203,81 @@ function render() {
   }
 
   document.querySelectorAll('[data-mode][data-door], [data-mode][data-controller][data-channel]').forEach((button) => button.addEventListener('click', controlDoor))
+  document.querySelectorAll('[data-edit-controller]').forEach((button) => button.addEventListener('click', editController))
+}
+
+function editController(event) {
+  const controller = DB.controllers.get(event.currentTarget.dataset.editController)
+  if (!controller) {
+    showNotice('Controller configuration could not be loaded.', true)
+    return
+  }
+
+  controllerForm.dataset.oid = controller.OID
+  controllerForm.elements.name.value = controller.name || ''
+  controllerForm.elements.deviceID.value = controller.deviceID || ''
+  controllerForm.elements.address.value = controller.address?.configured || controller.address?.address || ''
+  controllerForm.elements.protocol.value = controller.protocol === 'tcp' ? 'tcp' : 'udp'
+  controllerForm.elements.interlock.value = controller.interlock || '0'
+  controllerForm.elements.antipassback.value = controller.antipassback?.antipassback || '0'
+  document.getElementById('controller-editor-title').textContent = controller.name || `Controller ${controller.deviceID}`
+
+  const logicalDoors = records(DB.doors)
+  const capacity = controllerCapacity(controller)
+  document.getElementById('controller-door-fields').innerHTML = Array.from({ length: capacity }, (_, index) => {
+    const channel = index + 1
+    const selected = controller.doors?.[channel] || ''
+    const options = [`<option value="">Unassigned</option>`, ...logicalDoors.map((door) => `<option value="${escapeHTML(door.OID)}" ${door.OID === selected ? 'selected' : ''}>${display(door.name, `Door ${door.OID}`)}</option>`)]
+    return `<label><span>Physical door ${channel}</span><select name="door${channel}">${options.join('')}</select></label>`
+  }).join('')
+
+  controllerDialog.showModal()
+}
+
+async function saveController(event) {
+  event.preventDefault()
+  const oid = controllerForm.dataset.oid
+  const controller = DB.controllers.get(oid)
+  if (!controller) return
+
+  const updates = []
+  const changed = (suffix, value, original) => {
+    if (`${value ?? ''}` !== `${original ?? ''}`) updates.push({ oid: `${oid}${suffix}`, value: `${value ?? ''}` })
+  }
+
+  changed(schema.controllers.name, controllerForm.elements.name.value.trim(), controller.name)
+  changed(schema.controllers.deviceID, controllerForm.elements.deviceID.value.trim(), controller.deviceID)
+  changed(schema.controllers.endpoint.address, controllerForm.elements.address.value.trim(), controller.address?.configured)
+  changed(schema.controllers.endpoint.protocol, controllerForm.elements.protocol.value, controller.protocol)
+  changed(schema.controllers.interlock, controllerForm.elements.interlock.value, controller.interlock)
+  changed(schema.controllers.antipassback.antipassback, controllerForm.elements.antipassback.value, controller.antipassback?.antipassback)
+
+  for (let channel = 1; channel <= 4; channel += 1) {
+    const field = controllerForm.elements[`door${channel}`]
+    if (field) changed(schema.controllers[`door${channel}`], field.value, controller.doors?.[channel])
+  }
+
+  if (!updates.length) {
+    controllerDialog.close()
+    return
+  }
+
+  const saveButton = document.getElementById('controller-editor-save')
+  saveButton.disabled = true
+  try {
+    const response = await fetch('/controllers', {
+      method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ created: [], updated: updates, deleted: [] }),
+    })
+    if (!response.ok) throw new Error((await response.text()) || `Controller update failed (${response.status})`)
+    controllerDialog.close()
+    showNotice('Controller configuration saved.')
+    await load()
+  } catch (error) {
+    showNotice(error.message || 'Controller update failed.', true)
+  } finally {
+    saveButton.disabled = false
+  }
 }
 
 async function load() {
@@ -245,6 +328,9 @@ async function controlDoor(event) {
 }
 
 document.getElementById('refresh-button').addEventListener('click', load)
+controllerForm.addEventListener('submit', saveController)
+document.getElementById('controller-editor-close').addEventListener('click', () => controllerDialog.close())
+document.getElementById('controller-editor-cancel').addEventListener('click', () => controllerDialog.close())
 document.getElementById('menu-button').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'))
 document.getElementById('signout-button').addEventListener('click', async () => {
   await fetch('/logout', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}' })
