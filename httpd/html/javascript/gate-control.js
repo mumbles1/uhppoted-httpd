@@ -21,6 +21,7 @@ const accessWeekdays = [
   ['monday', 'Mon'], ['tuesday', 'Tue'], ['wednesday', 'Wed'], ['thursday', 'Thu'],
   ['friday', 'Fri'], ['saturday', 'Sat'], ['sunday', 'Sun'],
 ]
+const permanentAccessLevels = new Set(['0.5.254', '0.5.255'])
 
 let loading = false
 let emptyCardRetries = 0
@@ -214,11 +215,15 @@ function cardRows(list = records(DB.cards)) {
 }
 
 function groupRows(list = records(DB.groups)) {
-  return list.map((group) => {
-    const permitted = [...(group.doors?.values?.() || [])].filter((door) => door.allowed).length
-    return `<tr><td class="name-cell"><strong>${display(group.name, 'Unnamed access level')}</strong><small>${display(group.OID)}</small></td><td>${permitted}</td><td>${displayAccessSchedule(group.schedule)}</td><td>${group.firstcard ? 'Yes' : 'No'}</td><td>${statusBadge(group.status)}</td><td><button class="secondary" data-edit-group="${escapeHTML(group.OID)}" ${config.mode === 'monitor' ? 'disabled' : ''}>Configure</button></td></tr>`
-  })
+	return [...list].sort((a, b) => accessLevelOrder(a) - accessLevelOrder(b)).map((group) => {
+		const permitted = [...(group.doors?.values?.() || [])].filter((door) => door.allowed).length
+		const action = isPermanentAccessLevel(group) ? '<span class="badge">Permanent</span>' : `<button class="secondary" data-edit-group="${escapeHTML(group.OID)}" ${config.mode === 'monitor' ? 'disabled' : ''}>Configure</button>`
+		return `<tr><td class="name-cell"><strong>${display(group.name, 'Unnamed access level')}</strong><small>${display(group.OID)}</small></td><td>${permitted}</td><td>${displayAccessSchedule(group.schedule)}</td><td>${group.firstcard ? 'Yes' : 'No'}</td><td>${statusBadge(group.status)}</td><td>${action}</td></tr>`
+	})
 }
+
+function isPermanentAccessLevel(group) { return permanentAccessLevels.has(`${group?.OID || ''}`) }
+function accessLevelOrder(group) { return group?.OID === '0.5.254' ? -2 : group?.OID === '0.5.255' ? -1 : 0 }
 
 function displayAccessSchedule(schedule) {
   if (!schedule?.enabled) return 'Any time'
@@ -850,7 +855,11 @@ function selectedGroupSchedule() {
 }
 
 function editGroup(event) {
-  const group = event.currentTarget.dataset.editGroup ? DB.groups.get(event.currentTarget.dataset.editGroup) : null
+	const group = event.currentTarget.dataset.editGroup ? DB.groups.get(event.currentTarget.dataset.editGroup) : null
+	if (isPermanentAccessLevel(group)) {
+		showNotice(`${group.name} is permanent and cannot be configured.`)
+		return
+	}
   groupForm.dataset.oid = group?.OID || ''
   groupForm.elements.name.value = group?.name || ''
   groupForm.elements.firstcard.checked = Boolean(group?.firstcard)
