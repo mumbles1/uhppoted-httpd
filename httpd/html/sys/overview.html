@@ -21,7 +21,7 @@
           <a href="/sys/overview.html" data-route="overview"><span>Overview</span><b id="count-overview">—</b></a>
           <a href="/sys/controllers.html" data-route="controllers"><span>Controllers</span><b id="count-controllers">—</b></a>
           <a href="/sys/doors.html" data-route="doors"><span>Relays</span><b id="count-doors">—</b></a>
-          <a href="/sys/cards.html" data-route="cards"><span>Cards</span><b id="count-cards">—</b></a>
+          <a href="/sys/cards.html" data-route="cards"><span>Credentials</span><b id="count-cards">—</b></a>
           <a href="/sys/groups.html" data-route="groups"><span>Groups</span><b id="count-groups">—</b></a>
           <a href="/sys/events.html" data-route="events"><span>Events</span><b id="count-events">—</b></a>
           <a href="/sys/logs.html" data-route="logs"><span>Audit log</span><b id="count-logs">—</b></a>
@@ -112,11 +112,12 @@
     <dialog id="card-dialog" class="editor-dialog">
       <form id="card-form">
         <div class="dialog-heading">
-          <div><p class="eyebrow">CARD CONFIGURATION</p><h2 id="card-editor-title">Add card</h2></div>
+          <div><p class="eyebrow">CREDENTIAL CONFIGURATION</p><h2 id="card-editor-title">Add credential</h2></div>
           <button type="button" class="icon-button" id="card-editor-close" aria-label="Close">&times;</button>
         </div>
         <div class="form-grid">
-          <label class="wide"><span>Cardholder name</span><input name="name" type="text" placeholder="Jane Smith" required></label>
+          <label class="wide"><span>Name / description</span><input name="name" type="text" placeholder="Jane Smith or Gate remote 12" required></label>
+          <label><span>Credential type</span><select name="kind"><option value="card">Card</option><option value="rf-remote">RF Remote</option><option value="keypad-code">Keypad Code</option></select></label>
           <label><span>Controller decimal ID</span><input name="number" type="text" inputmode="numeric" pattern="[1-9][0-9]*" placeholder="12345678" required></label>
           <label><span>PIN (optional)</span><input name="PIN" type="number" min="0" max="999999" placeholder="Optional"></label>
           <label><span>Facility code (FC)</span><input name="facilityCode" type="number" min="0" max="255" placeholder="0–255"></label>
@@ -125,14 +126,14 @@
           <label><span>Valid until</span><input name="to" type="date" required></label>
         </div>
         <div class="door-mapping-heading heading-with-action">
-          <div><h3>Access groups</h3><p>Assign this card to one or more groups. Group relay permissions determine where it works.</p></div>
+          <div><h3>Access groups</h3><p>Assign this credential to one or more groups. Group relay permissions determine where it works.</p></div>
           <button type="button" class="secondary" id="card-group-add">Add access group</button>
         </div>
         <div class="choice-grid" id="card-group-fields"></div>
         <div class="dialog-actions">
-          <button type="button" class="danger delete-action hidden" id="card-editor-delete">Delete card</button>
+          <button type="button" class="danger delete-action hidden" id="card-editor-delete">Delete credential</button>
           <button type="button" class="secondary" id="card-editor-cancel">Cancel</button>
-          <button type="submit" class="primary" id="card-editor-save">Save card</button>
+          <button type="submit" class="primary" id="card-editor-save">Save credential</button>
         </div>
       </form>
     </dialog>
