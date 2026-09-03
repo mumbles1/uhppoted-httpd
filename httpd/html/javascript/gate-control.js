@@ -54,9 +54,9 @@ function updateNavigation() {
   document.getElementById('page-title').textContent = route === 'overview' ? 'Overview' : route === 'logs' ? 'Audit log' : route[0].toUpperCase() + route.slice(1)
 
   const counts = {
-    overview: records(DB.controllers).length + records(DB.doors).length,
+    overview: records(DB.controllers).length + controllerDoors().length,
     controllers: records(DB.controllers).length,
-    doors: records(DB.doors).length,
+    doors: controllerDoors().length,
     cards: records(DB.cards).length,
     groups: records(DB.groups).length,
     events: records(DB.events()).length,
@@ -95,20 +95,44 @@ function controllerForDoor(doorOID) {
   return records(DB.controllers).find((controller) => Object.values(controller.doors || {}).includes(doorOID))
 }
 
-function doorRows(list = records(DB.doors)) {
-  return list.map((door) => {
-    const controller = controllerForDoor(door.OID)
+function controllerDoors() {
+  const rows = []
+  const assigned = new Set()
+
+  records(DB.controllers).forEach((controller) => {
+    const modelDoors = Number(`${controller.deviceID || ''}`.trim()[0])
+    const capacity = [1, 2, 4].includes(modelDoors) ? modelDoors : 4
+    for (let channel = 1; channel <= capacity; channel += 1) {
+      const doorOID = controller.doors?.[channel] || ''
+      const door = doorOID ? DB.doors.get(doorOID) : null
+      if (doorOID) assigned.add(doorOID)
+      rows.push({ controller, channel, door })
+    }
+  })
+
+  records(DB.doors).forEach((door) => {
+    if (!assigned.has(door.OID)) rows.push({ controller: controllerForDoor(door.OID), channel: null, door })
+  })
+
+  return rows
+}
+
+function doorRows(list = controllerDoors()) {
+  return list.map(({ controller, channel, door }) => {
     const disabled = config.mode === 'monitor' ? 'disabled' : ''
+    const controllerName = controller?.name || (controller?.deviceID ? `Controller ${controller.deviceID}` : 'Unassigned')
+    const doorName = door?.name || (channel ? `Door ${channel}` : 'Unnamed door')
+    const target = door ? `data-door="${escapeHTML(door.OID)}"` : `data-controller="${escapeHTML(controller?.deviceID)}" data-channel="${channel}"`
     return `<tr>
-      <td class="name-cell"><strong>${display(door.name, 'Unnamed door')}</strong><small>${display(controller?.name, controller?.deviceID ? `Controller ${controller.deviceID}` : 'Unassigned')}</small></td>
-      <td>${display(door.mode?.mode)}</td>
-      <td>${display(door.delay?.delay, '0')}s</td>
-      <td>${door.keypad ? 'Enabled' : 'Disabled'}</td>
-      <td>${statusBadge(door.mode?.status || door.status)}</td>
+      <td class="name-cell"><strong>${display(doorName)}</strong><small>${display(controllerName)}${controller?.deviceID ? ` · ${escapeHTML(controller.deviceID)}` : ''}</small></td>
+      <td>${display(door?.mode?.mode, door ? 'Unknown' : 'Not configured')}</td>
+      <td>${door ? `${display(door.delay?.delay, '0')}s` : '—'}</td>
+      <td>${door ? (door.keypad ? 'Enabled' : 'Disabled') : '—'}</td>
+      <td>${statusBadge(door?.mode?.status || door?.status || controller?.status)}</td>
       <td><div class="door-actions">
-        <button class="primary" data-door="${escapeHTML(door.OID)}" data-mode="normally open" ${disabled}>Unlock</button>
-        <button class="secondary" data-door="${escapeHTML(door.OID)}" data-mode="controlled" ${disabled}>Controlled</button>
-        <button class="danger" data-door="${escapeHTML(door.OID)}" data-mode="normally closed" ${disabled}>Lock</button>
+        <button class="primary" ${target} data-mode="normally open" ${disabled}>Unlock</button>
+        <button class="secondary" ${target} data-mode="controlled" ${disabled}>Controlled</button>
+        <button class="danger" ${target} data-mode="normally closed" ${disabled}>Lock</button>
       </div></td>
     </tr>`
   })
@@ -143,7 +167,7 @@ function logRows(list = records(DB.logs())) {
 
 function overview() {
   const controllers = records(DB.controllers)
-  const doors = records(DB.doors)
+  const doors = controllerDoors()
   const cards = records(DB.cards)
   const groups = records(DB.groups)
   return `<div class="stats">
@@ -170,7 +194,7 @@ function render() {
     default: app.innerHTML = overview()
   }
 
-  document.querySelectorAll('[data-door][data-mode]').forEach((button) => button.addEventListener('click', controlDoor))
+  document.querySelectorAll('[data-mode][data-door], [data-mode][data-controller][data-channel]').forEach((button) => button.addEventListener('click', controlDoor))
 }
 
 async function load() {
@@ -206,7 +230,9 @@ async function controlDoor(event) {
   try {
     const response = await fetch('/api/v1/doors/control', {
       method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ door: button.dataset.door, mode: button.dataset.mode }),
+      body: JSON.stringify(button.dataset.door
+        ? { door: button.dataset.door, mode: button.dataset.mode }
+        : { controller: button.dataset.controller, channel: Number(button.dataset.channel), mode: button.dataset.mode }),
     })
     if (!response.ok) throw new Error((await response.text()) || `Door control failed (${response.status})`)
     showNotice(`Door command accepted: ${button.dataset.mode}.`)
