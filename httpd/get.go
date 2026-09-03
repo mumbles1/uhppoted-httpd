@@ -203,6 +203,7 @@ func (d *dispatcher) getWithAuth(w http.ResponseWriter, r *http.Request) {
 		"Theme":         parseSettings(r),
 		"Mode":          d.mode,
 		"User":          uid,
+		"GateControlURL": strings.TrimSpace(os.Getenv("GATE_CONTROL_URL")),
 		"CanManageUsers": d.authorised(uid, role, "/users"),
 		"Options":       options,
 		"WithPIN":       d.options.WithPIN,
