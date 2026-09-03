@@ -427,6 +427,14 @@ func (ii *Interfaces) CompareACL(controllers []types.IController, permissions ac
 	return nil, nil
 }
 
+func (ii *Interfaces) ControllerACL(controllers []types.IController) (acl.ACL, []error) {
+	if lan, ok := ii.LAN(); ok {
+		return lan.controllerACL(controllers)
+	}
+
+	return nil, []error{fmt.Errorf("no LAN interface configured")}
+}
+
 func lock(id uint32) {
 	g := sync.Mutex{}
 	if guard, _ := guards.LoadOrStore(id, &g); guard != nil {
@@ -439,3 +447,4 @@ func unlock(id uint32) {
 		guard.(*sync.Mutex).Unlock()
 	}
 }
+	
