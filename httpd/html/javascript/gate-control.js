@@ -21,7 +21,9 @@ const groupDialog = document.getElementById('group-dialog')
 const groupForm = document.getElementById('group-form')
 const backupDialog = document.getElementById('backup-dialog')
 const controllerImportDialog = document.getElementById('controller-import-dialog')
-const routes = ['overview', 'controllers', 'doors', 'cards', 'groups', 'events', 'logs']
+const userDialog = document.getElementById('user-dialog')
+const userForm = document.getElementById('user-form')
+const routes = ['overview', 'controllers', 'doors', 'cards', 'groups', 'events', 'logs', 'users']
 const accessWeekdays = [
   ['monday', 'Mon'], ['tuesday', 'Tue'], ['wednesday', 'Wed'], ['thursday', 'Thu'],
   ['friday', 'Fri'], ['saturday', 'Sat'], ['sunday', 'Sun'],
@@ -95,7 +97,7 @@ document.querySelectorAll('dialog').forEach((dialog) => dialog.addEventListener(
 function updateNavigation() {
   const route = currentRoute()
   document.querySelectorAll('[data-route]').forEach((link) => link.classList.toggle('active', link.dataset.route === route))
-  document.getElementById('page-title').textContent = route === 'overview' ? 'Overview' : route === 'logs' ? 'Audit log' : route === 'doors' ? 'Relays' : route === 'cards' ? 'Credentials' : route === 'groups' ? 'Access Levels' : route[0].toUpperCase() + route.slice(1)
+  document.getElementById('page-title').textContent = route === 'overview' ? 'Overview' : route === 'logs' ? 'Audit log' : route === 'doors' ? 'Relays' : route === 'cards' ? 'Credentials' : route === 'groups' ? 'Access Levels' : route === 'users' ? 'Login Accounts' : route[0].toUpperCase() + route.slice(1)
 
   const counts = {
     overview: records(DB.controllers).length + controllerDoors().length,
@@ -105,6 +107,7 @@ function updateNavigation() {
     groups: records(DB.groups).length,
     events: records(DB.events()).length,
     logs: records(DB.logs()).length,
+    users: records(DB.users()).length,
   }
   Object.entries(counts).forEach(([key, value]) => {
     const element = document.getElementById(`count-${key}`)
@@ -646,6 +649,16 @@ function logRows(list = records(DB.logs())) {
   return list.sort((a, b) => `${b.timestamp}`.localeCompare(`${a.timestamp}`)).map((entry) => `<tr><td>${display(entry.timestamp)}</td><td>${display(entry.uid)}</td><td>${display(entry.item?.type)}</td><td>${display(entry.item?.details)}</td></tr>`)
 }
 
+function userRows(list = records(DB.users())) {
+  return list.sort((a, b) => `${a.name || a.uid}`.localeCompare(`${b.name || b.uid}`)).map((user) => {
+    const otp = `${user.otp}` === 'true' ? '<span class="badge">Enabled</span>' : '<span class="badge warn">Not enabled</span>'
+    const status = `${user.locked}` === 'true' ? '<span class="badge warn">Locked</span>' : '<span class="badge">Active</span>'
+    const current = `${user.uid}` === `${config.user}` ? ' <span class="badge">Current</span>' : ''
+    const action = config.canManageUsers && config.mode !== 'monitor' ? `<button class="secondary" data-edit-user="${escapeHTML(user.OID)}">Configure</button>` : ''
+    return `<tr><td class="name-cell"><strong>${display(user.name, user.uid)}</strong><small>${display(user.uid)}</small></td><td>${display(user.role)}${current}</td><td>${otp}</td><td>${status}</td><td>${action}</td></tr>`
+  })
+}
+
 function overview() {
   const controllers = records(DB.controllers)
   const doors = controllerDoors()
@@ -674,6 +687,7 @@ function render() {
     case 'groups': app.innerHTML = panel('Access Levels', 'Controller-native relay access assignments', ['Access level', 'Relays', 'Time restriction', 'First-card', 'Status', ''], groupRows()); break
     case 'events': app.innerHTML = panel('Events', 'Recent controller events', ['Event #', 'Time', 'Controller', 'Door', 'Credential', 'Type', 'Access', 'Reason'], eventRows()); break
     case 'logs': app.innerHTML = panel('Audit log', 'Recent configuration changes', ['Time', 'User', 'Item', 'Details'], logRows()); break
+    case 'users': app.innerHTML = panel('Login Accounts', 'Manage who can sign in and what they can administer', ['Account', 'Role', 'OTP', 'Status', ''], userRows()); break
     default: app.innerHTML = overview()
   }
 
@@ -691,6 +705,9 @@ function render() {
     const filter = document.querySelector('[data-event-type-filter]')
     if (filter) filter.value = eventTypeFilter
   }
+  if (currentRoute() === 'users' && config.canManageUsers) {
+    app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<div class="panel-tools"><button class="primary" data-add-user ${config.mode === 'monitor' ? 'disabled' : ''}>Add login account</button></div>`)
+  }
 
   document.querySelectorAll('[data-mode][data-door], [data-mode][data-controller][data-channel]').forEach((button) => button.addEventListener('click', controlDoor))
   document.querySelectorAll('[data-edit-controller]').forEach((button) => button.addEventListener('click', editController))
@@ -699,6 +716,7 @@ function render() {
   document.querySelectorAll('[data-edit-person]').forEach((button) => button.addEventListener('click', openPersonEditor))
   document.querySelectorAll('[data-manage-credentials]').forEach((button) => button.addEventListener('click', openBulkCredentialAccess))
   document.querySelectorAll('[data-add-group], [data-edit-group]').forEach((button) => button.addEventListener('click', editGroup))
+  document.querySelectorAll('[data-add-user], [data-edit-user]').forEach((button) => button.addEventListener('click', editUser))
   bindEventCredentialRows(app)
   document.querySelector('[data-group-search]')?.addEventListener('input', filterGroups)
   document.querySelector('[data-credential-search]')?.addEventListener('input', filterCredentials)
@@ -922,6 +940,86 @@ async function synchronizeHardware(path, label) {
   if (!response.ok) {
     const details = (await response.text()).trim() || `request failed (${response.status})`
     throw new Error(`${label} saved locally, but controller synchronization failed: ${details}`)
+  }
+}
+
+function editUser(event) {
+  const oid = event.currentTarget.dataset.editUser || ''
+  const user = oid ? DB.users().get(oid) : null
+  userForm.reset()
+  userForm.dataset.oid = user?.OID || ''
+  userForm.elements.name.value = user?.name || ''
+  userForm.elements.uid.value = user?.uid || ''
+  userForm.elements.role.value = user?.role === 'admin' ? 'admin' : 'user'
+  userForm.elements.password.required = !user
+  userForm.elements.confirmPassword.required = !user
+  document.getElementById('user-editor-title').textContent = user ? 'Configure login account' : 'Add login account'
+  document.getElementById('user-password-help').textContent = user ? 'Leave both password fields blank to keep the existing password.' : 'A password is required for a new account.'
+  document.getElementById('user-revoke-otp-field').classList.toggle('hidden', !user || `${user.otp}` !== 'true')
+  document.getElementById('user-unlock-field').classList.toggle('hidden', !user || `${user.locked}` !== 'true')
+  document.getElementById('user-editor-delete').classList.toggle('hidden', !user)
+  userDialog.showModal()
+}
+
+async function saveUser(event) {
+  event.preventDefault()
+  const saveButton = document.getElementById('user-editor-save')
+  saveButton.disabled = true
+  let oid = userForm.dataset.oid
+  const existing = oid ? DB.users().get(oid) : null
+
+  try {
+    const name = userForm.elements.name.value.trim()
+    const uid = userForm.elements.uid.value.trim()
+    const role = userForm.elements.role.value
+    const password = userForm.elements.password.value
+    const confirmation = userForm.elements.confirmPassword.value
+    if (!name || !uid) throw new Error('Display name and User ID are required.')
+    if (records(DB.users()).some((user) => user.OID !== existing?.OID && `${user.uid}`.trim().toLowerCase() === uid.toLowerCase())) {
+      throw new Error('That User ID is already in use.')
+    }
+    if (!existing && !password) throw new Error('Enter a password for the new account.')
+    if (password !== confirmation) throw new Error('The password confirmation does not match.')
+
+    if (!oid) {
+      const created = await postConfiguration('/users', { created: [{ oid: '<new>', value: '' }], updated: [], deleted: [] })
+      oid = created.users?.find((item) => item.value === 'new')?.OID
+      if (!oid) throw new Error('The server did not return the new account ID.')
+    }
+
+    const updates = []
+    const changed = (suffix, value, original) => {
+      if (!existing || `${value ?? ''}` !== `${original ?? ''}`) updates.push({ oid: `${oid}${suffix}`, value: `${value ?? ''}` })
+    }
+    changed(schema.users.name, name, existing?.name)
+    changed(schema.users.uid, uid, existing?.uid)
+    changed(schema.users.role, role, existing?.role)
+    if (password) updates.push({ oid: `${oid}${schema.users.password}`, value: password })
+    if (userForm.elements.revokeOTP.checked) updates.push({ oid: `${oid}${schema.users.otp}`, value: 'false' })
+    if (userForm.elements.unlock.checked) updates.push({ oid: `${oid}${schema.users.locked}`, value: 'false' })
+    if (updates.length) await postConfiguration('/users', { created: [], updated: updates, deleted: [] })
+
+    userDialog.close()
+    await load()
+    showNotice(existing ? 'Login account saved.' : 'Login account added.')
+  } catch (error) {
+    showNotice(error.message || 'Login account configuration failed.', true)
+  } finally {
+    saveButton.disabled = false
+  }
+}
+
+async function deleteUser() {
+  const oid = userForm.dataset.oid
+  const user = DB.users().get(oid)
+  if (!user || !window.confirm(`Delete the login account for ${user.name || user.uid}?`)) return
+  try {
+    await postConfiguration('/users', { created: [], updated: [], deleted: [oid] })
+    userDialog.close()
+    await load()
+    showNotice('Login account deleted.')
+  } catch (error) {
+    showNotice(error.message || 'Login account deletion failed.', true)
   }
 }
 
@@ -1667,6 +1765,7 @@ doorForm.addEventListener('submit', saveDoor)
 cardForm.addEventListener('submit', saveCard)
 personForm.addEventListener('submit', savePerson)
 credentialBulkForm.addEventListener('submit', saveBulkCredentialAccess)
+userForm.addEventListener('submit', saveUser)
 cardForm.elements.managementGroup.addEventListener('change', () => updateManagementGroupNewField(cardForm))
 document.getElementById('card-group-fields').addEventListener('change', (event) => {
   if (event.target.matches('[data-card-group]')) enforceExclusiveNoAccess(event.target)
@@ -1710,6 +1809,9 @@ document.getElementById('card-group-add').addEventListener('click', () => editGr
 document.getElementById('group-editor-close').addEventListener('click', () => groupDialog.close())
 document.getElementById('group-editor-cancel').addEventListener('click', () => groupDialog.close())
 document.getElementById('group-editor-delete').addEventListener('click', deleteGroup)
+document.getElementById('user-editor-close').addEventListener('click', () => userDialog.close())
+document.getElementById('user-editor-cancel').addEventListener('click', () => userDialog.close())
+document.getElementById('user-editor-delete').addEventListener('click', deleteUser)
 document.getElementById('backup-create').addEventListener('click', createBackup)
 document.getElementById('backup-file').addEventListener('change', importBackup)
 document.getElementById('controller-import-apply').addEventListener('click', applyControllerImport)
