@@ -65,12 +65,14 @@ function openHelp(event) {
 }
 
 function returnToGateControl() {
-  const configuredURL = `${config.gateControlURL || ''}`.trim()
+  const configuredURL = normalizeGateControlURL(config.gateControlURL)
   if (configuredURL) {
     try {
-      window.location.assign(new URL(configuredURL).href)
+      const destination = new URL(configuredURL)
+      if (!['http:', 'https:'].includes(destination.protocol)) throw new Error('unsupported protocol')
+      window.location.assign(destination.href)
     } catch {
-      showNotice('GATE_CONTROL_URL is not a valid complete URL.', true)
+      showNotice('Gate Control address is invalid. Use an address like 192.168.0.208:PORT or http://192.168.0.208:PORT.', true)
     }
     return
   }
@@ -92,6 +94,19 @@ function returnToGateControl() {
   } else {
     showNotice('Gate Control address is not configured. Set GATE_CONTROL_URL on the container.', true)
   }
+}
+
+function normalizeGateControlURL(value) {
+  let address = `${value || ''}`.trim()
+
+  // CasaOS may retain quotes copied from compose examples. Accept those values
+  // and also accept the common host:port form without an explicit scheme.
+  if ((address.startsWith('"') && address.endsWith('"')) || (address.startsWith("'") && address.endsWith("'"))) {
+    address = address.slice(1, -1).trim()
+  }
+  if (address && !/^[a-z][a-z\d+.-]*:\/\//i.test(address)) address = `http://${address}`
+
+  return address
 }
 
 function records(source) {
