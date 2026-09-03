@@ -286,12 +286,5 @@ func (e *Event) deserialize(bytes []byte) error {
 }
 
 func (e Event) clone() Event {
-	event := Event{
-		CatalogEvent: catalog.CatalogEvent{
-			OID: e.OID,
-		},
-		Timestamp: e.Timestamp,
-	}
-
-	return event
+	return e
 }
