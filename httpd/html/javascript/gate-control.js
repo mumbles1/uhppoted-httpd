@@ -158,9 +158,10 @@ function doorRows(list = controllerDoors()) {
 function cardRows(list = records(DB.cards)) {
   return list.map((card) => {
     const memberships = [...(card.groups?.values?.() || [])].filter((group) => group.member).length
+    const credential = formatCredential(card.number)
     return `<tr>
       <td class="name-cell"><strong>${display(card.name, 'Unnamed cardholder')}</strong><small>${display(card.OID)}</small></td>
-      <td>${display(card.number)}</td><td>${display(card.from)}</td><td>${display(card.to)}</td><td>${memberships}</td><td>${statusBadge(card.status)}</td>
+      <td>${credential ? `<span class="name-cell"><strong>FC ${credential.facilityCode} · CD ${credential.cardNumber}</strong><small>Controller ID ${escapeHTML(credential.raw)}</small></span>` : display(card.number)}</td><td>${display(card.from)}</td><td>${display(card.to)}</td><td>${memberships}</td><td>${statusBadge(card.status)}</td>
       <td><button class="secondary" data-edit-card="${escapeHTML(card.OID)}" ${config.mode === 'monitor' ? 'disabled' : ''}>Configure</button></td>
     </tr>`
   })
@@ -201,8 +202,43 @@ function formatEventTime(value) {
 function eventCard(event) {
   const number = `${event.card || ''}`.trim()
   const name = `${event.cardName || ''}`.trim()
-  if (name && number && number !== '0') return `<span class="name-cell"><strong>${escapeHTML(name)}</strong><small>Card ${escapeHTML(number)}</small></span>`
+  const credential = formatCredential(number)
+  if (name && credential) return `<span class="name-cell"><strong>${escapeHTML(name)}</strong><small>FC ${credential.facilityCode} · CD ${credential.cardNumber} · Controller ID ${escapeHTML(credential.raw)}</small></span>`
+  if (credential) return `<span class="name-cell"><strong>FC ${credential.facilityCode} · CD ${credential.cardNumber}</strong><small>Controller ID ${escapeHTML(credential.raw)}</small></span>`
+  if (name && number && number !== '0') return `<span class="name-cell"><strong>${escapeHTML(name)}</strong><small>Controller ID ${escapeHTML(number)}</small></span>`
+  if (number && number !== '0') return `<span class="name-cell"><strong>Card ${escapeHTML(number)}</strong></span>`
   return display(number && number !== '0' ? number : '', '—')
+}
+
+function formatCredential(value) {
+  const wiegand = decodeWiegand26(value)
+  if (!wiegand || `${value}`.trim() === '0') return null
+  return { raw: `${value}`.trim(), ...wiegand }
+}
+
+function decodeWiegand26(value) {
+  const raw = `${value ?? ''}`.trim()
+  if (!raw) return null
+  const number = Number(raw)
+  if (!Number.isSafeInteger(number) || number < 0 || number > 0xffffff) return null
+  return { facilityCode: Math.floor(number / 65536), cardNumber: number % 65536 }
+}
+
+function populateFacilityCard(value) {
+  const wiegand = decodeWiegand26(value)
+  cardForm.elements.facilityCode.value = wiegand?.facilityCode ?? ''
+  cardForm.elements.cardNumber.value = wiegand?.cardNumber ?? ''
+}
+
+function populateDecimalCard() {
+  const facilityCode = cardForm.elements.facilityCode.value
+  const cardNumber = cardForm.elements.cardNumber.value
+  if (facilityCode === '' || cardNumber === '') return
+  const fc = Number(facilityCode)
+  const cn = Number(cardNumber)
+  if (Number.isInteger(fc) && fc >= 0 && fc <= 255 && Number.isInteger(cn) && cn >= 0 && cn <= 65535) {
+    cardForm.elements.number.value = `${fc * 65536 + cn}`
+  }
 }
 
 function logRows(list = records(DB.logs())) {
@@ -451,6 +487,7 @@ function editCard(event) {
   cardForm.dataset.oid = card?.OID || ''
   cardForm.elements.name.value = card?.name || ''
   cardForm.elements.number.value = card?.number || ''
+  populateFacilityCard(card?.number)
   cardForm.elements.PIN.value = card?.PIN || ''
   cardForm.elements.from.value = card?.from || defaults.from
   cardForm.elements.to.value = card?.to || defaults.to
@@ -897,6 +934,9 @@ document.getElementById('refresh-button').addEventListener('click', manualRefres
 controllerForm.addEventListener('submit', saveController)
 doorForm.addEventListener('submit', saveDoor)
 cardForm.addEventListener('submit', saveCard)
+cardForm.elements.number.addEventListener('input', () => populateFacilityCard(cardForm.elements.number.value))
+cardForm.elements.facilityCode.addEventListener('input', populateDecimalCard)
+cardForm.elements.cardNumber.addEventListener('input', populateDecimalCard)
 groupForm.addEventListener('submit', saveGroup)
 doorForm.elements.controller.addEventListener('change', () => refreshDoorChannels())
 document.getElementById('controller-editor-close').addEventListener('click', () => controllerDialog.close())
