@@ -102,6 +102,29 @@
       </form>
     </dialog>
 
+    <dialog id="card-dialog" class="editor-dialog">
+      <form id="card-form">
+        <div class="dialog-heading">
+          <div><p class="eyebrow">CARD CONFIGURATION</p><h2 id="card-editor-title">Add card</h2></div>
+          <button type="button" class="icon-button" id="card-editor-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="form-grid">
+          <label class="wide"><span>Cardholder name</span><input name="name" type="text" placeholder="Jane Smith" required></label>
+          <label><span>Card number</span><input name="number" type="text" inputmode="numeric" pattern="[1-9][0-9]*" placeholder="12345678" required></label>
+          <label><span>PIN (optional)</span><input name="PIN" type="number" min="0" max="999999" placeholder="Optional"></label>
+          <label><span>Valid from</span><input name="from" type="date" required></label>
+          <label><span>Valid until</span><input name="to" type="date" required></label>
+        </div>
+        <div class="door-mapping-heading"><h3>Access groups</h3><p>Assign this card to one or more groups. Group door permissions determine where it works.</p></div>
+        <div class="choice-grid" id="card-group-fields"></div>
+        <div class="dialog-actions">
+          <button type="button" class="danger delete-action hidden" id="card-editor-delete">Delete card</button>
+          <button type="button" class="secondary" id="card-editor-cancel">Cancel</button>
+          <button type="submit" class="primary" id="card-editor-save">Save card</button>
+        </div>
+      </form>
+    </dialog>
+
     <script>
       window.gateControl = {
         mode: {{printf "%q" $.context.Mode}},
