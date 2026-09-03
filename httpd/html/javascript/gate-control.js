@@ -319,6 +319,9 @@ async function saveDoor(event) {
     doorDialog.close()
     showNotice(existing ? 'Door configuration saved.' : 'Door added and assigned.')
     await load()
+    const returnController = DB.controllers.get(doorDialog.dataset.returnController)
+    if (returnController && controllerDialog.open) renderControllerDoors(returnController)
+    delete doorDialog.dataset.returnController
   } catch (error) {
     showNotice(error.message || 'Door configuration failed.', true)
   } finally {
@@ -355,6 +358,9 @@ async function deleteDoor() {
     doorDialog.close()
     showNotice(`${name} deleted.`)
     await load()
+    const returnController = DB.controllers.get(doorDialog.dataset.returnController)
+    if (returnController && controllerDialog.open) renderControllerDoors(returnController)
+    delete doorDialog.dataset.returnController
   } catch (error) {
     showNotice(error.message || 'Door deletion failed.', true)
   } finally {
@@ -469,6 +475,41 @@ async function deleteCard() {
   }
 }
 
+function renderControllerDoors(controller) {
+  const logicalDoors = records(DB.doors)
+  const capacity = controllerCapacity(controller)
+  document.getElementById('controller-door-fields').innerHTML = Array.from({ length: capacity }, (_, index) => {
+    const channel = index + 1
+    const selected = controller.doors?.[channel] || ''
+    const options = [`<option value="">Unassigned</option>`, ...logicalDoors.map((door) => `<option value="${escapeHTML(door.OID)}" ${door.OID === selected ? 'selected' : ''}>${display(door.name, `Door ${door.OID}`)}</option>`)]
+    return `<div class="controller-door-field">
+      <label><span>Physical door ${channel}</span><select name="door${channel}">${options.join('')}</select></label>
+      <button type="button" class="secondary" data-configure-controller-door="${channel}">${selected ? 'Configure' : 'Add door'}</button>
+    </div>`
+  }).join('')
+
+  document.querySelectorAll('[data-configure-controller-door]').forEach((button) => button.addEventListener('click', editControllerDoor))
+  document.querySelectorAll('#controller-door-fields select').forEach((select) => select.addEventListener('change', () => {
+    select.closest('.controller-door-field').querySelector('button').textContent = select.value ? 'Configure' : 'Add door'
+  }))
+}
+
+function editControllerDoor(event) {
+  const controller = DB.controllers.get(controllerForm.dataset.oid)
+  const channel = Number(event.currentTarget.dataset.configureControllerDoor)
+  const doorOID = controllerForm.elements[`door${channel}`]?.value || ''
+  if (!controller || !channel) return
+
+  if (doorOID) {
+    editDoor({ currentTarget: { dataset: { editDoor: doorOID } } })
+    doorForm.elements.controller.value = controller.OID
+    refreshDoorChannels(channel)
+  } else {
+    editDoor({ currentTarget: { dataset: { controllerOid: controller.OID, channel: `${channel}` } } })
+  }
+  doorDialog.dataset.returnController = controller.OID
+}
+
 function editController(event) {
   const controller = DB.controllers.get(event.currentTarget.dataset.editController)
   if (!controller) {
@@ -484,15 +525,7 @@ function editController(event) {
   controllerForm.elements.interlock.value = controller.interlock || '0'
   controllerForm.elements.antipassback.value = controller.antipassback?.antipassback || '0'
   document.getElementById('controller-editor-title').textContent = controller.name || `Controller ${controller.deviceID}`
-
-  const logicalDoors = records(DB.doors)
-  const capacity = controllerCapacity(controller)
-  document.getElementById('controller-door-fields').innerHTML = Array.from({ length: capacity }, (_, index) => {
-    const channel = index + 1
-    const selected = controller.doors?.[channel] || ''
-    const options = [`<option value="">Unassigned</option>`, ...logicalDoors.map((door) => `<option value="${escapeHTML(door.OID)}" ${door.OID === selected ? 'selected' : ''}>${display(door.name, `Door ${door.OID}`)}</option>`)]
-    return `<label><span>Physical door ${channel}</span><select name="door${channel}">${options.join('')}</select></label>`
-  }).join('')
+  renderControllerDoors(controller)
 
   controllerDialog.showModal()
 }
@@ -597,8 +630,14 @@ cardForm.addEventListener('submit', saveCard)
 doorForm.elements.controller.addEventListener('change', () => refreshDoorChannels())
 document.getElementById('controller-editor-close').addEventListener('click', () => controllerDialog.close())
 document.getElementById('controller-editor-cancel').addEventListener('click', () => controllerDialog.close())
-document.getElementById('door-editor-close').addEventListener('click', () => doorDialog.close())
-document.getElementById('door-editor-cancel').addEventListener('click', () => doorDialog.close())
+document.getElementById('door-editor-close').addEventListener('click', () => {
+  doorDialog.close()
+  delete doorDialog.dataset.returnController
+})
+document.getElementById('door-editor-cancel').addEventListener('click', () => {
+  doorDialog.close()
+  delete doorDialog.dataset.returnController
+})
 document.getElementById('door-editor-delete').addEventListener('click', deleteDoor)
 document.getElementById('card-editor-close').addEventListener('click', () => cardDialog.close())
 document.getElementById('card-editor-cancel').addEventListener('click', () => cardDialog.close())
