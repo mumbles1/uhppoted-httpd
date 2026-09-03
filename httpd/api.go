@@ -33,6 +33,13 @@ func (d *dispatcher) api(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch {
+	case r.URL.Path == "/api/v1/refresh" && r.Method == http.MethodPost:
+		if !d.apiAuthorised(w, uid, role, "/interfaces", "/controllers", "/doors", "/cards", "/groups", "/events", "/logs") {
+			return
+		}
+		system.Refresh()
+		writeJSON(w, parseHeader(r), map[string]any{"ok": true, "queued": true})
+
 	case r.URL.Path == "/api/v1/snapshot" && r.Method == http.MethodGet:
 		if !d.apiAuthorised(w, uid, role, "/interfaces", "/controllers", "/doors", "/cards", "/groups", "/events", "/logs") {
 			return
