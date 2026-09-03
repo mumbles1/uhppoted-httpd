@@ -176,6 +176,24 @@
       </form>
     </dialog>
 
+    <dialog id="person-dialog" class="editor-dialog">
+      <form id="person-form">
+        <div class="dialog-heading">
+          <div><p class="eyebrow">PERSON CONFIGURATION</p><h2>Edit person</h2></div>
+          <button type="button" class="icon-button" id="person-editor-close" aria-label="Close">&times;</button>
+        </div>
+        <p class="field-help" id="person-editor-summary"></p>
+        <div class="form-grid">
+          <label class="wide"><span>Full name</span><input name="name" type="text" required></label>
+          <label class="wide"><span>Management group / folder</span><input name="managementGroup" type="text" list="management-group-options" placeholder="Select an existing group or enter a new one"></label>
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="secondary" id="person-editor-cancel">Cancel</button>
+          <button type="submit" class="primary" id="person-editor-save">Save person</button>
+        </div>
+      </form>
+    </dialog>
+
     <dialog id="group-dialog" class="editor-dialog">
       <form id="group-form">
         <div class="dialog-heading">
