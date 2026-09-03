@@ -110,6 +110,8 @@ export const schema = {
     PIN: '.6',
     // {{end}}
     kind: '.7',
+    managementGroup: '.8',
+    label: '.9',
 
     regex: /^(0\.4\.[1-9][0-9]*).*$/,
     groups: /^(0\.4\.[1-9][0-9]*\.5\.[1-9][0-9]*)(\.[1-3])?$/,
