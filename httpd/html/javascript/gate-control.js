@@ -12,11 +12,14 @@ const doorDialog = document.getElementById('door-dialog')
 const doorForm = document.getElementById('door-form')
 const cardDialog = document.getElementById('card-dialog')
 const cardForm = document.getElementById('card-form')
+const groupDialog = document.getElementById('group-dialog')
+const groupForm = document.getElementById('group-form')
 const routes = ['overview', 'controllers', 'doors', 'cards', 'groups', 'events', 'logs']
 
 let loading = false
 let emptyCardRetries = 0
 let emptyCardRetryTimer = null
+let groupSearch = ''
 
 function currentRoute() {
   const name = window.location.pathname.split('/').pop()?.replace('.html', '') || 'overview'
@@ -166,8 +169,18 @@ function cardRows(list = records(DB.cards)) {
 function groupRows(list = records(DB.groups)) {
   return list.map((group) => {
     const permitted = [...(group.doors?.values?.() || [])].filter((door) => door.allowed).length
-    return `<tr><td class="name-cell"><strong>${display(group.name, 'Unnamed group')}</strong><small>${display(group.OID)}</small></td><td>${permitted}</td><td>${group.firstcard ? 'Yes' : 'No'}</td><td>${statusBadge(group.status)}</td></tr>`
+    return `<tr><td class="name-cell"><strong>${display(group.name, 'Unnamed group')}</strong><small>${display(group.OID)}</small></td><td>${permitted}</td><td>${group.firstcard ? 'Yes' : 'No'}</td><td>${statusBadge(group.status)}</td><td><button class="secondary" data-edit-group="${escapeHTML(group.OID)}" ${config.mode === 'monitor' ? 'disabled' : ''}>Configure</button></td></tr>`
   })
+}
+
+function filterGroups(event) {
+  groupSearch = event.currentTarget.value
+  const query = groupSearch.trim().toLowerCase()
+  const groups = records(DB.groups).filter((group) => !query || `${group.name} ${group.OID}`.toLowerCase().includes(query))
+  const body = app.querySelector('tbody')
+  if (!body) return
+  body.innerHTML = groups.length ? groupRows(groups).join('') : '<tr><td colspan="5">No groups match your search.</td></tr>'
+  body.querySelectorAll('[data-edit-group]').forEach((button) => button.addEventListener('click', editGroup))
 }
 
 function eventRows(list = records(DB.events())) {
@@ -203,7 +216,7 @@ function render() {
     case 'controllers': app.innerHTML = panel('Controllers', 'Controller health and configuration', ['Controller', 'ID', 'Protocol', 'Cards', 'Events', 'Status', ''], controllerRows()); break
     case 'doors': app.innerHTML = panel('Relays', config.mode === 'monitor' ? 'Monitor mode — controls are disabled' : 'Live relay state and controls', ['Relay / door', 'Mode', 'Delay', 'Keypad', 'Status', 'Controls'], doorRows()); break
     case 'cards': app.innerHTML = panel('Cards', 'Cardholders and validity periods', ['Cardholder', 'Card number', 'Valid from', 'Valid to', 'Groups', 'Status', ''], cardRows()); break
-    case 'groups': app.innerHTML = panel('Groups', 'Door access assignments', ['Group', 'Doors', 'First-card', 'Status'], groupRows()); break
+    case 'groups': app.innerHTML = panel('Groups', 'Relay access assignments', ['Group', 'Relays', 'First-card', 'Status', ''], groupRows()); break
     case 'events': app.innerHTML = panel('Events', 'Recent controller events', ['Time', 'Controller', 'Door', 'Card', 'Access', 'Reason'], eventRows()); break
     case 'logs': app.innerHTML = panel('Audit log', 'Recent configuration changes', ['Time', 'User', 'Item', 'Details'], logRows()); break
     default: app.innerHTML = overview()
@@ -212,11 +225,17 @@ function render() {
   if (currentRoute() === 'cards') {
     app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<button class="primary" data-add-card ${config.mode === 'monitor' ? 'disabled' : ''}>Add card</button>`)
   }
+  if (currentRoute() === 'groups') {
+    app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<div class="panel-tools"><input class="panel-search" data-group-search type="search" placeholder="Search groups" aria-label="Search groups" value="${escapeHTML(groupSearch)}"><button class="primary" data-add-group ${config.mode === 'monitor' ? 'disabled' : ''}>Add access group</button></div>`)
+  }
 
   document.querySelectorAll('[data-mode][data-door], [data-mode][data-controller][data-channel]').forEach((button) => button.addEventListener('click', controlDoor))
   document.querySelectorAll('[data-edit-controller]').forEach((button) => button.addEventListener('click', editController))
   document.querySelectorAll('[data-add-door], [data-edit-door]').forEach((button) => button.addEventListener('click', editDoor))
   document.querySelectorAll('[data-add-card], [data-edit-card]').forEach((button) => button.addEventListener('click', editCard))
+  document.querySelectorAll('[data-add-group], [data-edit-group]').forEach((button) => button.addEventListener('click', editGroup))
+  document.querySelector('[data-group-search]')?.addEventListener('input', filterGroups)
+  if (currentRoute() === 'groups' && groupSearch) filterGroups({ currentTarget: { value: groupSearch } })
 }
 
 function doorAssignment(doorOID) {
@@ -388,6 +407,20 @@ function cardInGroup(card, group) {
   return Boolean(card.groups?.get?.(oid)?.member || [...(card.groups?.values?.() || [])].some((membership) => membership.member && membership.group === group.OID))
 }
 
+function selectedCardGroups() {
+  return new Set([...document.querySelectorAll('[data-card-group]:checked')].map((field) => field.dataset.cardGroup))
+}
+
+function renderCardGroups(card, selected = null) {
+  const groups = records(DB.groups)
+  document.getElementById('card-group-fields').innerHTML = groups.length
+    ? groups.map((group) => {
+      const checked = selected ? selected.has(group.OID) : cardInGroup(card, group)
+      return `<label class="choice"><input type="checkbox" data-card-group="${escapeHTML(group.OID)}" ${checked ? 'checked' : ''}><span>${display(group.name, `Group ${group.OID}`)}</span></label>`
+    }).join('')
+    : empty('No access groups are available. Add one here, then assign it to this card.')
+}
+
 function defaultCardDates() {
   const from = new Date()
   const to = new Date(from)
@@ -406,14 +439,129 @@ function editCard(event) {
   cardForm.elements.from.value = card?.from || defaults.from
   cardForm.elements.to.value = card?.to || defaults.to
 
-  const groups = records(DB.groups)
-  document.getElementById('card-group-fields').innerHTML = groups.length
-    ? groups.map((group) => `<label class="choice"><input type="checkbox" data-card-group="${escapeHTML(group.OID)}" ${cardInGroup(card, group) ? 'checked' : ''}><span>${display(group.name, `Group ${group.OID}`)}</span></label>`).join('')
-    : empty('No access groups are available. The card can be saved now and assigned after a group is created.')
+  renderCardGroups(card)
 
   document.getElementById('card-editor-title').textContent = card ? (card.name || 'Configure card') : 'Add card'
   document.getElementById('card-editor-delete').classList.toggle('hidden', !card)
   cardDialog.showModal()
+}
+
+function groupAllowsDoor(group, doorOID) {
+  return [...(group?.doors?.values?.() || [])].some((permission) => permission.allowed && permission.door === doorOID)
+}
+
+function groupDoorOID(groupOID, doorOID) {
+  const match = `${doorOID}`.match(schema.doors.regex)
+  return match ? `${groupOID}${schema.groups.door}.${match[2]}` : ''
+}
+
+function renderGroupDoors(group) {
+  const doors = records(DB.doors)
+  document.getElementById('group-door-fields').innerHTML = doors.length
+    ? doors.map((door) => `<label class="choice"><input type="checkbox" data-group-door="${escapeHTML(door.OID)}" ${groupAllowsDoor(group, door.OID) ? 'checked' : ''}><span>${display(door.name, `Relay ${door.OID}`)}</span></label>`).join('')
+    : empty('No configured relays are available yet. You can save the group and assign relays later.')
+}
+
+function editGroup(event) {
+  const group = event.currentTarget.dataset.editGroup ? DB.groups.get(event.currentTarget.dataset.editGroup) : null
+  groupForm.dataset.oid = group?.OID || ''
+  groupForm.elements.name.value = group?.name || ''
+  groupForm.elements.firstcard.checked = Boolean(group?.firstcard)
+  groupDialog.dataset.returnCard = event.currentTarget.dataset.fromCard === 'true' ? 'true' : ''
+  if (groupDialog.dataset.returnCard) groupDialog.dataset.cardSelections = JSON.stringify([...selectedCardGroups()])
+  else delete groupDialog.dataset.cardSelections
+  renderGroupDoors(group)
+  document.getElementById('group-editor-title').textContent = group ? (group.name || 'Configure access group') : 'Add access group'
+  document.getElementById('group-editor-delete').classList.toggle('hidden', !group)
+  groupDialog.showModal()
+}
+
+async function refreshGroupData() {
+  const response = await fetch('/api/v1/snapshot', { credentials: 'same-origin', cache: 'no-store' })
+  if (!response.ok) throw new Error((await response.text()) || `Unable to refresh groups (${response.status})`)
+  const snapshot = await response.json()
+  DB.replace('groups', snapshot.groups || [])
+}
+
+async function saveGroup(event) {
+  event.preventDefault()
+  const saveButton = document.getElementById('group-editor-save')
+  saveButton.disabled = true
+  let oid = groupForm.dataset.oid
+  const existing = oid ? DB.groups.get(oid) : null
+
+  try {
+    const name = groupForm.elements.name.value.trim()
+    if (records(DB.groups).some((group) => group.OID !== oid && `${group.name}`.trim().toLowerCase() === name.toLowerCase())) {
+      throw new Error('An access group with that name already exists.')
+    }
+    if (!oid) {
+      const created = await postConfiguration('/groups', { created: [{ oid: '<new>', value: '' }], updated: [], deleted: [] })
+      oid = created.groups?.find((item) => item.value === 'new')?.OID
+      if (!oid) throw new Error('The server did not return the new group ID.')
+    }
+
+    const updates = []
+    const changed = (suffix, value, original) => {
+      if (!existing || `${value ?? ''}` !== `${original ?? ''}`) updates.push({ oid: `${oid}${suffix}`, value: `${value ?? ''}` })
+    }
+    changed(schema.groups.name, name, existing?.name)
+    changed(schema.groups.firstcard, `${groupForm.elements.firstcard.checked}`, `${Boolean(existing?.firstcard)}`)
+    for (const door of records(DB.doors)) {
+      const permissionOID = groupDoorOID(oid, door.OID)
+      const selected = Boolean(document.querySelector(`[data-group-door="${door.OID}"]`)?.checked)
+      if (permissionOID && (!existing || selected !== groupAllowsDoor(existing, door.OID))) updates.push({ oid: permissionOID, value: `${selected}` })
+    }
+    if (updates.length) await postConfiguration('/groups', { created: [], updated: updates, deleted: [] })
+    await refreshGroupData()
+
+    const returnCard = groupDialog.dataset.returnCard === 'true'
+    const selections = new Set(JSON.parse(groupDialog.dataset.cardSelections || '[]'))
+    selections.add(oid)
+    groupDialog.close()
+    if (returnCard && cardDialog.open) {
+      const card = cardForm.dataset.oid ? DB.cards.get(cardForm.dataset.oid) : null
+      renderCardGroups(card, selections)
+      showNotice('Access group created and selected. Save the card to apply its access.')
+    } else {
+      showNotice(existing ? 'Access group saved. Save or update cards to apply membership changes.' : 'Access group added.')
+      render()
+    }
+  } catch (error) {
+    showNotice(error.message || 'Access group configuration failed.', true)
+  } finally {
+    saveButton.disabled = false
+  }
+}
+
+async function deleteGroup() {
+  const oid = groupForm.dataset.oid
+  const group = oid ? DB.groups.get(oid) : null
+  if (!group) return
+  const name = group.name || `Group ${oid}`
+  if (!window.confirm(`Delete ${name}? Cards assigned only to this group will lose access.`)) return
+
+  const deleteButton = document.getElementById('group-editor-delete')
+  const saveButton = document.getElementById('group-editor-save')
+  deleteButton.disabled = true
+  saveButton.disabled = true
+  try {
+    const memberships = records(DB.cards)
+      .filter((card) => cardInGroup(card, group))
+      .map((card) => ({ oid: cardGroupOID(card.OID, oid), value: 'false' }))
+      .filter((item) => item.oid)
+    if (memberships.length) await postConfiguration('/cards', { created: [], updated: memberships, deleted: [] })
+    await postConfiguration('/groups', { created: [], updated: [], deleted: [oid] })
+    await synchronizeHardware('/synchronize/ACL', 'Access rules')
+    groupDialog.close()
+    showNotice(`${name} deleted and card access synchronized.`)
+    await load()
+  } catch (error) {
+    showNotice(error.message || 'Access group deletion failed.', true)
+  } finally {
+    deleteButton.disabled = false
+    saveButton.disabled = false
+  }
 }
 
 async function currentCardOID(card) {
@@ -651,6 +799,27 @@ async function load() {
   }
 }
 
+async function manualRefresh() {
+  const button = document.getElementById('refresh-button')
+  button.disabled = true
+  button.textContent = 'Refreshing...'
+  showNotice('Refreshing controller and access-control data...')
+  try {
+    const response = await fetch('/api/v1/refresh', {
+      method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}',
+    })
+    if (!response.ok) throw new Error((await response.text()) || `Refresh failed (${response.status})`)
+    await new Promise((resolve) => setTimeout(resolve, 1200))
+    await load()
+    showNotice('Controller and access-control data refreshed.')
+  } catch (error) {
+    showNotice(error.message || 'Refresh failed.', true)
+  } finally {
+    button.disabled = false
+    button.textContent = 'Refresh'
+  }
+}
+
 async function controlDoor(event) {
   const button = event.currentTarget
   const buttons = button.closest('.door-actions').querySelectorAll('button')
@@ -672,10 +841,11 @@ async function controlDoor(event) {
   }
 }
 
-document.getElementById('refresh-button').addEventListener('click', load)
+document.getElementById('refresh-button').addEventListener('click', manualRefresh)
 controllerForm.addEventListener('submit', saveController)
 doorForm.addEventListener('submit', saveDoor)
 cardForm.addEventListener('submit', saveCard)
+groupForm.addEventListener('submit', saveGroup)
 doorForm.elements.controller.addEventListener('change', () => refreshDoorChannels())
 document.getElementById('controller-editor-close').addEventListener('click', () => controllerDialog.close())
 document.getElementById('controller-editor-cancel').addEventListener('click', () => controllerDialog.close())
@@ -691,6 +861,10 @@ document.getElementById('door-editor-delete').addEventListener('click', deleteDo
 document.getElementById('card-editor-close').addEventListener('click', () => cardDialog.close())
 document.getElementById('card-editor-cancel').addEventListener('click', () => cardDialog.close())
 document.getElementById('card-editor-delete').addEventListener('click', deleteCard)
+document.getElementById('card-group-add').addEventListener('click', (event) => editGroup({ currentTarget: { dataset: { fromCard: 'true' } } }))
+document.getElementById('group-editor-close').addEventListener('click', () => groupDialog.close())
+document.getElementById('group-editor-cancel').addEventListener('click', () => groupDialog.close())
+document.getElementById('group-editor-delete').addEventListener('click', deleteGroup)
 document.getElementById('menu-button').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'))
 document.getElementById('signout-button').addEventListener('click', async () => {
   await fetch('/logout', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}' })
