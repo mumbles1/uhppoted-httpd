@@ -407,6 +407,35 @@ func (l *LAN) setTime(c types.IController, t time.Time) {
 	}
 }
 
+func (l *LAN) relayStatus(c types.IController) (map[uint8]struct {
+	DoorOpen    bool `json:"door-open"`
+	RelayActive bool `json:"relay-active"`
+}, error) {
+	lock(c.ID())
+	defer unlock(c.ID())
+
+	status, err := l.api([]types.IController{c}).UHPPOTE.GetStatus(c.ID())
+	if err != nil {
+		return nil, err
+	}
+	if status == nil {
+		return nil, fmt.Errorf("got nil response to get-status request for %v", c.ID())
+	}
+
+	states := map[uint8]struct {
+		DoorOpen    bool `json:"door-open"`
+		RelayActive bool `json:"relay-active"`
+	}{}
+	for door := uint8(1); door <= 4; door++ {
+		states[door] = struct {
+			DoorOpen    bool `json:"door-open"`
+			RelayActive bool `json:"relay-active"`
+		}{DoorOpen: status.DoorState[door], RelayActive: status.RelayState&(1<<(door-1)) != 0}
+	}
+
+	return states, nil
+}
+
 func (l *LAN) setDoor(c types.IController, door uint8, mode lib.ControlState, delay uint8) error {
 	lock(c.ID())
 	defer unlock(c.ID())
