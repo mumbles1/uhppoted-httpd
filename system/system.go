@@ -166,6 +166,10 @@ func Init(cfg config.Config, conf string, mode types.RunMode, debug bool) error 
 			return err
 		}
 	}
+	sys.groups.EnsureDefaults()
+	if err := save(TagGroups, &sys.groups); err != nil {
+		return fmt.Errorf("could not save default access levels: %w", err)
+	}
 
 	kb := ast.NewKnowledgeLibrary()
 	if err := builder.NewRuleBuilder(kb).BuildRuleFromResource("acl", "0.0.0", pkg.NewFileResource(cfg.HTTPD.DB.Rules.ACL)); err != nil {
@@ -798,3 +802,4 @@ func warnf(tag string, format string, args ...any) {
 		log.Warnf(fmt.Sprintf("%-10v %v", tag, format), args...)
 	}
 }
+	
