@@ -25,6 +25,7 @@
           <a href="/sys/groups.html" data-route="groups"><span>Access Levels</span><b id="count-groups">—</b></a>
           <a href="/sys/events.html" data-route="events"><span>Events</span><b id="count-events">—</b></a>
           <a href="/sys/logs.html" data-route="logs"><span>Audit log</span><b id="count-logs">—</b></a>
+          {{with nav "overview"}}{{if .Authorised.Users}}<a href="/sys/users.html" data-route="users"><span>Login Accounts</span><b id="count-users">—</b></a>{{end}}{{end}}
         </nav>
 
         <div class="sidebar-footer">
@@ -75,6 +76,30 @@
         <div class="dialog-actions">
           <button type="button" class="secondary" id="controller-editor-cancel">Cancel</button>
           <button type="submit" class="primary" id="controller-editor-save">Save controller</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="user-dialog" class="editor-dialog">
+      <form id="user-form">
+        <div class="dialog-heading">
+          <div><p class="eyebrow">LOGIN ACCOUNT CONFIGURATION</p><h2 id="user-editor-title">Add login account</h2></div>
+          <button type="button" class="icon-button" id="user-editor-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="form-grid">
+          <label><span>Display name</span><input name="name" type="text" autocomplete="name" required></label>
+          <label><span>User ID</span><input name="uid" type="text" autocomplete="username" required></label>
+          <label class="wide"><span>Role</span><select name="role" required><option value="user">User</option><option value="admin">Administrator</option></select></label>
+          <label><span>New password</span><input name="password" type="password" autocomplete="new-password"></label>
+          <label><span>Confirm password</span><input name="confirmPassword" type="password" autocomplete="new-password"></label>
+          <p class="field-help wide" id="user-password-help">A password is required for a new account.</p>
+          <label class="checkbox-field wide hidden" id="user-revoke-otp-field"><input name="revokeOTP" type="checkbox"><span>Revoke this account's OTP enrollment</span></label>
+          <label class="checkbox-field wide hidden" id="user-unlock-field"><input name="unlock" type="checkbox"><span>Unlock this account</span></label>
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="danger delete-action hidden" id="user-editor-delete">Delete account</button>
+          <button type="button" class="secondary" id="user-editor-cancel">Cancel</button>
+          <button type="submit" class="primary" id="user-editor-save">Save account</button>
         </div>
       </form>
     </dialog>
@@ -260,7 +285,8 @@
     <script>
       window.gateControl = {
         mode: {{printf "%q" $.context.Mode}},
-        user: {{printf "%q" $.context.User}}
+        user: {{printf "%q" $.context.User}},
+        canManageUsers: {{$.context.CanManageUsers}}
       }
     </script>
     <script type="module" src="/javascript/gate-control.js"></script>
