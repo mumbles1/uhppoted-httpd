@@ -26,6 +26,7 @@
           <a href="/sys/events.html" data-route="events"><span>Events</span><b id="count-events">—</b></a>
           <a href="/sys/logs.html" data-route="logs"><span>Audit log</span><b id="count-logs">—</b></a>
           {{with nav "overview"}}{{if .Authorised.Users}}<a href="/sys/users.html" data-route="users"><span>Login Accounts</span><b id="count-users">—</b></a>{{end}}{{end}}
+          <a href="#help" id="help-menu-button"><span>Help &amp; Tips</span><b>?</b></a>
         </nav>
 
         <div class="sidebar-footer">
@@ -42,6 +43,7 @@
             <h1 id="page-title">Overview</h1>
           </div>
           <div class="topbar-actions">
+            <button class="secondary" id="help-button">Help</button>
             <button class="secondary" id="refresh-button">Refresh</button>
             <span class="user-chip">{{$.context.User}}</span>
             <button class="secondary" id="signout-button">Sign out</button>
@@ -279,6 +281,44 @@
           <button type="submit" class="secondary">Cancel</button>
           <button type="button" class="primary" id="controller-import-apply" disabled>Apply selected import</button>
         </div>
+      </form>
+    </dialog>
+
+    <dialog id="help-dialog" class="editor-dialog help-dialog">
+      <form method="dialog">
+        <div class="dialog-heading">
+          <div><p class="eyebrow">ACCESS CONTROL - HTTP</p><h2>Help &amp; Tips</h2></div>
+          <button type="submit" class="icon-button" aria-label="Close">&times;</button>
+        </div>
+        <section class="help-context" id="context-help"></section>
+        <div class="help-grid">
+          <section class="help-topic">
+            <h3>Getting started</h3>
+            <ol><li>Discover or add the controller on <strong>Controllers</strong>.</li><li>Assign names and settings to its channels.</li><li>Create <strong>Access Levels</strong>.</li><li>Add credentials and assign at least one access level.</li></ol>
+          </section>
+          <section class="help-topic">
+            <h3>Controller networking</h3>
+            <p>Use Docker <strong>host networking</strong> when the controller is on the local LAN. UHPPOTE discovery uses UDP broadcast on port 60000, which a bridge network commonly prevents.</p>
+          </section>
+          <section class="help-topic">
+            <h3>Credentials</h3>
+            <p>The controller decimal ID is <strong>FC × 100000 + CD</strong>. Duplicate credential numbers are blocked. Exact full names are grouped as one person who may have multiple credentials.</p>
+          </section>
+          <section class="help-topic">
+            <h3>Access Levels</h3>
+            <p>Level 0 is permanent No Access. Level 1 is permanent 24/7 access. Scheduled access is written to the controller so it continues working while this app is offline.</p>
+          </section>
+          <section class="help-topic">
+            <h3>Relays and events</h3>
+            <p>Relays represent physical controller channels. Open and Close change the relay mode; Controlled restores normal credential operation. Event search accepts names, credential numbers, FC/CD and controller IDs.</p>
+          </section>
+          <section class="help-topic">
+            <h3>Data, backup and login</h3>
+            <p>Persist <strong>/data</strong> to <strong>/DATA/AppData/uhppoted-httpd</strong>. Overview provides timestamped backups, safe restore and controller import. Administrators manage sign-in accounts from Login Accounts.</p>
+          </section>
+        </div>
+        <p class="help-note">Tip: changes marked as synchronized were accepted by the controller. A local-only or synchronization warning means the controller should be checked before relying on that change.</p>
+        <div class="dialog-actions"><button type="submit" class="primary">Got it</button></div>
       </form>
     </dialog>
 
