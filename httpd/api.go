@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"codeberg.org/uhppoted/uhppoted-httpd/system"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog/schema"
 	"codeberg.org/uhppoted/uhppoted-httpd/types"
 )
 
@@ -67,6 +68,29 @@ func (d *dispatcher) api(w http.ResponseWriter, r *http.Request) {
 				"events":      system.Events(uid, role, 0, 50),
 				"logs":        system.Logs(uid, role, 0, 50),
 			}, nil
+		})
+
+	case r.URL.Path == "/api/v1/controllers/time" && r.Method == http.MethodPost:
+		if !d.apiAuthorised(w, uid, role, "/controllers") {
+			return
+		}
+		d.exec(w, r, func(body map[string]any) (any, error) {
+			controller, ok := body["controller"].(string)
+			if !ok || strings.TrimSpace(controller) == "" {
+				return nil, fmt.Errorf("controller is required")
+			}
+			datetime, ok := body["datetime"].(string)
+			if !ok || strings.TrimSpace(datetime) == "" {
+				return nil, fmt.Errorf("controller datetime is required")
+			}
+			now, err := time.ParseInLocation("2006-01-02T15:04:05", datetime, time.Local)
+			if err != nil {
+				return nil, fmt.Errorf("invalid controller datetime")
+			}
+			if err := system.SynchronizeControllerDateTime(schema.OID(controller), now); err != nil {
+				return nil, err
+			}
+			return map[string]any{"ok": true, "controller": controller, "datetime": datetime}, nil
 		})
 
 	case r.URL.Path == "/api/v1/doors/control" && r.Method == http.MethodPost:
