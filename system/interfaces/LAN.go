@@ -43,7 +43,7 @@ type kv = struct {
 
 var created = types.TimestampNow()
 
-const MAX = 5
+const MAX = 100
 
 func (l LAN) String() string {
 	return fmt.Sprintf("%v", l.Name)
@@ -348,24 +348,24 @@ func (l *LAN) getEvents(c types.IController, intervals []types.Interval) {
 
 		for _, interval := range intervals {
 			if interval.Contains(last) {
-				index := max(interval.From, first)
-
-				for index <= last && count < MAX {
+				lower := max(interval.From, first)
+				for index := last; index >= lower && count < MAX; index-- {
 					f(index)
-					index++
+					if index == 0 {
+						break
+					}
 				}
-			}
-
-			if interval.Contains(first) {
+			} else if interval.Contains(first) {
 				index := min(interval.To, last)
 
 				for index >= first && count < MAX {
 					f(index)
+					if index == 0 {
+						break
+					}
 					index--
 				}
-			}
-
-			if interval.From >= first && interval.To <= last {
+			} else if interval.From >= first && interval.To <= last {
 				for index := interval.From; index <= interval.To; index++ {
 					f(index)
 				}
@@ -381,7 +381,7 @@ func (l *LAN) getEvents(c types.IController, intervals []types.Interval) {
 	}
 }
 
-func (l *LAN) setTime(c types.IController, t time.Time) {
+func (l *LAN) setTime(c types.IController, t time.Time) error {
 	lock(c.ID())
 	defer unlock(c.ID())
 
@@ -391,7 +391,9 @@ func (l *LAN) setTime(c types.IController, t time.Time) {
 	datetime := time.Time(t.In(location))
 
 	if response, err := api.UHPPOTE.SetTime(deviceID, datetime); err != nil {
-		log.Warnf("%v", err)
+		return err
+	} else if response == nil {
+		return fmt.Errorf("%v failed to set controller date/time", deviceID)
 	} else if response != nil {
 		catalog.PutV(c.OID(), ControllerDateTimeModified, false)
 
@@ -404,7 +406,10 @@ func (l *LAN) setTime(c types.IController, t time.Time) {
 		}
 
 		log.Infof("%v  set date/time: %v", deviceID, response.DateTime)
+		return nil
 	}
+
+	return nil
 }
 
 func (l *LAN) relayStatus(c types.IController) (map[uint8]struct {
@@ -559,7 +564,7 @@ func (l *LAN) setFirstCard(c types.IController, door uint8, firstcard lib.FirstC
 	}
 }
 
-func (l *LAN) putCard(c types.IController, cardID uint32, PIN uint32, from, to lib.Date, permissions map[uint8]uint8, firstcard map[uint8]bool) {
+func (l *LAN) putCard(c types.IController, cardID uint32, PIN uint32, from, to lib.Date, permissions map[uint8]uint8, firstcard map[uint8]bool) error {
 	lock(c.ID())
 	defer unlock(c.ID())
 
@@ -586,15 +591,16 @@ func (l *LAN) putCard(c types.IController, cardID uint32, PIN uint32, from, to l
 	}
 
 	if ok, err := api.UHPPOTE.PutCard(deviceID, card); err != nil {
-		log.Warnf("%v", err)
+		return err
 	} else if !ok {
-		log.Warnf("%v", fmt.Errorf("%v  failed to update card %v", deviceID, cardID))
+		return fmt.Errorf("%v failed to update credential %v", deviceID, cardID)
 	} else {
 		log.Infof("%v  put card %v", deviceID, card)
+		return nil
 	}
 }
 
-func (l *LAN) deleteCard(c types.IController, card uint32) {
+func (l *LAN) deleteCard(c types.IController, card uint32) error {
 	lock(c.ID())
 	defer unlock(c.ID())
 
@@ -602,11 +608,12 @@ func (l *LAN) deleteCard(c types.IController, card uint32) {
 	deviceID := c.ID()
 
 	if ok, err := api.UHPPOTE.DeleteCard(deviceID, card); err != nil {
-		log.Warnf("%v", err)
+		return err
 	} else if !ok {
-		log.Warnf("%v", fmt.Errorf("%v  failed to delete card %v", deviceID, card))
+		return fmt.Errorf("%v failed to delete credential %v", deviceID, card)
 	} else {
 		log.Infof("%v  deleted card %v", deviceID, card)
+		return nil
 	}
 }
 
