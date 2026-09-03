@@ -12,6 +12,8 @@ import (
 	"sync"
 	"time"
 
+	lib "codeberg.org/uhppoted/uhppoted-core/types"
+
 	"codeberg.org/uhppoted/uhppoted-httpd/auth"
 	"codeberg.org/uhppoted/uhppoted-httpd/log"
 	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog"
@@ -58,6 +60,14 @@ func (cc *Cards) CSV() ([]byte, error) {
 
 type Cards struct {
 	cards map[schema.OID]*Card
+}
+
+type ControllerImport struct {
+	CardNumber uint32
+	PIN        uint32
+	From       lib.Date
+	To         lib.Date
+	Group      schema.OID
 }
 
 var guard sync.RWMutex
@@ -190,6 +200,62 @@ func (cc *Cards) List() []Card {
 	}
 
 	return list
+}
+
+// MergeControllerImports treats the controller as authoritative for dates,
+// PIN and access membership, while preserving local names and credential type.
+// It never deletes a local credential or removes an existing access level.
+func (cc *Cards) MergeControllerImports(a *auth.Authorizator, records []ControllerImport, dbc db.DBC, withPIN bool) (int, int, error) {
+	added, updated := 0, 0
+	for _, record := range records {
+		if record.CardNumber == 0 {
+			continue
+		}
+		var card *Card
+		for _, existing := range cc.cards {
+			if !existing.IsDeleted() && existing.CardID == record.CardNumber {
+				card = existing
+				break
+			}
+		}
+		if card == nil {
+			created, err := cc.add(a, Card{
+				CatalogCard: catalog.CatalogCard{CardID: record.CardNumber},
+				name:        fmt.Sprintf("Imported credential %d", record.CardNumber),
+				kind:        "card",
+				from:        record.From,
+				to:          record.To,
+				groups:      map[schema.OID]bool{record.Group: true},
+			})
+			if err != nil {
+				return added, updated, err
+			}
+			if withPIN {
+				created.pin = record.PIN
+			}
+			created.unconfigured = false
+			created.modified = types.TimestampNow()
+			created.log(dbc, auth.UID(a), "import", "card", "", record.CardNumber, "Imported credential %v from controller", record.CardNumber)
+			added++
+			continue
+		}
+
+		card.from = record.From
+		card.to = record.To
+		if withPIN {
+			card.pin = record.PIN
+		}
+		if card.groups == nil {
+			card.groups = map[schema.OID]bool{}
+		}
+		card.groups[record.Group] = true
+		card.unconfigured = false
+		card.modified = types.TimestampNow()
+		card.log(dbc, auth.UID(a), "import", "card", record.CardNumber, record.CardNumber, "Updated credential %v from controller", record.CardNumber)
+		updated++
+	}
+
+	return added, updated, cc.Validate()
 }
 
 /* Some of this is a bit obscure, so:
@@ -436,3 +502,4 @@ func (cc *Cards) add(a *auth.Authorizator, c Card) (*Card, error) {
 
 	return card, nil
 }
+	
