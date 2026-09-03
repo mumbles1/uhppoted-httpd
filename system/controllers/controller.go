@@ -875,6 +875,14 @@ func (c icontroller) Door(d uint8) (schema.OID, bool) {
 	return oid, ok
 }
 
+func (c icontroller) Interlock() lib.Interlock {
+	return c.interlock
+}
+
+func (c icontroller) AntiPassback() lib.AntiPassback {
+	return c.antipassback
+}
+
 func (c icontroller) DateTimeOk() bool {
 	return c.synchronized != types.StatusError
 }
