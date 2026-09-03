@@ -103,6 +103,8 @@ tbody tr:hover td { background: #10233a; }
 .controller-door-field { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 8px; }
 .controller-door-field label { min-width: 0; }
 .controller-door-field button { min-height: 42px; white-space: nowrap; }
+.controller-time-action { display: flex; align-items: end; gap: 8px; }
+.controller-time-action button { flex: 1; min-height: 42px; }
 .door-mapping-heading { margin: 22px 0 12px; padding-top: 18px; border-top: 1px solid var(--line); }
 .heading-with-action { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .heading-with-action button { flex: 0 0 auto; }
@@ -145,4 +147,5 @@ tbody tr:hover td { background: #10233a; }
 
 @media (max-width: 520px) {
   .controller-door-field { grid-template-columns: 1fr; }
+  .controller-time-action { flex-direction: column; align-items: stretch; }
 }
