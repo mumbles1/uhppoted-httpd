@@ -272,6 +272,16 @@ async function postConfiguration(url, body) {
   return response.json()
 }
 
+async function synchronizeHardware(path, label) {
+  const response = await fetch(path, {
+    method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}',
+  })
+  if (!response.ok) {
+    const details = (await response.text()).trim() || `request failed (${response.status})`
+    throw new Error(`${label} saved locally, but controller synchronization failed: ${details}`)
+  }
+}
+
 async function saveDoor(event) {
   event.preventDefault()
   const saveButton = document.getElementById('door-editor-save')
@@ -311,9 +321,10 @@ async function saveDoor(event) {
       assignmentUpdates.push({ oid: `${controller.OID}${schema.controllers[`door${channel}`]}`, value: oid })
     }
     if (assignmentUpdates.length) await postConfiguration('/controllers', { created: [], updated: assignmentUpdates, deleted: [] })
+    await synchronizeHardware('/synchronize/doors', 'Relay')
 
     doorDialog.close()
-    showNotice(existing ? 'Door configuration saved.' : 'Door added and assigned.')
+    showNotice(existing ? 'Door configuration saved and synchronized.' : 'Door added, assigned, and synchronized.')
     await load()
     const returnController = DB.controllers.get(doorDialog.dataset.returnController)
     if (returnController && controllerDialog.open) renderControllerDoors(returnController)
@@ -350,9 +361,10 @@ async function deleteDoor() {
       await postConfiguration('/controllers', { created: [], updated: assignmentUpdates, deleted: [] })
     }
     await postConfiguration('/doors', { created: [], updated: [], deleted: [oid] })
+    await synchronizeHardware('/synchronize/ACL', 'Access rules')
 
     doorDialog.close()
-    showNotice(`${name} deleted.`)
+    showNotice(`${name} deleted and access rules synchronized.`)
     await load()
     const returnController = DB.controllers.get(doorDialog.dataset.returnController)
     if (returnController && controllerDialog.open) renderControllerDoors(returnController)
@@ -460,10 +472,11 @@ async function saveCard(event) {
       if (!saved.cards?.some((item) => `${item.OID || ''}`.startsWith(`${oid}.`))) {
         throw new Error('The card changed while it was being saved. Please try again.')
       }
+      await synchronizeHardware('/synchronize/ACL', 'Card')
     }
 
     cardDialog.close()
-    showNotice(existing ? 'Card configuration saved.' : 'Card added and assigned.')
+    showNotice(existing ? 'Card configuration saved and synchronized.' : 'Card added and synchronized.')
     await load()
   } catch (error) {
     showNotice(error.message || 'Card configuration failed.', true)
@@ -485,8 +498,9 @@ async function deleteCard() {
   saveButton.disabled = true
   try {
     await postConfiguration('/cards', { created: [], updated: [], deleted: [oid] })
+    await synchronizeHardware('/synchronize/ACL', 'Card')
     cardDialog.close()
-    showNotice(`${name} deleted.`)
+    showNotice(`${name} deleted and synchronized.`)
     await load()
   } catch (error) {
     showNotice(error.message || 'Card deletion failed.', true)
@@ -587,8 +601,10 @@ async function saveController(event) {
       body: JSON.stringify({ created: [], updated: updates, deleted: [] }),
     })
     if (!response.ok) throw new Error((await response.text()) || `Controller update failed (${response.status})`)
+    await synchronizeHardware('/synchronize/doors', 'Relay')
+    await synchronizeHardware('/synchronize/ACL', 'Card')
     controllerDialog.close()
-    showNotice('Controller configuration saved.')
+    showNotice('Controller configuration saved and synchronized.')
     await load()
   } catch (error) {
     showNotice(error.message || 'Controller update failed.', true)
