@@ -404,6 +404,25 @@ function editCard(event) {
   cardDialog.showModal()
 }
 
+async function currentCardOID(card) {
+  if (!card?.number) return card?.OID || ''
+
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const response = await fetch('/api/v1/snapshot', { credentials: 'same-origin', cache: 'no-store' })
+    if (!response.ok) throw new Error((await response.text()) || `Unable to refresh cards (${response.status})`)
+    const snapshot = await response.json()
+    const number = (snapshot.cards || []).find((item) => {
+      const match = `${item.OID || ''}`.match(schema.cards.regex)
+      return match && `${item.OID}` === `${match[1]}${schema.cards.card}` && `${item.value}` === `${card.number}`
+    })
+    const match = `${number?.OID || ''}`.match(schema.cards.regex)
+    if (match) return match[1]
+    if (attempt < 3) await new Promise((resolve) => setTimeout(resolve, 350 * (attempt + 1)))
+  }
+
+  throw new Error('The card list is refreshing. Please save again in a moment.')
+}
+
 async function saveCard(event) {
   event.preventDefault()
   const saveButton = document.getElementById('card-editor-save')
@@ -413,6 +432,7 @@ async function saveCard(event) {
 
   try {
     if (cardForm.elements.to.value < cardForm.elements.from.value) throw new Error('Valid until must be on or after Valid from.')
+    if (existing) oid = await currentCardOID(existing)
     if (!oid) {
       const created = await postConfiguration('/cards', { created: [{ oid: '<new>', value: '' }], updated: [], deleted: [] })
       oid = created.cards?.find((item) => item.value === 'new')?.OID
@@ -435,7 +455,12 @@ async function saveCard(event) {
       const selected = Boolean(field?.checked)
       if (membershipOID && selected !== cardInGroup(existing, group)) updates.push({ oid: membershipOID, value: `${selected}` })
     }
-    if (updates.length) await postConfiguration('/cards', { created: [], updated: updates, deleted: [] })
+    if (updates.length) {
+      const saved = await postConfiguration('/cards', { created: [], updated: updates, deleted: [] })
+      if (!saved.cards?.some((item) => `${item.OID || ''}`.startsWith(`${oid}.`))) {
+        throw new Error('The card changed while it was being saved. Please try again.')
+      }
+    }
 
     cardDialog.close()
     showNotice(existing ? 'Card configuration saved.' : 'Card added and assigned.')
@@ -585,10 +610,14 @@ async function load() {
     }
     if (!response.ok) throw new Error((await response.text()) || `Request failed (${response.status})`)
     const snapshot = await response.json()
-    for (const [name, values] of Object.entries(snapshot)) DB.replace(name, values)
+    const snapshotHasCards = (snapshot.cards || []).some((item) => schema.cards.regex.test(`${item.OID || ''}`))
+    const retainCards = currentRoute() === 'cards' && records(DB.cards).length > 0 && !snapshotHasCards && emptyCardRetries < 4
+    for (const [name, values] of Object.entries(snapshot)) {
+      if (!(retainCards && name === 'cards')) DB.replace(name, values)
+    }
     setConnection(true, config.mode === 'monitor' ? 'Monitor mode' : 'System online')
     render()
-    if (currentRoute() === 'cards' && records(DB.cards).length === 0 && emptyCardRetries < 2) {
+    if (retainCards || (currentRoute() === 'cards' && records(DB.cards).length === 0 && emptyCardRetries < 4)) {
       emptyCardRetries += 1
       clearTimeout(emptyCardRetryTimer)
       emptyCardRetryTimer = setTimeout(load, emptyCardRetries * 500)
