@@ -193,11 +193,11 @@
           <div><p class="eyebrow">SAFE CONTROLLER IMPORT</p><h2>Import from controller</h2></div>
           <button type="submit" class="icon-button" aria-label="Close">&times;</button>
         </div>
-        <p class="field-help">This reads the configured controllers only. It never writes to them, never deletes local credentials, and makes a timestamped backup before applying.</p>
+        <p class="field-help">This reads the configured controllers only. For matching credentials, choose Merge to keep local dates/PIN or Override to use the controller values. It never writes to the controller, never deletes local credentials, and makes a timestamped backup before applying.</p>
         <div id="controller-import-preview" class="import-preview"><span class="spinner"></span> Reading controller credentials&hellip;</div>
         <div class="dialog-actions">
           <button type="submit" class="secondary">Cancel</button>
-          <button type="button" class="primary" id="controller-import-apply" disabled>Apply safe import</button>
+          <button type="button" class="primary" id="controller-import-apply" disabled>Apply selected import</button>
         </div>
       </form>
     </dialog>
