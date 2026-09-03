@@ -39,6 +39,9 @@ html.login body #content.login-shell {
   -webkit-mask-image: linear-gradient(to bottom, #000, transparent 82%);
 }
 html.login main.login-main {
+  grid-area: auto;
+  grid-column: 1;
+  grid-row: 1;
   width: 100%;
   margin: 0;
   padding: 40px 20px;
@@ -129,7 +132,7 @@ html.login form button:focus-visible,
 html.login input:focus-visible { outline: 3px solid rgba(39,167,255,.3); outline-offset: 2px; }
 html.login #message { margin-top: 15px; padding: 11px 13px; border: 1px solid #71323d; border-radius: 9px; background: #35171d; }
 html.login #message #warning { width: 100%; padding: 0; border: 0; color: #ffc0c7; background: transparent; font: inherit; font-size: 13px; text-align: left; }
-html.login footer { min-height: 38px; padding: 8px 14px; border-top: 1px solid var(--login-line); color: var(--login-muted); background: rgba(9,20,33,.78); font-size: 11px; }
+html.login footer { grid-area: auto; grid-column: 1; grid-row: 2; min-height: 38px; padding: 8px 14px; border-top: 1px solid var(--login-line); color: var(--login-muted); background: rgba(9,20,33,.78); font-size: 11px; }
 html.login footer p { margin: 0; }
 
 @media (max-width: 520px) {
