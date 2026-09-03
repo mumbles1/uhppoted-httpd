@@ -73,6 +73,7 @@ func (d *dispatcher) getNoAuth(w http.ResponseWriter, r *http.Request) {
 		"Mode":          d.mode,
 		"WithPIN":       d.options.WithPIN,
 		"WithFirstCard": d.options.WithFirstCard,
+		"CanManageUsers": d.authorised(uid, role, "/users"),
 	}
 
 	// ... normalise path
@@ -237,7 +238,8 @@ func (d *dispatcher) getWithAuth(w http.ResponseWriter, r *http.Request) {
 		"/sys/cards.html",
 		"/sys/groups.html",
 		"/sys/events.html",
-		"/sys/logs.html":
+		"/sys/logs.html",
+		"/sys/users.html":
 		renderPath = "/sys/overview.html"
 	}
 
