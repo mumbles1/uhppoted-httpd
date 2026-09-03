@@ -18,6 +18,7 @@
 body { margin: 0; min-width: 320px; min-height: 100vh; background: var(--bg); color: var(--text); }
 button, input, select { font: inherit; }
 button { cursor: pointer; }
+.button-link { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
 
 .app-shell { display: grid; grid-template-columns: 260px minmax(0, 1fr); min-height: 100vh; }
 .sidebar { position: sticky; top: 0; height: 100vh; padding: 24px 16px; background: linear-gradient(180deg, #0c1a2c 0%, #091421 100%); border-right: 1px solid var(--line); display: flex; flex-direction: column; z-index: 20; }
