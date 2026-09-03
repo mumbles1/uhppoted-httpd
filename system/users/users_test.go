@@ -46,3 +46,21 @@ func TestValidateWithNewUser(t *testing.T) {
 		t.Errorf("Unexpected error validating users list with new user (%v)", err)
 	}
 }
+
+func TestHasAdminIgnoresDeletedUsers(t *testing.T) {
+	uu := Users{
+		users: map[schema.OID]*User{
+			"0.8.9": {
+				CatalogUser: catalog.CatalogUser{OID: "0.8.9"},
+				uid:         "admin",
+				role:        "admin",
+				created:     types.TimestampNow(),
+				deleted:     types.TimestampNow(),
+			},
+		},
+	}
+
+	if uu.HasAdmin("admin") {
+		t.Error("deleted user must not satisfy the administrator requirement")
+	}
+}
