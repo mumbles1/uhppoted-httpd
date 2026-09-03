@@ -12,6 +12,8 @@ const doorDialog = document.getElementById('door-dialog')
 const doorForm = document.getElementById('door-form')
 const cardDialog = document.getElementById('card-dialog')
 const cardForm = document.getElementById('card-form')
+const credentialBulkDialog = document.getElementById('credential-bulk-dialog')
+const credentialBulkForm = document.getElementById('credential-bulk-form')
 const groupDialog = document.getElementById('group-dialog')
 const groupForm = document.getElementById('group-form')
 const backupDialog = document.getElementById('backup-dialog')
@@ -27,6 +29,7 @@ let loading = false
 let emptyCardRetries = 0
 let emptyCardRetryTimer = null
 let groupSearch = ''
+let credentialSearch = ''
 let eventSearch = ''
 let eventTypeFilter = 'all'
 let relayStatus = {}
@@ -215,6 +218,70 @@ function cardRows(list = records(DB.cards)) {
   })
 }
 
+function credentialSearchText(card) {
+  const credential = formatCredential(card.number)
+  return [card.managementGroup, card.name, card.label, card.kind, credentialTypeLabel(card.kind), card.number, credential?.facilityCode, credential?.cardNumber, card.OID]
+    .map((value) => `${value ?? ''}`.toLowerCase()).join(' ')
+}
+
+function credentialTree() {
+  const query = credentialSearch.trim().toLowerCase()
+  const cards = records(DB.cards)
+    .filter((card) => !query || credentialSearchText(card).includes(query))
+    .sort((a, b) => `${a.managementGroup || ''}\u0000${a.name || ''}\u0000${a.label || ''}\u0000${a.number || ''}`.localeCompare(`${b.managementGroup || ''}\u0000${b.name || ''}\u0000${b.label || ''}\u0000${b.number || ''}`, undefined, { sensitivity: 'base', numeric: true }))
+  const managementGroups = new Map()
+
+  cards.forEach((card) => {
+    const groupName = `${card.managementGroup || ''}`.trim() || 'Ungrouped'
+    const groupKey = groupName.toLocaleLowerCase()
+    if (!managementGroups.has(groupKey)) managementGroups.set(groupKey, { name: groupName, people: new Map() })
+    const group = managementGroups.get(groupKey)
+    const personName = `${card.name || ''}`.trim() || 'Unassigned person'
+    const personKey = personName.toLocaleLowerCase()
+    if (!group.people.has(personKey)) group.people.set(personKey, { name: personName, cards: [] })
+    group.people.get(personKey).cards.push(card)
+  })
+
+  const branches = [...managementGroups.values()].map((group) => {
+    const groupCards = [...group.people.values()].flatMap((person) => person.cards)
+    const people = [...group.people.values()].map((person) => {
+      const oids = person.cards.map((card) => card.OID).join(',')
+      const leaves = person.cards.map((card) => {
+        const credential = formatCredential(card.number)
+        const memberships = [...(card.groups?.values?.() || [])].filter((membership) => membership.member).length
+        const credentialTitle = `${card.label || ''}`.trim() || credentialTypeLabel(card.kind)
+        return `<article class="credential-leaf">
+          <div class="credential-leaf-main"><strong>${display(credentialTitle)}</strong><span>${credential ? `FC ${credential.facilityCode} &middot; CD ${credential.cardNumber}` : display(card.number)}</span><small>${credential ? `Controller ID ${escapeHTML(credential.raw)} &middot; ` : ''}${memberships} access level${memberships === 1 ? '' : 's'} &middot; ${display(card.from)} to ${display(card.to)}</small></div>
+          <button class="secondary" data-edit-card="${escapeHTML(card.OID)}" ${config.mode === 'monitor' ? 'disabled' : ''}>Configure</button>
+        </article>`
+      }).join('')
+      return `<details class="credential-tree-person" open>
+        <summary><span class="tree-summary-main"><strong>${display(person.name)}</strong><small>${person.cards.length} credential${person.cards.length === 1 ? '' : 's'}</small></span><button class="secondary tree-manage" data-manage-credentials="${escapeHTML(oids)}" data-manage-label="${escapeHTML(person.name)}" ${config.mode === 'monitor' ? 'disabled' : ''}>Manage access</button></summary>
+        <div class="credential-tree-leaves">${leaves}</div>
+      </details>`
+    }).join('')
+    const groupOIDs = groupCards.map((card) => card.OID).join(',')
+    return `<details class="credential-tree-group" open>
+      <summary><span class="tree-summary-main"><strong>${display(group.name)}</strong><small>${group.people.size} ${group.people.size === 1 ? 'person' : 'people'} &middot; ${groupCards.length} credential${groupCards.length === 1 ? '' : 's'}</small></span><button class="secondary tree-manage" data-manage-credentials="${escapeHTML(groupOIDs)}" data-manage-label="${escapeHTML(group.name)}" ${config.mode === 'monitor' ? 'disabled' : ''}>Manage access</button></summary>
+      <div class="credential-tree-people">${people}</div>
+    </details>`
+  }).join('')
+
+  return `<section class="panel credential-tree-panel"><div class="panel-heading"><div><h2>Credentials</h2><p>Management group &rarr; person &rarr; credentials</p></div></div><div class="credential-tree">${branches || empty(query ? 'No credentials match your search.' : 'No credentials are available.')}</div></section>`
+}
+
+function filterCredentials(event) {
+  credentialSearch = event.currentTarget.value
+  const template = document.createElement('template')
+  template.innerHTML = credentialTree()
+  const next = template.content.querySelector('.credential-tree')
+  const current = app.querySelector('.credential-tree')
+  if (!next || !current) return
+  current.replaceWith(next)
+  next.querySelectorAll('[data-edit-card]').forEach((button) => button.addEventListener('click', editCard))
+  next.querySelectorAll('[data-manage-credentials]').forEach((button) => button.addEventListener('click', openBulkCredentialAccess))
+}
+
 function groupRows(list = records(DB.groups)) {
 	return [...list].sort((a, b) => accessLevelOrder(a) - accessLevelOrder(b)).map((group) => {
 		const permitted = [...(group.doors?.values?.() || [])].filter((door) => door.allowed).length
@@ -386,7 +453,7 @@ function render() {
   switch (currentRoute()) {
     case 'controllers': app.innerHTML = panel('Controllers', 'Controller health and configuration', ['Controller', 'ID', 'Protocol', 'Credentials', 'Events', 'Status', ''], controllerRows()); break
     case 'doors': app.innerHTML = panel('Relays', config.mode === 'monitor' ? 'Monitor mode — controls are disabled' : 'Live relay state and controls', ['Relay / door', 'Mode', 'Delay', 'Keypad', 'Status', 'Controls'], doorRows()); break
-    case 'cards': app.innerHTML = panel('Credentials', 'Cards, RF remotes, and keypad codes', ['Name', 'Credential number', 'Valid from', 'Valid to', 'Access levels', 'Status', ''], cardRows()); break
+    case 'cards': app.innerHTML = credentialTree(); break
     case 'groups': app.innerHTML = panel('Access Levels', 'Controller-native relay access assignments', ['Access level', 'Relays', 'Time restriction', 'First-card', 'Status', ''], groupRows()); break
     case 'events': app.innerHTML = panel('Events', 'Recent controller events', ['Event #', 'Time', 'Controller', 'Door', 'Credential', 'Type', 'Access', 'Reason'], eventRows()); break
     case 'logs': app.innerHTML = panel('Audit log', 'Recent configuration changes', ['Time', 'User', 'Item', 'Details'], logRows()); break
@@ -394,7 +461,7 @@ function render() {
   }
 
   if (currentRoute() === 'cards') {
-    app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<div class="panel-tools"><a class="secondary button-link" href="/api/v1/credentials.csv" download>Download CSV</a><button class="secondary" data-export-credentials>Save CSV</button><button class="primary" data-add-card ${config.mode === 'monitor' ? 'disabled' : ''}>Add credential</button></div>`)
+    app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<div class="panel-tools"><input class="panel-search" data-credential-search type="search" placeholder="Search people, groups, or credentials" aria-label="Search credentials" value="${escapeHTML(credentialSearch)}"><a class="secondary button-link" href="/api/v1/credentials.csv" download>Download CSV</a><button class="secondary" data-export-credentials>Save CSV</button><button class="primary" data-add-card ${config.mode === 'monitor' ? 'disabled' : ''}>Add credential</button></div>`)
   }
   if (currentRoute() === 'controllers') {
     app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<div class="panel-tools"><button class="secondary" data-open-backups>Backups</button><button class="primary" data-import-controller>Import from controller</button></div>`)
@@ -412,9 +479,11 @@ function render() {
   document.querySelectorAll('[data-edit-controller]').forEach((button) => button.addEventListener('click', editController))
   document.querySelectorAll('[data-add-door], [data-edit-door]').forEach((button) => button.addEventListener('click', editDoor))
   document.querySelectorAll('[data-add-card], [data-edit-card]').forEach((button) => button.addEventListener('click', editCard))
+  document.querySelectorAll('[data-manage-credentials]').forEach((button) => button.addEventListener('click', openBulkCredentialAccess))
   document.querySelectorAll('[data-add-group], [data-edit-group]').forEach((button) => button.addEventListener('click', editGroup))
   bindEventCredentialRows(app)
   document.querySelector('[data-group-search]')?.addEventListener('input', filterGroups)
+  document.querySelector('[data-credential-search]')?.addEventListener('input', filterCredentials)
   document.querySelector('[data-event-search]')?.addEventListener('input', (event) => { eventSearch = event.currentTarget.value; refreshEventRows() })
   document.querySelector('[data-event-type-filter]')?.addEventListener('change', (event) => { eventTypeFilter = event.currentTarget.value; refreshEventRows() })
   document.querySelector('[data-export-credentials]')?.addEventListener('click', exportCredentials)
@@ -759,6 +828,60 @@ function renderCardGroups(card, selected = null) {
     : empty('No access levels are available. Add one here, then assign it to this credential.')
 }
 
+function openBulkCredentialAccess(event) {
+  event.preventDefault()
+  event.stopPropagation()
+  const oids = `${event.currentTarget.dataset.manageCredentials || ''}`.split(',').filter(Boolean)
+  const cards = oids.map((oid) => DB.cards.get(oid)).filter(Boolean)
+  if (!cards.length) return
+  credentialBulkForm.dataset.oids = JSON.stringify(oids)
+  credentialBulkForm.elements.mode.value = 'add'
+  const label = event.currentTarget.dataset.manageLabel || 'selected branch'
+  document.getElementById('credential-bulk-title').textContent = `Manage ${label}`
+  document.getElementById('credential-bulk-summary').textContent = `Apply an access-level change to ${cards.length} credential${cards.length === 1 ? '' : 's'}. Credential names, numbers, and dates are not changed.`
+  const groups = records(DB.groups)
+  document.getElementById('credential-bulk-levels').innerHTML = groups.length
+    ? groups.map((group) => `<label class="choice"><input type="checkbox" data-bulk-group="${escapeHTML(group.OID)}"><span>${display(group.name, `Access level ${group.OID}`)}</span></label>`).join('')
+    : empty('No access levels are available.')
+  credentialBulkDialog.showModal()
+}
+
+async function saveBulkCredentialAccess(event) {
+  event.preventDefault()
+  const saveButton = document.getElementById('credential-bulk-save')
+  saveButton.disabled = true
+  try {
+    const cards = JSON.parse(credentialBulkForm.dataset.oids || '[]').map((oid) => DB.cards.get(oid)).filter(Boolean)
+    const selected = new Set([...document.querySelectorAll('[data-bulk-group]:checked')].map((field) => field.dataset.bulkGroup))
+    const mode = credentialBulkForm.elements.mode.value
+    if (!cards.length) throw new Error('No credentials are selected.')
+    if (mode !== 'replace' && !selected.size) throw new Error('Select at least one access level.')
+    if (mode === 'replace' && !selected.size && !window.confirm('Remove every access level from all selected credentials?')) return
+
+    const updates = []
+    cards.forEach((card) => records(DB.groups).forEach((group) => {
+      const membershipOID = cardGroupOID(card.OID, group.OID)
+      const current = cardInGroup(card, group)
+      const next = mode === 'replace' ? selected.has(group.OID) : mode === 'remove' ? current && !selected.has(group.OID) : current || selected.has(group.OID)
+      if (membershipOID && next !== current) updates.push({ oid: membershipOID, value: `${next}` })
+    }))
+    if (!updates.length) {
+      credentialBulkDialog.close()
+      showNotice('The selected credentials already have that access configuration.')
+      return
+    }
+    await postConfiguration('/cards', { created: [], updated: updates, deleted: [] })
+    await synchronizeHardware('/synchronize/ACL', 'Credential group')
+    credentialBulkDialog.close()
+    showNotice(`Access levels updated and synchronized for ${cards.length} credential${cards.length === 1 ? '' : 's'}.`)
+    await load()
+  } catch (error) {
+    showNotice(error.message || 'Group credential update failed.', true)
+  } finally {
+    saveButton.disabled = false
+  }
+}
+
 function defaultCardDates() {
   const from = new Date()
   const format = (date) => `${date.getFullYear()}-${`${date.getMonth() + 1}`.padStart(2, '0')}-${`${date.getDate()}`.padStart(2, '0')}`
@@ -794,7 +917,9 @@ function editCard(event) {
   const card = event.currentTarget.dataset.editCard ? DB.cards.get(event.currentTarget.dataset.editCard) : null
   const defaults = defaultCardDates()
   cardForm.dataset.oid = card?.OID || ''
+  cardForm.elements.managementGroup.value = card?.managementGroup || ''
   cardForm.elements.name.value = card?.name || ''
+  cardForm.elements.label.value = card?.label || ''
   cardForm.elements.kind.value = card?.kind || 'card'
   cardForm.elements.number.value = card?.number || ''
   populateFacilityCard(card?.number)
@@ -995,13 +1120,12 @@ async function saveCard(event) {
   const existing = oid ? DB.cards.get(oid) : null
 
   try {
+    const managementGroup = cardForm.elements.managementGroup.value.trim()
     const name = cardForm.elements.name.value.trim()
+    const label = cardForm.elements.label.value.trim()
     const number = cardForm.elements.number.value.trim()
     if (!cardForm.elements.from.value || !cardForm.elements.to.value || cardForm.elements.to.value < cardForm.elements.from.value) {
       throw new Error('Valid until must be on or after Valid from.')
-    }
-    if (records(DB.cards).some((card) => card.OID !== existing?.OID && `${card.name}`.trim().toLowerCase() === name.toLowerCase())) {
-      throw new Error('A credential with that name already exists.')
     }
     if (records(DB.cards).some((card) => card.OID !== existing?.OID && `${card.number}`.trim() === number)) {
       throw new Error('A credential with that number already exists.')
@@ -1017,7 +1141,9 @@ async function saveCard(event) {
     const changed = (suffix, value, original) => {
       if (!existing || `${value ?? ''}` !== `${original ?? ''}`) updates.push({ oid: `${oid}${suffix}`, value: `${value ?? ''}` })
     }
+    changed(schema.cards.managementGroup, managementGroup, existing?.managementGroup)
     changed(schema.cards.name, name, existing?.name)
+    changed(schema.cards.label, label, existing?.label)
     changed(schema.cards.kind, cardForm.elements.kind.value, existing?.kind || 'card')
     changed(schema.cards.card, number, existing?.number)
     if (schema.cards.PIN) changed(schema.cards.PIN, cardForm.elements.PIN.value.trim(), existing?.PIN)
@@ -1295,6 +1421,7 @@ document.getElementById('refresh-button').addEventListener('click', manualRefres
 controllerForm.addEventListener('submit', saveController)
 doorForm.addEventListener('submit', saveDoor)
 cardForm.addEventListener('submit', saveCard)
+credentialBulkForm.addEventListener('submit', saveBulkCredentialAccess)
 cardForm.elements.number.addEventListener('input', () => populateFacilityCard(cardForm.elements.number.value))
 cardForm.elements.facilityCode.addEventListener('input', populateDecimalCard)
 cardForm.elements.cardNumber.addEventListener('input', populateDecimalCard)
@@ -1324,6 +1451,8 @@ document.getElementById('door-editor-delete').addEventListener('click', deleteDo
 document.getElementById('card-editor-close').addEventListener('click', () => cardDialog.close())
 document.getElementById('card-editor-cancel').addEventListener('click', () => cardDialog.close())
 document.getElementById('card-editor-delete').addEventListener('click', deleteCard)
+document.getElementById('credential-bulk-close').addEventListener('click', () => credentialBulkDialog.close())
+document.getElementById('credential-bulk-cancel').addEventListener('click', () => credentialBulkDialog.close())
 document.getElementById('card-group-add').addEventListener('click', () => editGroup({ currentTarget: { dataset: { fromCard: 'true' } } }))
 document.getElementById('group-editor-close').addEventListener('click', () => groupDialog.close())
 document.getElementById('group-editor-cancel').addEventListener('click', () => groupDialog.close())
@@ -1339,4 +1468,3 @@ document.getElementById('signout-button').addEventListener('click', async () => 
 
 load()
 setInterval(load, 15000)
-	
