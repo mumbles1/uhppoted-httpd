@@ -98,6 +98,8 @@ tbody tr:hover td { background: #10233a; }
 .form-grid label > span { color: #9db4ca; font-size: 12px; font-weight: 750; }
 .form-grid input, .form-grid select { width: 100%; min-height: 42px; padding: 0 11px; border: 1px solid var(--line); border-radius: 8px; outline: none; color: var(--text); background: #081421; }
 .form-grid input:focus, .form-grid select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px #168dd329; }
+.form-grid .checkbox-field { display: flex; align-items: center; align-self: end; min-height: 42px; padding: 0 11px; border: 1px solid var(--line); border-radius: 8px; background: #081421; }
+.form-grid .checkbox-field input { width: 17px; min-height: auto; height: 17px; margin: 0 9px 0 0; padding: 0; }
 .door-mapping-heading { margin: 22px 0 12px; padding-top: 18px; border-top: 1px solid var(--line); }
 .door-mapping-heading h3 { margin: 0; font-size: 15px; }
 .door-mapping-heading p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }

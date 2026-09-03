@@ -77,6 +77,30 @@
       </form>
     </dialog>
 
+    <dialog id="door-dialog" class="editor-dialog">
+      <form id="door-form">
+        <div class="dialog-heading">
+          <div><p class="eyebrow">DOOR CONFIGURATION</p><h2 id="door-editor-title">Add door</h2></div>
+          <button type="button" class="icon-button" id="door-editor-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="form-grid">
+          <label class="wide"><span>Name</span><input name="name" type="text" placeholder="Front gate" required></label>
+          <label><span>Default mode</span><select name="mode"><option value="controlled">Controlled</option><option value="normally open">Normally open</option><option value="normally closed">Normally closed</option></select></label>
+          <label><span>Unlock delay (seconds)</span><input name="delay" type="number" min="1" max="60" value="5" required></label>
+          <label class="checkbox-field"><input name="keypad" type="checkbox"><span>Enable keypad</span></label>
+        </div>
+        <div class="door-mapping-heading"><h3>Controller assignment</h3><p>Connect this logical door to a physical controller channel.</p></div>
+        <div class="form-grid">
+          <label><span>Controller</span><select name="controller"><option value="">Unassigned</option></select></label>
+          <label><span>Physical channel</span><select name="channel"><option value="">Select a controller</option></select></label>
+        </div>
+        <div class="dialog-actions">
+          <button type="button" class="secondary" id="door-editor-cancel">Cancel</button>
+          <button type="submit" class="primary" id="door-editor-save">Save door</button>
+        </div>
+      </form>
+    </dialog>
+
     <script>
       window.gateControl = {
         mode: {{printf "%q" $.context.Mode}},

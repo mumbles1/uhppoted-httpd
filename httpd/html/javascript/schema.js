@@ -81,6 +81,12 @@ export const schema = {
     modified: '.0.3',
     type: '.0.4',
 
+    name: '.1',
+    delay: '.2',
+    mode: '.3',
+    keypad: '.4',
+    passcodes: '.5',
+
     regex: /^(0\.3\.([1-9][0-9]*)).*$/,
   },
 

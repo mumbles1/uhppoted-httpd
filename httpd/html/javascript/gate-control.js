@@ -8,6 +8,8 @@ const connectionDot = document.getElementById('connection-dot')
 const connectionLabel = document.getElementById('connection-label')
 const controllerDialog = document.getElementById('controller-dialog')
 const controllerForm = document.getElementById('controller-form')
+const doorDialog = document.getElementById('door-dialog')
+const doorForm = document.getElementById('door-form')
 const routes = ['overview', 'controllers', 'doors', 'cards', 'groups', 'events', 'logs']
 
 let loading = false
@@ -138,6 +140,9 @@ function doorRows(list = controllerDoors()) {
       <td>${door ? (door.keypad ? 'Enabled' : 'Disabled') : '—'}</td>
       <td>${statusBadge(door?.mode?.status || door?.status || controller?.status)}</td>
       <td><div class="door-actions">
+        ${door
+          ? `<button class="secondary" data-edit-door="${escapeHTML(door.OID)}" ${disabled}>Configure</button>`
+          : `<button class="secondary" data-add-door data-controller-oid="${escapeHTML(controller?.OID)}" data-channel="${channel}" ${disabled}>Add door</button>`}
         <button class="primary" ${target} data-mode="normally open" ${disabled}>Unlock</button>
         <button class="secondary" ${target} data-mode="controlled" ${disabled}>Controlled</button>
         <button class="danger" ${target} data-mode="normally closed" ${disabled}>Lock</button>
@@ -202,8 +207,115 @@ function render() {
     default: app.innerHTML = overview()
   }
 
+  if (currentRoute() === 'doors') {
+    app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<button class="primary" data-add-door ${config.mode === 'monitor' ? 'disabled' : ''}>Add door</button>`)
+  }
+
   document.querySelectorAll('[data-mode][data-door], [data-mode][data-controller][data-channel]').forEach((button) => button.addEventListener('click', controlDoor))
   document.querySelectorAll('[data-edit-controller]').forEach((button) => button.addEventListener('click', editController))
+  document.querySelectorAll('[data-add-door], [data-edit-door]').forEach((button) => button.addEventListener('click', editDoor))
+}
+
+function doorAssignment(doorOID) {
+  for (const controller of records(DB.controllers)) {
+    for (const [channel, assigned] of Object.entries(controller.doors || {})) {
+      if (assigned === doorOID) return { controller, channel: Number(channel) }
+    }
+  }
+  return { controller: null, channel: null }
+}
+
+function refreshDoorChannels(selected = '') {
+  const controller = DB.controllers.get(doorForm.elements.controller.value)
+  const editingDoor = doorForm.dataset.oid
+  const channels = controller ? Array.from({ length: controllerCapacity(controller) }, (_, index) => index + 1) : []
+  doorForm.elements.channel.innerHTML = controller
+    ? channels.map((channel) => {
+      const assigned = controller.doors?.[channel] || ''
+      const occupied = assigned && assigned !== editingDoor
+      return `<option value="${channel}" ${`${channel}` === `${selected}` ? 'selected' : ''} ${occupied ? 'disabled' : ''}>Door ${channel}${occupied ? ' (assigned)' : ''}</option>`
+    }).join('')
+    : '<option value="">Select a controller</option>'
+}
+
+function editDoor(event) {
+  const door = event.currentTarget.dataset.editDoor ? DB.doors.get(event.currentTarget.dataset.editDoor) : null
+  const assigned = door ? doorAssignment(door.OID) : {
+    controller: DB.controllers.get(event.currentTarget.dataset.controllerOid),
+    channel: Number(event.currentTarget.dataset.channel) || null,
+  }
+
+  doorForm.dataset.oid = door?.OID || ''
+  doorForm.dataset.originalController = assigned.controller?.OID || ''
+  doorForm.dataset.originalChannel = assigned.channel || ''
+  doorForm.elements.name.value = door?.name || ''
+  doorForm.elements.mode.value = door?.mode?.configured || door?.mode?.mode || 'controlled'
+  doorForm.elements.delay.value = door?.delay?.configured || door?.delay?.delay || '5'
+  doorForm.elements.keypad.checked = Boolean(door?.keypad)
+  doorForm.elements.controller.innerHTML = ['<option value="">Unassigned</option>', ...records(DB.controllers).map((controller) => `<option value="${escapeHTML(controller.OID)}">${display(controller.name, `Controller ${controller.deviceID}`)}</option>`)].join('')
+  doorForm.elements.controller.value = assigned.controller?.OID || ''
+  refreshDoorChannels(assigned.channel)
+  document.getElementById('door-editor-title').textContent = door ? (door.name || 'Configure door') : 'Add door'
+  doorDialog.showModal()
+}
+
+async function postConfiguration(url, body) {
+  const response = await fetch(url, {
+    method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) throw new Error((await response.text()) || `Configuration update failed (${response.status})`)
+  return response.json()
+}
+
+async function saveDoor(event) {
+  event.preventDefault()
+  const saveButton = document.getElementById('door-editor-save')
+  saveButton.disabled = true
+  let oid = doorForm.dataset.oid
+  const existing = oid ? DB.doors.get(oid) : null
+
+  try {
+    if (!oid) {
+      const created = await postConfiguration('/doors', { created: [{ oid: '<new>', value: '' }], updated: [], deleted: [] })
+      oid = created.doors?.find((item) => item.value === 'new')?.OID
+      if (!oid) throw new Error('The server did not return the new door ID.')
+    }
+
+    const updates = []
+    const changed = (suffix, value, original) => {
+      if (!existing || `${value ?? ''}` !== `${original ?? ''}`) updates.push({ oid: `${oid}${suffix}`, value: `${value ?? ''}` })
+    }
+    changed(schema.doors.name, doorForm.elements.name.value.trim(), existing?.name)
+    changed(schema.doors.delay, doorForm.elements.delay.value, existing?.delay?.configured || existing?.delay?.delay)
+    changed(schema.doors.mode, doorForm.elements.mode.value, existing?.mode?.configured || existing?.mode?.mode)
+    changed(schema.doors.keypad, `${doorForm.elements.keypad.checked}`, `${Boolean(existing?.keypad)}`)
+    if (updates.length) await postConfiguration('/doors', { created: [], updated: updates, deleted: [] })
+
+    const originalController = DB.controllers.get(doorForm.dataset.originalController)
+    const originalChannel = Number(doorForm.dataset.originalChannel) || null
+    const controller = DB.controllers.get(doorForm.elements.controller.value)
+    const channel = Number(doorForm.elements.channel.value) || null
+    const assignmentUpdates = []
+
+    if (originalController && (originalController.OID !== controller?.OID || originalChannel !== channel)) {
+      assignmentUpdates.push({ oid: `${originalController.OID}${schema.controllers[`door${originalChannel}`]}`, value: '' })
+    }
+    if (controller && channel && (originalController?.OID !== controller.OID || originalChannel !== channel)) {
+      const occupied = controller.doors?.[channel]
+      if (occupied && occupied !== oid) throw new Error(`Physical door ${channel} is already assigned.`)
+      assignmentUpdates.push({ oid: `${controller.OID}${schema.controllers[`door${channel}`]}`, value: oid })
+    }
+    if (assignmentUpdates.length) await postConfiguration('/controllers', { created: [], updated: assignmentUpdates, deleted: [] })
+
+    doorDialog.close()
+    showNotice(existing ? 'Door configuration saved.' : 'Door added and assigned.')
+    await load()
+  } catch (error) {
+    showNotice(error.message || 'Door configuration failed.', true)
+  } finally {
+    saveButton.disabled = false
+  }
 }
 
 function editController(event) {
@@ -329,8 +441,12 @@ async function controlDoor(event) {
 
 document.getElementById('refresh-button').addEventListener('click', load)
 controllerForm.addEventListener('submit', saveController)
+doorForm.addEventListener('submit', saveDoor)
+doorForm.elements.controller.addEventListener('change', () => refreshDoorChannels())
 document.getElementById('controller-editor-close').addEventListener('click', () => controllerDialog.close())
 document.getElementById('controller-editor-cancel').addEventListener('click', () => controllerDialog.close())
+document.getElementById('door-editor-close').addEventListener('click', () => doorDialog.close())
+document.getElementById('door-editor-cancel').addEventListener('click', () => doorDialog.close())
 document.getElementById('menu-button').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'))
 document.getElementById('signout-button').addEventListener('click', async () => {
   await fetch('/logout', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}' })
