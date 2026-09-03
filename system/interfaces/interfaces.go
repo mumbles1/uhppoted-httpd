@@ -403,6 +403,14 @@ func (ii *Interfaces) PutCard(controller types.IController, card uint32, PIN uin
 	return lan.putCard(controller, card, PIN, from, to, permissions, firstcard)
 }
 
+func (ii *Interfaces) SetTimeProfile(controller types.IController, profile lib.TimeProfile) error {
+	lan, ok := ii.LAN()
+	if !ok {
+		return fmt.Errorf("no LAN interface configured")
+	}
+	return lan.setTimeProfile(controller, profile)
+}
+
 func (ii *Interfaces) DeleteCard(controller types.IController, card uint32) error {
 	lan, ok := ii.LAN()
 	if !ok {

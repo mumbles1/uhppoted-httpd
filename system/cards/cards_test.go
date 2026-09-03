@@ -2,6 +2,7 @@ package cards
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"codeberg.org/uhppoted/uhppoted-httpd/auth"
@@ -503,5 +504,24 @@ func TestValidateWithNewCard(t *testing.T) {
 
 	if err := cc.Validate(); err != nil {
 		t.Errorf("Unexpected error validating cards list with new card (%v)", err)
+	}
+}
+
+func TestValidateRejectsDuplicateCredentialNames(t *testing.T) {
+	cc := Cards{
+		cards: map[schema.OID]*Card{
+			"0.4.1": {
+				CatalogCard: catalog.CatalogCard{OID: "0.4.1", CardID: 1001},
+				name:        "Employee One",
+			},
+			"0.4.2": {
+				CatalogCard: catalog.CatalogCard{OID: "0.4.2", CardID: 1002},
+				name:        " employee one ",
+			},
+		},
+	}
+
+	if err := cc.Validate(); err == nil || !strings.Contains(err.Error(), "duplicate credential name") {
+		t.Fatalf("Expected duplicate credential name error, got %v", err)
 	}
 }

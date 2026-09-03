@@ -70,6 +70,36 @@ func TestGroupDeserializeWithDefaultCreated(t *testing.T) {
 	}
 }
 
+func TestGroupTimeProfile(t *testing.T) {
+	g := Group{
+		CatalogGroup: catalog.CatalogGroup{OID: "0.5.3"},
+		Name:         "Employees",
+		Schedule: Schedule{
+			Enabled: true,
+			Start:   "08:30",
+			End:     "17:00",
+			Weekdays: map[string]bool{
+				"monday": true,
+				"friday": true,
+			},
+		},
+	}
+
+	profile, err := g.TimeProfile()
+	if err != nil {
+		t.Fatalf("Unexpected error creating time profile: %v", err)
+	}
+	if profile == nil || profile.ID != 252 {
+		t.Fatalf("Incorrect time profile: %#v", profile)
+	}
+	if !profile.Weekdays[time.Monday] || !profile.Weekdays[time.Friday] || profile.Weekdays[time.Saturday] {
+		t.Fatalf("Incorrect profile weekdays: %#v", profile.Weekdays)
+	}
+	if profile.Segments[1].Start.String() != "08:30" || profile.Segments[1].End.String() != "17:00" {
+		t.Fatalf("Incorrect profile segment: %#v", profile.Segments[1])
+	}
+}
+
 func TestGroupAsObjects(t *testing.T) {
 	catalog.Init(memdb.NewCatalog())
 

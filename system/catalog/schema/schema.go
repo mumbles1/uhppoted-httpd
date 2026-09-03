@@ -138,6 +138,7 @@ type Groups struct {
 	Name      Suffix `json:"name"`
 	Doors     Suffix `json:"doors"`
 	FirstCard Suffix `json:"firstcard"`
+	Schedule  Suffix `json:"schedule"`
 }
 
 type Events struct {
@@ -411,6 +412,7 @@ var schema = Schema{
 		Name:      GroupName,
 		Doors:     GroupDoors,
 		FirstCard: GroupFirstCard,
+		Schedule:  GroupSchedule,
 	},
 
 	Events: Events{
@@ -558,6 +560,7 @@ const CardKind Suffix = ".7"
 const GroupName Suffix = ".1"
 const GroupDoors Suffix = ".2"
 const GroupFirstCard Suffix = ".3"
+const GroupSchedule Suffix = ".4"
 
 const EventsStatus Suffix = ".0.0"
 const EventsFirst Suffix = ".0.1"

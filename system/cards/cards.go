@@ -353,6 +353,7 @@ func (cc *Cards) Clone() Cards {
 
 func (cc Cards) Validate() error {
 	cards := map[uint32]string{}
+	names := map[string]string{}
 
 	for k, c := range cc.cards {
 		if c.IsDeleted() {
@@ -377,6 +378,14 @@ func (cc Cards) Validate() error {
 			}
 
 			cards[c.CardID] = string(c.OID)
+		}
+
+		if name := strings.ToLower(strings.TrimSpace(c.name)); name != "" {
+			if oid, ok := names[name]; ok {
+				return fmt.Errorf("duplicate credential name (%v)", oid)
+			}
+
+			names[name] = string(c.OID)
 		}
 	}
 

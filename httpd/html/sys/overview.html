@@ -22,7 +22,7 @@
           <a href="/sys/controllers.html" data-route="controllers"><span>Controllers</span><b id="count-controllers">—</b></a>
           <a href="/sys/doors.html" data-route="doors"><span>Relays</span><b id="count-doors">—</b></a>
           <a href="/sys/cards.html" data-route="cards"><span>Credentials</span><b id="count-cards">—</b></a>
-          <a href="/sys/groups.html" data-route="groups"><span>Groups</span><b id="count-groups">—</b></a>
+          <a href="/sys/groups.html" data-route="groups"><span>Access Levels</span><b id="count-groups">—</b></a>
           <a href="/sys/events.html" data-route="events"><span>Events</span><b id="count-events">—</b></a>
           <a href="/sys/logs.html" data-route="logs"><span>Audit log</span><b id="count-logs">—</b></a>
         </nav>
@@ -130,8 +130,8 @@
           <label class="wide hidden" id="card-pin-field"><span>PIN (optional)</span><input name="PIN" type="number" min="0" max="999999" placeholder="Optional"></label>
         </div>
         <div class="door-mapping-heading heading-with-action">
-          <div><h3>Access groups</h3><p>Assign this credential to one or more groups. Group relay permissions determine where it works.</p></div>
-          <button type="button" class="secondary" id="card-group-add">Add access group</button>
+          <div><h3>Access levels</h3><p>Assign this credential to one or more access levels. Each level determines which relays it may use.</p></div>
+          <button type="button" class="secondary" id="card-group-add">Add access level</button>
         </div>
         <div class="choice-grid" id="card-group-fields"></div>
         <div class="dialog-actions">
@@ -145,19 +145,28 @@
     <dialog id="group-dialog" class="editor-dialog">
       <form id="group-form">
         <div class="dialog-heading">
-          <div><p class="eyebrow">ACCESS GROUP CONFIGURATION</p><h2 id="group-editor-title">Add access group</h2></div>
+          <div><p class="eyebrow">ACCESS LEVEL CONFIGURATION</p><h2 id="group-editor-title">Add access level</h2></div>
           <button type="button" class="icon-button" id="group-editor-close" aria-label="Close">&times;</button>
         </div>
         <div class="form-grid">
-          <label class="wide"><span>Group name</span><input name="name" type="text" placeholder="Employees" required></label>
+          <label class="wide"><span>Access level name</span><input name="name" type="text" placeholder="Employees" required></label>
           <label class="checkbox-field"><input name="firstcard" type="checkbox"><span>First card unlocks</span></label>
+          <label class="checkbox-field wide"><input name="scheduleEnabled" type="checkbox"><span>Restrict access by controller time</span></label>
+          <div class="schedule-editor wide hidden" id="group-schedule-fields">
+            <p class="field-help">Stored in the controller and enforced even when Access Control - HTTP is offline.</p>
+            <div class="weekday-grid" id="group-schedule-weekdays"></div>
+            <div class="field-pair">
+              <label><span>Access starts</span><input name="scheduleStart" type="time" value="08:00"></label>
+              <label><span>Access ends</span><input name="scheduleEnd" type="time" value="17:00"></label>
+            </div>
+          </div>
         </div>
-        <div class="door-mapping-heading"><h3>Relay access</h3><p>Select every relay or door members of this group may use.</p></div>
+        <div class="door-mapping-heading"><h3>Relay access</h3><p>Select every relay or door assigned credentials may use.</p></div>
         <div class="choice-grid" id="group-door-fields"></div>
         <div class="dialog-actions">
-          <button type="button" class="danger delete-action hidden" id="group-editor-delete">Delete group</button>
+          <button type="button" class="danger delete-action hidden" id="group-editor-delete">Delete access level</button>
           <button type="button" class="secondary" id="group-editor-cancel">Cancel</button>
-          <button type="submit" class="primary" id="group-editor-save">Save group</button>
+          <button type="submit" class="primary" id="group-editor-save">Save access level</button>
         </div>
       </form>
     </dialog>

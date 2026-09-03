@@ -680,6 +680,7 @@ function groups(o) {
       name: '',
       doors: new Map(),
       firstcard: false,
+      schedule: { enabled: false, start: '08:00', end: '17:00', weekdays: {} },
       status: o.value,
       touched: new Date(),
     })
@@ -708,6 +709,14 @@ function groups(o) {
 
     case `${base}${schema.groups.firstcard}`:
       v.firstcard = o.value === true || o.value === 'true'
+      break
+
+    case `${base}${schema.groups.schedule}`:
+      try {
+        v.schedule = typeof o.value === 'string' ? JSON.parse(o.value) : o.value
+      } catch {
+        v.schedule = { enabled: false, start: '08:00', end: '17:00', weekdays: {} }
+      }
       break
 
     default: {
