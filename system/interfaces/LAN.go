@@ -600,6 +600,22 @@ func (l *LAN) putCard(c types.IController, cardID uint32, PIN uint32, from, to l
 	}
 }
 
+func (l *LAN) setTimeProfile(c types.IController, profile lib.TimeProfile) error {
+	lock(c.ID())
+	defer unlock(c.ID())
+
+	api := l.api([]types.IController{c})
+	deviceID := c.ID()
+	if ok, err := api.UHPPOTE.SetTimeProfile(deviceID, profile); err != nil {
+		return err
+	} else if !ok {
+		return fmt.Errorf("%v failed to update time profile %v", deviceID, profile.ID)
+	}
+
+	log.Infof("%v  set time profile %v", deviceID, profile.ID)
+	return nil
+}
+
 func (l *LAN) deleteCard(c types.IController, card uint32) error {
 	lock(c.ID())
 	defer unlock(c.ID())
