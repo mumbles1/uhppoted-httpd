@@ -183,6 +183,7 @@ func (d *dispatcher) api(w http.ResponseWriter, r *http.Request) {
 				"groups":      system.Groups(uid, role),
 				"events":      system.Events(uid, role, 0, 50),
 				"logs":        system.Logs(uid, role, 0, 50),
+				"users":       system.Users(uid, role),
 				"relayStatus": system.RelayStatus(),
 			}, nil
 		})
@@ -290,4 +291,3 @@ func (d *dispatcher) apiAuthorised(w http.ResponseWriter, uid, role string, path
 	}
 	return true
 }
-	
