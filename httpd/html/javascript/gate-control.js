@@ -206,7 +206,7 @@ function relayStateBadge(live, controller) {
 	return `<span class="badge ${state === 'Secure' && !live.stale ? '' : 'warn'}">${state}${suffix}</span>`
 }
 
-function cardRows(list = records(DB.cards)) {
+function _cardRows(list = records(DB.cards)) {
   return list.map((card) => {
     const memberships = [...(card.groups?.values?.() || [])].filter((group) => group.member).length
     const credential = formatCredential(card.number)
