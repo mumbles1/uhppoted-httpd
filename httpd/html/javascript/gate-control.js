@@ -196,10 +196,11 @@ function doorRows(list = controllerDoors()) {
 }
 
 function relayStateBadge(live, controller) {
-  if (!controller) return '<span class="badge warn">Unassigned</span>'
-  if (!live) return '<span class="badge warn">Unavailable</span>'
-  const state = live['relay-active'] ? 'Relay active' : live['door-open'] ? 'Door open' : 'Secure'
-  return `<span class="badge ${state === 'Secure' ? '' : 'warn'}">${state}</span>`
+	if (!controller) return '<span class="badge warn">Unassigned</span>'
+	if (!live) return '<span class="badge warn">Unavailable</span>'
+	const state = live['relay-active'] ? 'Relay active' : live['door-open'] ? 'Door open' : 'Secure'
+	const suffix = live.stale ? ' · last known' : ''
+	return `<span class="badge ${state === 'Secure' && !live.stale ? '' : 'warn'}">${state}${suffix}</span>`
 }
 
 function cardRows(list = records(DB.cards)) {
@@ -1338,4 +1339,4 @@ document.getElementById('signout-button').addEventListener('click', async () => 
 
 load()
 setInterval(load, 15000)
-  
+	
