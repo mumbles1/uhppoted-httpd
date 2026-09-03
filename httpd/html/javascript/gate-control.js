@@ -1037,6 +1037,17 @@ function selectedCardGroups() {
   return new Set([...document.querySelectorAll('[data-card-group]:checked')].map((field) => field.dataset.cardGroup))
 }
 
+const noAccessLevelOID = '0.5.254'
+
+function enforceExclusiveNoAccess(changed) {
+  if (!changed.checked) return
+  document.querySelectorAll('[data-card-group]').forEach((field) => {
+    if (field !== changed && (changed.dataset.cardGroup === noAccessLevelOID || field.dataset.cardGroup === noAccessLevelOID)) {
+      field.checked = false
+    }
+  })
+}
+
 function renderCardGroups(card, selected = null) {
   const groups = records(DB.groups).sort(accessLevelCompare)
   document.getElementById('card-group-fields').innerHTML = groups.length
@@ -1361,6 +1372,9 @@ async function saveCard(event) {
     if (!selectedGroups.size) {
       throw new Error('Select at least one access level. Use Level 0 for no access.')
     }
+    if (selectedGroups.has(noAccessLevelOID) && selectedGroups.size > 1) {
+      throw new Error('No Access cannot be combined with another access level.')
+    }
     if (existing) oid = await currentCardOID(existing)
     if (!oid) {
       const created = await postConfiguration('/cards', { created: [{ oid: '<new>', value: '' }], updated: [], deleted: [] })
@@ -1654,6 +1668,9 @@ cardForm.addEventListener('submit', saveCard)
 personForm.addEventListener('submit', savePerson)
 credentialBulkForm.addEventListener('submit', saveBulkCredentialAccess)
 cardForm.elements.managementGroup.addEventListener('change', () => updateManagementGroupNewField(cardForm))
+document.getElementById('card-group-fields').addEventListener('change', (event) => {
+  if (event.target.matches('[data-card-group]')) enforceExclusiveNoAccess(event.target)
+})
 personForm.elements.managementGroup.addEventListener('change', () => updateManagementGroupNewField(personForm))
 cardForm.elements.number.addEventListener('input', () => populateFacilityCard(cardForm.elements.number.value))
 cardForm.elements.name.addEventListener('change', useExistingPersonGroup)
