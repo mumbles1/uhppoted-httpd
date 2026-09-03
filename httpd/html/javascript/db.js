@@ -692,7 +692,7 @@ function groups(o) {
       break
 
     case `${base}${schema.groups.firstcard}`:
-      v.firstcard = o.value
+      v.firstcard = o.value === true || o.value === 'true'
       break
 
     default: {
