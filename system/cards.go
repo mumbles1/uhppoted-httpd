@@ -2,6 +2,8 @@ package system
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
 	lib "codeberg.org/uhppoted/uhppoted-core/types"
 
@@ -100,5 +102,57 @@ func UpdateCards(uid, role string, m map[string]any) (any, error) {
 		sys.cards = shadow
 	})
 
+	if err := exportCredentialsCSVLocked(); err != nil {
+		warnf("credentials", "could not update credentials CSV: %v", err)
+	}
+
 	return dbc.Objects(), nil
+}
+
+func CredentialsCSV() ([]byte, error) {
+	sys.RLock()
+	defer sys.RUnlock()
+	return sys.cards.CSV()
+}
+
+func ExportCredentialsCSV() (string, error) {
+	sys.RLock()
+	defer sys.RUnlock()
+	return credentialsCSVPath(), exportCredentialsCSVLocked()
+}
+
+func credentialsCSVPath() string {
+	if path := os.Getenv("UHPPOTED_CREDENTIALS_CSV"); path != "" {
+		return path
+	}
+	return "/data/credentials.csv"
+}
+
+func exportCredentialsCSVLocked() error {
+	data, err := sys.cards.CSV()
+	if err != nil {
+		return err
+	}
+	path := credentialsCSVPath()
+	if err := os.MkdirAll(filepath.Dir(path), 0750); err != nil {
+		return err
+	}
+	temporary, err := os.CreateTemp(filepath.Dir(path), ".credentials-*.csv")
+	if err != nil {
+		return err
+	}
+	name := temporary.Name()
+	defer os.Remove(name)
+	if err := temporary.Chmod(0640); err != nil {
+		temporary.Close()
+		return err
+	}
+	if _, err := temporary.Write(data); err != nil {
+		temporary.Close()
+		return err
+	}
+	if err := temporary.Close(); err != nil {
+		return err
+	}
+	return os.Rename(name, path)
 }
