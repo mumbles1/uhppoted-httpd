@@ -15,23 +15,31 @@ import (
 )
 
 type ControllerImportCredential struct {
-	CardNumber uint32   `json:"cardNumber"`
-	PIN        uint32   `json:"pin,omitempty"`
-	From       string   `json:"from"`
-	To         string   `json:"to"`
-	Relays     []string `json:"relays"`
+	CardNumber  uint32   `json:"cardNumber"`
+	PIN         uint32   `json:"pin,omitempty"`
+	From        string   `json:"from"`
+	To          string   `json:"to"`
+	Relays      []string `json:"relays"`
 	Controllers []uint32 `json:"controllers"`
-	Supported  bool     `json:"supported"`
-	Warning    string   `json:"warning,omitempty"`
+	Supported   bool     `json:"supported"`
+	Resolvable  bool     `json:"resolvable"`
+	LocalMatch  bool     `json:"localMatch"`
+	Warning     string   `json:"warning,omitempty"`
 }
 
 type ControllerImportPreview struct {
 	Controllers int                          `json:"controllers"`
 	Credentials []ControllerImportCredential `json:"credentials"`
 	Supported   int                          `json:"supported"`
+	Resolvable  int                          `json:"resolvable"`
 	Skipped     int                          `json:"skipped"`
 	Warnings    []string                     `json:"warnings"`
 	raw         acl.ACL
+}
+
+type ControllerImportResolution struct {
+	Mode       string `json:"mode"`
+	Controller uint32 `json:"controller"`
 }
 
 func ReadControllerImport() (ControllerImportPreview, error) {
@@ -96,6 +104,12 @@ func ReadControllerImport() (ControllerImportPreview, error) {
 	}
 
 	preview := ControllerImportPreview{Controllers: len(current), Credentials: []ControllerImportCredential{}, Warnings: []string{}, raw: current}
+	localCards := map[uint32]bool{}
+	for _, card := range sys.cards.List() {
+		if card.CardID != 0 && !card.IsDeleted() {
+			localCards[card.CardID] = true
+		}
+	}
 	numbers := make([]uint32, 0, len(merged))
 	for number := range merged {
 		numbers = append(numbers, number)
@@ -114,23 +128,30 @@ func ReadControllerImport() (ControllerImportPreview, error) {
 			warning = strings.Trim(strings.Join([]string{warning, "credential dates or PIN conflict between controllers"}, "; "), "; ")
 		}
 		supported := !a.conflict && len(a.unsupported) == 0
+		resolvable := a.conflict && len(a.unsupported) == 0
 		if supported {
 			preview.Supported++
+		} else if resolvable {
+			preview.Resolvable++
 		} else {
 			preview.Skipped++
 		}
 		preview.Credentials = append(preview.Credentials, ControllerImportCredential{
 			CardNumber: number, PIN: uint32(a.card.PIN), From: fmt.Sprint(a.card.From), To: fmt.Sprint(a.card.To),
-			Relays: relays, Controllers: a.controllers, Supported: supported, Warning: warning,
+			Relays: relays, Controllers: a.controllers, Supported: supported, Resolvable: resolvable,
+			LocalMatch: localCards[number], Warning: warning,
 		})
 	}
 	if preview.Skipped > 0 {
-		preview.Warnings = append(preview.Warnings, "Timed, first-card, conflicting, or unmapped credentials are shown but will not be imported.")
+		preview.Warnings = append(preview.Warnings, "Timed, first-card, or unmapped credentials are shown but cannot be imported safely.")
+	}
+	if preview.Resolvable > 0 {
+		preview.Warnings = append(preview.Warnings, "Credentials that differ between controllers require you to select the controller whose dates and PIN should be used.")
 	}
 	return preview, nil
 }
 
-func ApplyControllerImport(uid, role string) (map[string]any, error) {
+func ApplyControllerImport(uid, role string, resolutions map[uint32]ControllerImportResolution) (map[string]any, error) {
 	preview, err := ReadControllerImport()
 	if err != nil {
 		return nil, err
@@ -147,9 +168,21 @@ func ApplyControllerImport(uid, role string) (map[string]any, error) {
 	groupShadow := sys.groups.Clone()
 	cardShadow := sys.cards.Clone()
 	imports := []cards.ControllerImport{}
+	processed := 0
 	for _, credential := range preview.Credentials {
-		if !credential.Supported {
+		resolution := resolutions[credential.CardNumber]
+		if !credential.Supported && !credential.Resolvable {
 			continue
+		}
+		if resolution.Mode == "skip" {
+			continue
+		}
+		selectedController := uint32(0)
+		if credential.Resolvable {
+			selectedController = resolution.Controller
+			if !containsController(credential.Controllers, selectedController) {
+				continue
+			}
 		}
 		relays := make([]schema.OID, 0, len(credential.Relays))
 		for _, relay := range credential.Relays {
@@ -159,8 +192,12 @@ func ApplyControllerImport(uid, role string) (map[string]any, error) {
 		if err != nil {
 			return nil, err
 		}
-		card := findACLCard(preview.raw, credential.CardNumber)
-		imports = append(imports, cards.ControllerImport{CardNumber: credential.CardNumber, PIN: uint32(card.PIN), From: card.From, To: card.To, Group: group})
+		card := findACLCard(preview.raw, credential.CardNumber, selectedController)
+		imports = append(imports, cards.ControllerImport{
+			CardNumber: credential.CardNumber, PIN: uint32(card.PIN), From: card.From, To: card.To, Group: group,
+			PreserveDetails: credential.LocalMatch && resolution.Mode != "override",
+		})
+		processed++
 	}
 	added, updated, err := cardShadow.MergeControllerImports(a, imports, dbc, sys.withPIN)
 	if err != nil {
@@ -182,15 +219,35 @@ func ApplyControllerImport(uid, role string) (map[string]any, error) {
 	if err := exportCredentialsCSVLocked(); err != nil {
 		warnf("credentials", "could not update credentials CSV: %v", err)
 	}
-	return map[string]any{"ok": true, "added": added, "updated": updated, "skipped": preview.Skipped, "safetyBackup": safety}, nil
+	return map[string]any{"ok": true, "added": added, "updated": updated, "skipped": len(preview.Credentials) - processed, "safetyBackup": safety}, nil
 }
 
-func findACLCard(current acl.ACL, number uint32) lib.Card {
-	for _, list := range current {
+func findACLCard(current acl.ACL, number uint32, controller uint32) lib.Card {
+	if controller != 0 {
+		if card, ok := current[controller][number]; ok {
+			return card
+		}
+	}
+	controllers := make([]uint32, 0, len(current))
+	for id := range current {
+		controllers = append(controllers, id)
+	}
+	sort.Slice(controllers, func(i, j int) bool { return controllers[i] < controllers[j] })
+	for _, id := range controllers {
+		list := current[id]
 		if card, ok := list[number]; ok {
 			return card
 		}
 	}
 	return lib.Card{}
 }
-  
+
+func containsController(controllers []uint32, controller uint32) bool {
+	for _, id := range controllers {
+		if id == controller {
+			return true
+		}
+	}
+	return false
+}
+	
