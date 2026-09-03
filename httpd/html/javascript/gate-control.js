@@ -15,6 +15,8 @@ const cardForm = document.getElementById('card-form')
 const credentialBulkDialog = document.getElementById('credential-bulk-dialog')
 const credentialBulkForm = document.getElementById('credential-bulk-form')
 const managementGroupDialog = document.getElementById('management-group-dialog')
+const personDialog = document.getElementById('person-dialog')
+const personForm = document.getElementById('person-form')
 const groupDialog = document.getElementById('group-dialog')
 const groupForm = document.getElementById('group-form')
 const backupDialog = document.getElementById('backup-dialog')
@@ -351,7 +353,7 @@ function credentialTree() {
         </article>`
       }).join('')
       return `<details class="credential-tree-person" open>
-        <summary><span class="tree-summary-main"><strong>${display(person.name)}</strong><small>${person.cards.length} credential${person.cards.length === 1 ? '' : 's'}</small></span><button class="secondary tree-manage" data-manage-credentials="${escapeHTML(oids)}" data-manage-label="${escapeHTML(person.name)}" ${config.mode === 'monitor' ? 'disabled' : ''}>Manage access</button></summary>
+        <summary><span class="tree-summary-main"><strong>${display(person.name)}</strong><small>${person.cards.length} credential${person.cards.length === 1 ? '' : 's'}</small></span><span class="tree-actions"><button class="secondary" data-edit-person="${escapeHTML(oids)}" ${config.mode === 'monitor' ? 'disabled' : ''}>Edit person</button><button class="secondary tree-manage" data-manage-credentials="${escapeHTML(oids)}" data-manage-label="${escapeHTML(person.name)}" ${config.mode === 'monitor' ? 'disabled' : ''}>Manage access</button></span></summary>
         <div class="credential-tree-leaves">${leaves}</div>
       </details>`
     }).join('')
@@ -374,7 +376,56 @@ function filterCredentials(event) {
   if (!next || !current) return
   current.replaceWith(next)
   next.querySelectorAll('[data-edit-card]').forEach((button) => button.addEventListener('click', editCard))
+  next.querySelectorAll('[data-edit-person]').forEach((button) => button.addEventListener('click', openPersonEditor))
   next.querySelectorAll('[data-manage-credentials]').forEach((button) => button.addEventListener('click', openBulkCredentialAccess))
+}
+
+function openPersonEditor(event) {
+  event.preventDefault()
+  event.stopPropagation()
+  const oids = `${event.currentTarget.dataset.editPerson || ''}`.split(',').filter(Boolean)
+  const cards = oids.map((oid) => DB.cards.get(oid)).filter(Boolean)
+  if (!cards.length) return
+  refreshManagementGroupOptions()
+  personForm.dataset.oids = JSON.stringify(oids)
+  personForm.elements.name.value = `${cards[0].name || ''}`.trim()
+  personForm.elements.managementGroup.value = `${cards[0].managementGroup || ''}`.trim()
+  document.getElementById('person-editor-summary').textContent = `Changes apply to all ${cards.length} credential${cards.length === 1 ? '' : 's'} assigned to this person.`
+  personDialog.showModal()
+}
+
+async function savePerson(event) {
+  event.preventDefault()
+  const saveButton = document.getElementById('person-editor-save')
+  saveButton.disabled = true
+  try {
+    const oids = new Set(JSON.parse(personForm.dataset.oids || '[]'))
+    const cards = [...oids].map((oid) => DB.cards.get(oid)).filter(Boolean)
+    let name = personForm.elements.name.value.trim()
+    let managementGroup = personForm.elements.managementGroup.value.trim()
+    if (!cards.length) throw new Error('That person no longer has any credentials.')
+    if (!name) throw new Error('Full name is required.')
+    const match = records(DB.cards)
+      .filter((card) => !oids.has(card.OID) && `${card.name || ''}`.trim().toLocaleLowerCase() === name.toLocaleLowerCase())
+      .sort((a, b) => `${a.OID}`.localeCompare(`${b.OID}`, undefined, { numeric: true }))[0]
+    if (match) {
+      name = `${match.name || ''}`.trim()
+      managementGroup = `${match.managementGroup || ''}`.trim()
+    }
+    const updates = []
+    cards.forEach((card) => {
+      if (`${card.name || ''}`.trim() !== name) updates.push({ oid: `${card.OID}${schema.cards.name}`, value: name })
+      if (`${card.managementGroup || ''}`.trim() !== managementGroup) updates.push({ oid: `${card.OID}${schema.cards.managementGroup}`, value: managementGroup })
+    })
+    if (updates.length) await postConfiguration('/cards', { created: [], updated: updates, deleted: [] })
+    personDialog.close()
+    showNotice(match ? `${name} was merged with the existing person.` : `${name} was updated across ${cards.length} credential${cards.length === 1 ? '' : 's'}.`)
+    await load()
+  } catch (error) {
+    showNotice(error.message || 'Unable to update the person.', true)
+  } finally {
+    saveButton.disabled = false
+  }
 }
 
 function groupRows(list = records(DB.groups)) {
@@ -574,6 +625,7 @@ function render() {
   document.querySelectorAll('[data-edit-controller]').forEach((button) => button.addEventListener('click', editController))
   document.querySelectorAll('[data-add-door], [data-edit-door]').forEach((button) => button.addEventListener('click', editDoor))
   document.querySelectorAll('[data-add-card], [data-edit-card]').forEach((button) => button.addEventListener('click', editCard))
+  document.querySelectorAll('[data-edit-person]').forEach((button) => button.addEventListener('click', openPersonEditor))
   document.querySelectorAll('[data-manage-credentials]').forEach((button) => button.addEventListener('click', openBulkCredentialAccess))
   document.querySelectorAll('[data-add-group], [data-edit-group]').forEach((button) => button.addEventListener('click', editGroup))
   bindEventCredentialRows(app)
@@ -1525,6 +1577,7 @@ document.getElementById('refresh-button').addEventListener('click', manualRefres
 controllerForm.addEventListener('submit', saveController)
 doorForm.addEventListener('submit', saveDoor)
 cardForm.addEventListener('submit', saveCard)
+personForm.addEventListener('submit', savePerson)
 credentialBulkForm.addEventListener('submit', saveBulkCredentialAccess)
 cardForm.elements.number.addEventListener('input', () => populateFacilityCard(cardForm.elements.number.value))
 cardForm.elements.name.addEventListener('change', useExistingPersonGroup)
@@ -1558,6 +1611,8 @@ document.getElementById('card-editor-cancel').addEventListener('click', () => ca
 document.getElementById('card-editor-delete').addEventListener('click', deleteCard)
 document.getElementById('credential-bulk-close').addEventListener('click', () => credentialBulkDialog.close())
 document.getElementById('credential-bulk-cancel').addEventListener('click', () => credentialBulkDialog.close())
+document.getElementById('person-editor-close').addEventListener('click', () => personDialog.close())
+document.getElementById('person-editor-cancel').addEventListener('click', () => personDialog.close())
 document.getElementById('card-group-add').addEventListener('click', () => editGroup({ currentTarget: { dataset: { fromCard: 'true' } } }))
 document.getElementById('group-editor-close').addEventListener('click', () => groupDialog.close())
 document.getElementById('group-editor-cancel').addEventListener('click', () => groupDialog.close())
