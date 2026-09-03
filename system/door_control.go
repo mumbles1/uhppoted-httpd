@@ -2,6 +2,7 @@ package system
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	lib "codeberg.org/uhppoted/uhppoted-core/types"
@@ -10,6 +11,42 @@ import (
 	"codeberg.org/uhppoted/uhppoted-httpd/system/doors"
 	"codeberg.org/uhppoted/uhppoted-httpd/types"
 )
+
+// ControlControllerDoor applies a door control mode to a physical controller
+// channel. It is used for discovered controllers that have not yet had logical
+// door records assigned to their channels.
+func ControlControllerDoor(controllerID string, door uint8, requestedMode string) error {
+	id, err := strconv.ParseUint(strings.TrimSpace(controllerID), 10, 32)
+	if err != nil || id == 0 {
+		return fmt.Errorf("invalid controller ID %q", controllerID)
+	}
+
+	if door < 1 || door > 4 {
+		return fmt.Errorf("invalid controller door %d", door)
+	}
+
+	mode, err := parseControlMode(requestedMode)
+	if err != nil {
+		return err
+	}
+
+	var controller types.IController
+
+	sys.RLock()
+	for _, c := range sys.controllers.AsIControllers() {
+		if c.ID() == uint32(id) {
+			controller = c
+			break
+		}
+	}
+	sys.RUnlock()
+
+	if controller == nil {
+		return fmt.Errorf("controller %q not found", controllerID)
+	}
+
+	return sys.interfaces.SetDoorControl(controller, door, mode)
+}
 
 // ControlDoor applies a door control mode synchronously. A nil error means the
 // controller exchange completed, rather than merely being queued in the UI.
