@@ -128,6 +128,25 @@ tbody tr:hover td { background: #10233a; }
 .panel-tools { display: flex; align-items: center; gap: 10px; }
 .panel-search { width: min(260px, 34vw); min-height: 38px; padding: 0 11px; border: 1px solid var(--line); border-radius: 8px; outline: none; color: var(--text); background: #081421; }
 .panel-search:focus { border-color: var(--blue); box-shadow: 0 0 0 3px #168dd329; }
+.credential-tree { display: grid; gap: 12px; padding: 16px; }
+.credential-tree .empty { min-height: 150px; }
+.credential-tree-group, .credential-tree-person { min-width: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 10px; background: #091522; }
+.credential-tree-person { background: #0b1929; }
+.credential-tree summary { display: flex; align-items: center; gap: 12px; min-height: 58px; padding: 10px 12px; cursor: pointer; list-style-position: inside; }
+.credential-tree-group > summary { background: #10243a; }
+.credential-tree-person > summary { min-height: 52px; }
+.credential-tree summary::marker { color: var(--blue); }
+.tree-summary-main { flex: 1; min-width: 0; }
+.tree-summary-main strong, .tree-summary-main small { display: block; overflow-wrap: anywhere; }
+.tree-summary-main small { margin-top: 3px; color: var(--muted); font-size: 12px; }
+.tree-manage { flex: 0 0 auto; }
+.credential-tree-people, .credential-tree-leaves { display: grid; gap: 9px; padding: 10px; border-top: 1px solid var(--line); }
+.credential-tree-leaves { background: #07111d; }
+.credential-leaf { display: flex; align-items: center; gap: 14px; padding: 12px; border: 1px solid #1b3049; border-radius: 9px; background: #0c1b2d; }
+.credential-leaf-main { flex: 1; min-width: 0; }
+.credential-leaf-main strong, .credential-leaf-main span, .credential-leaf-main small { display: block; overflow-wrap: anywhere; }
+.credential-leaf-main span { margin-top: 4px; color: #cbe4fa; font-size: 13px; font-weight: 700; }
+.credential-leaf-main small { margin-top: 4px; color: var(--muted); font-size: 11px; }
 .data-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 18px 0; }
 .file-button { position: relative; overflow: hidden; }
 .file-button input { position: absolute; width: 1px; height: 1px; opacity: 0; }
@@ -169,6 +188,7 @@ tbody tr:hover td { background: #10233a; }
   .heading-with-action { align-items: flex-start; flex-direction: column; }
   .panel-heading { align-items: flex-start; gap: 12px; padding-top: 12px; padding-bottom: 12px; }
   .panel-tools { width: 100%; }
+  .credential-tree-panel .panel-heading { flex-direction: column; }
   .panel-search { width: 100%; }
   .backup-row, .import-record, .import-summary { align-items: stretch; flex-direction: column; }
   .import-record-status { text-align: left; }
@@ -193,6 +213,9 @@ tbody tr:hover td { background: #10233a; }
   .stat strong { margin-top: 6px; font-size: 25px; }
   .panel-heading { min-height: 64px; padding: 12px; }
   .panel-tools { flex-direction: column; align-items: stretch; }
+  .credential-tree { padding: 10px; }
+  .credential-tree summary, .credential-leaf { align-items: stretch; flex-direction: column; }
+  .tree-manage, .credential-leaf > button { width: 100%; }
   .table-wrap { overflow-x: visible; }
   table, thead, tbody, tr, th, td { display: block; width: 100%; }
   thead { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
@@ -222,4 +245,3 @@ tbody tr:hover td { background: #10233a; }
   .controller-time-action { flex-direction: column; align-items: stretch; }
   .weekday-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-  
