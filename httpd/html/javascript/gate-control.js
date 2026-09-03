@@ -185,8 +185,24 @@ function filterGroups(event) {
 
 function eventRows(list = records(DB.events())) {
   return list.sort((a, b) => `${b.timestamp}`.localeCompare(`${a.timestamp}`)).map((event) => `<tr>
-    <td>${display(event.timestamp)}</td><td>${display(event.deviceName, event.deviceID)}</td><td>${display(event.doorName, event.door)}</td><td>${display(event.cardName, event.card)}</td><td>${event.granted === 'true' ? '<span class="badge">Granted</span>' : '<span class="badge warn">Denied</span>'}</td><td>${display(event.reason, event.eventType)}</td>
+    <td>${display(formatEventTime(event.timestamp))}</td><td>${display(event.deviceName, event.deviceID)}</td><td>${display(event.doorName, event.door)}</td><td>${eventCard(event)}</td><td>${event.granted === 'true' ? '<span class="badge">Granted</span>' : '<span class="badge warn">Denied</span>'}</td><td>${display(event.reason, event.eventType)}</td>
   </tr>`)
+}
+
+function formatEventTime(value) {
+  const text = `${value || ''}`.trim()
+  const local = text.match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2}):(\d{2})$/)
+  const date = local
+    ? new Date(Number(local[1]), Number(local[2]) - 1, Number(local[3]), Number(local[4]), Number(local[5]), Number(local[6]))
+    : new Date(text)
+  return Number.isNaN(date.getTime()) ? text : new Intl.DateTimeFormat(undefined, { dateStyle: 'short', timeStyle: 'medium' }).format(date)
+}
+
+function eventCard(event) {
+  const number = `${event.card || ''}`.trim()
+  const name = `${event.cardName || ''}`.trim()
+  if (name && number && number !== '0') return `<span class="name-cell"><strong>${escapeHTML(name)}</strong><small>Card ${escapeHTML(number)}</small></span>`
+  return display(number && number !== '0' ? number : '', '—')
 }
 
 function logRows(list = records(DB.logs())) {
@@ -805,13 +821,15 @@ async function manualRefresh() {
   button.textContent = 'Refreshing...'
   showNotice('Refreshing controller and access-control data...')
   try {
+    const now = new Date()
+    const localDateTime = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 19)
     const response = await fetch('/api/v1/refresh', {
-      method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}',
+      method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ datetime: localDateTime }),
     })
     if (!response.ok) throw new Error((await response.text()) || `Refresh failed (${response.status})`)
     await new Promise((resolve) => setTimeout(resolve, 1200))
     await load()
-    showNotice('Controller and access-control data refreshed.')
+    showNotice('Controller data and clock refreshed.')
   } catch (error) {
     showNotice(error.message || 'Refresh failed.', true)
   } finally {
