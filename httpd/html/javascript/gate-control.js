@@ -10,6 +10,8 @@ const controllerDialog = document.getElementById('controller-dialog')
 const controllerForm = document.getElementById('controller-form')
 const doorDialog = document.getElementById('door-dialog')
 const doorForm = document.getElementById('door-form')
+const cardDialog = document.getElementById('card-dialog')
+const cardForm = document.getElementById('card-form')
 const routes = ['overview', 'controllers', 'doors', 'cards', 'groups', 'events', 'logs']
 
 let loading = false
@@ -157,6 +159,7 @@ function cardRows(list = records(DB.cards)) {
     return `<tr>
       <td class="name-cell"><strong>${display(card.name, 'Unnamed cardholder')}</strong><small>${display(card.OID)}</small></td>
       <td>${display(card.number)}</td><td>${display(card.from)}</td><td>${display(card.to)}</td><td>${memberships}</td><td>${statusBadge(card.status)}</td>
+      <td><button class="secondary" data-edit-card="${escapeHTML(card.OID)}" ${config.mode === 'monitor' ? 'disabled' : ''}>Configure</button></td>
     </tr>`
   })
 }
@@ -200,7 +203,7 @@ function render() {
   switch (currentRoute()) {
     case 'controllers': app.innerHTML = panel('Controllers', 'Controller health and configuration', ['Controller', 'ID', 'Protocol', 'Cards', 'Events', 'Status', ''], controllerRows()); break
     case 'doors': app.innerHTML = panel('Doors', config.mode === 'monitor' ? 'Monitor mode — controls are disabled' : 'Live door state and controls', ['Door', 'Mode', 'Delay', 'Keypad', 'Status', 'Controls'], doorRows()); break
-    case 'cards': app.innerHTML = panel('Cards', 'Cardholders and validity periods', ['Cardholder', 'Card number', 'Valid from', 'Valid to', 'Groups', 'Status'], cardRows()); break
+    case 'cards': app.innerHTML = panel('Cards', 'Cardholders and validity periods', ['Cardholder', 'Card number', 'Valid from', 'Valid to', 'Groups', 'Status', ''], cardRows()); break
     case 'groups': app.innerHTML = panel('Groups', 'Door access assignments', ['Group', 'Doors', 'First-card', 'Status'], groupRows()); break
     case 'events': app.innerHTML = panel('Events', 'Recent controller events', ['Time', 'Controller', 'Door', 'Card', 'Access', 'Reason'], eventRows()); break
     case 'logs': app.innerHTML = panel('Audit log', 'Recent configuration changes', ['Time', 'User', 'Item', 'Details'], logRows()); break
@@ -210,10 +213,14 @@ function render() {
   if (currentRoute() === 'doors') {
     app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<button class="primary" data-add-door ${config.mode === 'monitor' ? 'disabled' : ''}>Add door</button>`)
   }
+  if (currentRoute() === 'cards') {
+    app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<button class="primary" data-add-card ${config.mode === 'monitor' ? 'disabled' : ''}>Add card</button>`)
+  }
 
   document.querySelectorAll('[data-mode][data-door], [data-mode][data-controller][data-channel]').forEach((button) => button.addEventListener('click', controlDoor))
   document.querySelectorAll('[data-edit-controller]').forEach((button) => button.addEventListener('click', editController))
   document.querySelectorAll('[data-add-door], [data-edit-door]').forEach((button) => button.addEventListener('click', editDoor))
+  document.querySelectorAll('[data-add-card], [data-edit-card]').forEach((button) => button.addEventListener('click', editCard))
 }
 
 function doorAssignment(doorOID) {
@@ -356,6 +363,112 @@ async function deleteDoor() {
   }
 }
 
+function cardGroupOID(cardOID, groupOID) {
+  const match = groupOID.match(schema.groups.regex)
+  return match ? `${cardOID}${schema.cards.group}${match[2]}` : ''
+}
+
+function cardInGroup(card, group) {
+  if (!card) return false
+  const oid = cardGroupOID(card.OID, group.OID)
+  return Boolean(card.groups?.get?.(oid)?.member || [...(card.groups?.values?.() || [])].some((membership) => membership.member && membership.group === group.OID))
+}
+
+function defaultCardDates() {
+  const from = new Date()
+  const to = new Date(from)
+  to.setFullYear(to.getFullYear() + 1)
+  const format = (date) => `${date.getFullYear()}-${`${date.getMonth() + 1}`.padStart(2, '0')}-${`${date.getDate()}`.padStart(2, '0')}`
+  return { from: format(from), to: format(to) }
+}
+
+function editCard(event) {
+  const card = event.currentTarget.dataset.editCard ? DB.cards.get(event.currentTarget.dataset.editCard) : null
+  const defaults = defaultCardDates()
+  cardForm.dataset.oid = card?.OID || ''
+  cardForm.elements.name.value = card?.name || ''
+  cardForm.elements.number.value = card?.number || ''
+  cardForm.elements.PIN.value = card?.PIN || ''
+  cardForm.elements.from.value = card?.from || defaults.from
+  cardForm.elements.to.value = card?.to || defaults.to
+
+  const groups = records(DB.groups)
+  document.getElementById('card-group-fields').innerHTML = groups.length
+    ? groups.map((group) => `<label class="choice"><input type="checkbox" data-card-group="${escapeHTML(group.OID)}" ${cardInGroup(card, group) ? 'checked' : ''}><span>${display(group.name, `Group ${group.OID}`)}</span></label>`).join('')
+    : empty('No access groups are available. The card can be saved now and assigned after a group is created.')
+
+  document.getElementById('card-editor-title').textContent = card ? (card.name || 'Configure card') : 'Add card'
+  document.getElementById('card-editor-delete').classList.toggle('hidden', !card)
+  cardDialog.showModal()
+}
+
+async function saveCard(event) {
+  event.preventDefault()
+  const saveButton = document.getElementById('card-editor-save')
+  saveButton.disabled = true
+  let oid = cardForm.dataset.oid
+  const existing = oid ? DB.cards.get(oid) : null
+
+  try {
+    if (cardForm.elements.to.value < cardForm.elements.from.value) throw new Error('Valid until must be on or after Valid from.')
+    if (!oid) {
+      const created = await postConfiguration('/cards', { created: [{ oid: '<new>', value: '' }], updated: [], deleted: [] })
+      oid = created.cards?.find((item) => item.value === 'new')?.OID
+      if (!oid) throw new Error('The server did not return the new card ID.')
+    }
+
+    const updates = []
+    const changed = (suffix, value, original) => {
+      if (!existing || `${value ?? ''}` !== `${original ?? ''}`) updates.push({ oid: `${oid}${suffix}`, value: `${value ?? ''}` })
+    }
+    changed(schema.cards.name, cardForm.elements.name.value.trim(), existing?.name)
+    changed(schema.cards.card, cardForm.elements.number.value.trim(), existing?.number)
+    if (schema.cards.PIN) changed(schema.cards.PIN, cardForm.elements.PIN.value.trim(), existing?.PIN)
+    changed(schema.cards.from, cardForm.elements.from.value, existing?.from)
+    changed(schema.cards.to, cardForm.elements.to.value, existing?.to)
+
+    for (const group of records(DB.groups)) {
+      const membershipOID = cardGroupOID(oid, group.OID)
+      const field = document.querySelector(`[data-card-group="${group.OID}"]`)
+      const selected = Boolean(field?.checked)
+      if (membershipOID && selected !== cardInGroup(existing, group)) updates.push({ oid: membershipOID, value: `${selected}` })
+    }
+    if (updates.length) await postConfiguration('/cards', { created: [], updated: updates, deleted: [] })
+
+    cardDialog.close()
+    showNotice(existing ? 'Card configuration saved.' : 'Card added and assigned.')
+    await load()
+  } catch (error) {
+    showNotice(error.message || 'Card configuration failed.', true)
+  } finally {
+    saveButton.disabled = false
+  }
+}
+
+async function deleteCard() {
+  const oid = cardForm.dataset.oid
+  const card = oid ? DB.cards.get(oid) : null
+  if (!card) return
+  const name = card.name || `Card ${card.number || oid}`
+  if (!window.confirm(`Delete ${name}? This revokes all group access and cannot be undone.`)) return
+
+  const deleteButton = document.getElementById('card-editor-delete')
+  const saveButton = document.getElementById('card-editor-save')
+  deleteButton.disabled = true
+  saveButton.disabled = true
+  try {
+    await postConfiguration('/cards', { created: [], updated: [], deleted: [oid] })
+    cardDialog.close()
+    showNotice(`${name} deleted.`)
+    await load()
+  } catch (error) {
+    showNotice(error.message || 'Card deletion failed.', true)
+  } finally {
+    deleteButton.disabled = false
+    saveButton.disabled = false
+  }
+}
+
 function editController(event) {
   const controller = DB.controllers.get(event.currentTarget.dataset.editController)
   if (!controller) {
@@ -480,12 +593,16 @@ async function controlDoor(event) {
 document.getElementById('refresh-button').addEventListener('click', load)
 controllerForm.addEventListener('submit', saveController)
 doorForm.addEventListener('submit', saveDoor)
+cardForm.addEventListener('submit', saveCard)
 doorForm.elements.controller.addEventListener('change', () => refreshDoorChannels())
 document.getElementById('controller-editor-close').addEventListener('click', () => controllerDialog.close())
 document.getElementById('controller-editor-cancel').addEventListener('click', () => controllerDialog.close())
 document.getElementById('door-editor-close').addEventListener('click', () => doorDialog.close())
 document.getElementById('door-editor-cancel').addEventListener('click', () => doorDialog.close())
 document.getElementById('door-editor-delete').addEventListener('click', deleteDoor)
+document.getElementById('card-editor-close').addEventListener('click', () => cardDialog.close())
+document.getElementById('card-editor-cancel').addEventListener('click', () => cardDialog.close())
+document.getElementById('card-editor-delete').addEventListener('click', deleteCard)
 document.getElementById('menu-button').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'))
 document.getElementById('signout-button').addEventListener('click', async () => {
   await fetch('/logout', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}' })
