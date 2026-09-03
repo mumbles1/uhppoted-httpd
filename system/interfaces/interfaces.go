@@ -257,10 +257,12 @@ func (ii *Interfaces) GetEvents(controllers []types.IController, missing map[uin
 	}
 }
 
-func (ii *Interfaces) SetTime(controller types.IController, t time.Time) {
+func (ii *Interfaces) SetTime(controller types.IController, t time.Time) error {
 	if lan, ok := ii.LAN(); ok {
-		lan.setTime(controller, t)
+		return lan.setTime(controller, t)
 	}
+
+	return fmt.Errorf("no LAN interface configured")
 }
 
 func (ii *Interfaces) RelayStatus(controllers []types.IController) map[uint32]map[uint8]struct {
@@ -298,12 +300,12 @@ func (ii *Interfaces) RelayStatus(controllers []types.IController) map[uint32]ma
 	return result
 }
 
-func (ii *Interfaces) SetDoor(controller types.IController, door uint8, mode lib.ControlState, delay uint8) {
-	if lan, ok := ii.LAN(); ok {
-		if err := lan.setDoor(controller, door, mode, delay); err != nil {
-			log.Warnf("%v", err)
-		}
+func (ii *Interfaces) SetDoor(controller types.IController, door uint8, mode lib.ControlState, delay uint8) error {
+	lan, ok := ii.LAN()
+	if !ok {
+		return fmt.Errorf("no LAN interface configured")
 	}
+	return lan.setDoor(controller, door, mode, delay)
 }
 
 func (ii *Interfaces) SetDoorControl(controller types.IController, door uint8, mode lib.ControlState) error {
@@ -336,22 +338,24 @@ func (ii *Interfaces) SetDoorDelay(controller types.IController, door uint8, del
 	}
 }
 
-func (ii *Interfaces) SetInterlock(controller types.IController, interlock lib.Interlock) {
-	if lan, ok := ii.LAN(); ok {
-		if err := lan.setInterlock(controller, interlock); err != nil {
-			log.Warnf("%v", err)
-		} else {
-			log.Infof("%v  set interlock %v", controller.ID(), interlock)
-		}
+func (ii *Interfaces) SetInterlock(controller types.IController, interlock lib.Interlock) error {
+	lan, ok := ii.LAN()
+	if !ok {
+		return fmt.Errorf("no LAN interface configured")
 	}
+	if err := lan.setInterlock(controller, interlock); err != nil {
+		return err
+	}
+	log.Infof("%v  set interlock %v", controller.ID(), interlock)
+	return nil
 }
 
-func (ii *Interfaces) SetAntiPassback(controller types.IController, antipassback lib.AntiPassback) {
-	if lan, ok := ii.LAN(); ok {
-		if err := lan.setAntiPassback(controller, antipassback); err != nil {
-			log.Warnf("%v", err)
-		}
+func (ii *Interfaces) SetAntiPassback(controller types.IController, antipassback lib.AntiPassback) error {
+	lan, ok := ii.LAN()
+	if !ok {
+		return fmt.Errorf("no LAN interface configured")
 	}
+	return lan.setAntiPassback(controller, antipassback)
 }
 
 func (ii *Interfaces) ActivateKeypads(controller types.IController, keypads map[uint8]bool) {
@@ -379,26 +383,32 @@ func (ii *Interfaces) SetDoorPasscodes(controller types.IController, door uint8,
 	}
 }
 
-func (ii *Interfaces) SetFirstCard(controller types.IController, door uint8, firstcard lib.FirstCard) {
-	if lan, ok := ii.LAN(); ok {
-		if err := lan.setFirstCard(controller, door, firstcard); err != nil {
-			log.Warnf("%v", err)
-		} else {
-			log.Infof("%v  set door %v first card", controller.ID(), door)
-		}
+func (ii *Interfaces) SetFirstCard(controller types.IController, door uint8, firstcard lib.FirstCard) error {
+	lan, ok := ii.LAN()
+	if !ok {
+		return fmt.Errorf("no LAN interface configured")
 	}
+	if err := lan.setFirstCard(controller, door, firstcard); err != nil {
+		return err
+	}
+	log.Infof("%v  set door %v first card", controller.ID(), door)
+	return nil
 }
 
-func (ii *Interfaces) PutCard(controller types.IController, card uint32, PIN uint32, from, to lib.Date, permissions map[uint8]uint8, firstcard map[uint8]bool) {
-	if lan, ok := ii.LAN(); ok {
-		lan.putCard(controller, card, PIN, from, to, permissions, firstcard)
+func (ii *Interfaces) PutCard(controller types.IController, card uint32, PIN uint32, from, to lib.Date, permissions map[uint8]uint8, firstcard map[uint8]bool) error {
+	lan, ok := ii.LAN()
+	if !ok {
+		return fmt.Errorf("no LAN interface configured")
 	}
+	return lan.putCard(controller, card, PIN, from, to, permissions, firstcard)
 }
 
-func (ii *Interfaces) DeleteCard(controller types.IController, card uint32) {
-	if lan, ok := ii.LAN(); ok {
-		lan.deleteCard(controller, card)
+func (ii *Interfaces) DeleteCard(controller types.IController, card uint32) error {
+	lan, ok := ii.LAN()
+	if !ok {
+		return fmt.Errorf("no LAN interface configured")
 	}
+	return lan.deleteCard(controller, card)
 }
 
 func (ii *Interfaces) CompareACL(controllers []types.IController, permissions acl.ACL, withPIN bool) (map[uint32]acl.Diff, error) {
