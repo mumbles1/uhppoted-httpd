@@ -203,8 +203,12 @@ func (d *Door) AsObjects(a *auth.Authorizator) []schema.Object {
 		list = append(list, kv{DoorControlError, control.err})
 		list = append(list, kv{DoorKeypad, d.keypad})
 		list = append(list, kv{DoorPasscodes, passcodes})
-		list = append(list, kv{DoorReaderEntry, d.readerEntry})
-		list = append(list, kv{DoorReaderExit, d.readerExit})
+		if d.readerEntry != "" {
+			list = append(list, kv{DoorReaderEntry, d.readerEntry})
+		}
+		if d.readerExit != "" {
+			list = append(list, kv{DoorReaderExit, d.readerExit})
+		}
 
 		list = append(list, kv{DoorFirstCardStartTime, fmt.Sprintf("%v", d.firstcard.StartTime)})
 		list = append(list, kv{DoorFirstCardEndTime, fmt.Sprintf("%v", d.firstcard.EndTime)})
