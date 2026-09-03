@@ -54,6 +54,29 @@
       </section>
     </div>
 
+    <dialog id="controller-dialog" class="editor-dialog">
+      <form id="controller-form">
+        <div class="dialog-heading">
+          <div><p class="eyebrow">CONTROLLER CONFIGURATION</p><h2 id="controller-editor-title">Configure controller</h2></div>
+          <button type="button" class="icon-button" id="controller-editor-close" aria-label="Close">&times;</button>
+        </div>
+        <div class="form-grid">
+          <label><span>Name</span><input name="name" type="text" placeholder="Front gate controller"></label>
+          <label><span>Device ID</span><input name="deviceID" type="number" min="1" required></label>
+          <label class="wide"><span>Controller address</span><input name="address" type="text" placeholder="192.168.1.100:60000" required></label>
+          <label><span>Protocol</span><select name="protocol"><option value="udp">UDP</option><option value="tcp">TCP</option></select></label>
+          <label><span>Interlock</span><select name="interlock"><option value="0">Disabled</option><option value="1">Doors 1 &amp; 2</option><option value="2">Doors 3 &amp; 4</option><option value="3">1 &amp; 2, 3 &amp; 4</option><option value="4">Doors 1, 2 &amp; 3</option><option value="8">All four doors</option></select></label>
+          <label><span>Anti-passback</span><select name="antipassback"><option value="0">Disabled</option><option value="1">(1:2); (3:4)</option><option value="2">(1,3): (2,4)</option><option value="3">1: (2,3)</option><option value="4">1: (2,3,4)</option></select></label>
+        </div>
+        <div class="door-mapping-heading"><h3>Door assignments</h3><p>Assign existing logical doors to the controller's physical channels.</p></div>
+        <div class="form-grid" id="controller-door-fields"></div>
+        <div class="dialog-actions">
+          <button type="button" class="secondary" id="controller-editor-cancel">Cancel</button>
+          <button type="submit" class="primary" id="controller-editor-save">Save controller</button>
+        </div>
+      </form>
+    </dialog>
+
     <script>
       window.gateControl = {
         mode: {{printf "%q" $.context.Mode}},
