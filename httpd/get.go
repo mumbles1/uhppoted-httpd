@@ -90,7 +90,14 @@ func (d *dispatcher) getNoAuth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if (d.options.NoSetup || system.HasAdmin(role)) && path == "/sys/setup.html" {
-		http.Redirect(w, r, "/index.html", http.StatusFound)
+		http.Redirect(w, r, "/sys/overview.html", http.StatusFound)
+		return
+	}
+
+	// Do not render the legacy index page just to run a client-side redirect.
+	// Rendering it causes a noticeable white flash on desktop and mobile.
+	if path == "/index.html" {
+		http.Redirect(w, r, "/sys/overview.html", http.StatusFound)
 		return
 	}
 
@@ -171,7 +178,8 @@ func (d *dispatcher) getWithAuth(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if path == "/" {
-		path = "/index.html"
+		http.Redirect(w, r, "/sys/overview.html", http.StatusFound)
+		return
 	}
 
 	if !strings.HasPrefix(path, "/") {
