@@ -62,9 +62,16 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 
 .stats { display: grid; grid-template-columns: repeat(4, minmax(150px, 1fr)); gap: 14px; margin-bottom: 22px; }
 .stat, .panel { border: 1px solid var(--line); border-radius: 12px; background: linear-gradient(145deg, var(--panel), #0b1727); box-shadow: 0 14px 40px #02071140; }
-.stat { padding: 18px; }
+.stat { padding: 18px; color: inherit; text-decoration: none; transition: border-color .15s ease, transform .15s ease; }
+.stat:hover, .stat:focus-visible { border-color: var(--blue); transform: translateY(-1px); }
 .stat span { color: var(--muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
 .stat strong { display: block; margin-top: 10px; font-size: 29px; }
+.selectable-row { cursor: pointer; }
+.selectable-row:hover td { background: #13243a; }
+.schedule-editor { padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: #081321; }
+.field-help { margin: 0 0 12px; color: var(--muted); font-size: 13px; }
+.weekday-grid { display: grid; grid-template-columns: repeat(7, minmax(72px, 1fr)); gap: 8px; margin-bottom: 14px; }
+.weekday-grid .choice { padding: 9px; justify-content: center; }
 .panel { overflow: hidden; }
 .panel + .panel { margin-top: 18px; }
 .panel-heading { min-height: 58px; padding: 0 18px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); }
