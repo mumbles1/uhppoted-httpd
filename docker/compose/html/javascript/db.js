@@ -635,7 +635,7 @@ function events(o) {
     return
   }
 
-  if (oid === `${schema.events.base}${schema.events.first}`) {
+  if (oid === `${schema.events.base}${schema.events.last}`) {
     DB.tables.events.last = o.value
     return
   }
