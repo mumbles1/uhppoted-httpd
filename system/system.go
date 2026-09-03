@@ -359,6 +359,19 @@ func SynchronizeDateTimeAt(now time.Time) error {
 	return nil
 }
 
+func SynchronizeControllerDateTime(oid schema.OID, now time.Time) error {
+	for _, controller := range sys.controllers.AsIControllers() {
+		if controller.OID() == oid {
+			go func() {
+				sys.interfaces.SetTime(controller, now)
+			}()
+			return nil
+		}
+	}
+
+	return fmt.Errorf("controller %v not found", oid)
+}
+
 func SynchronizeDoors(withFirstCard bool) error {
 	controllers := sys.controllers.AsIControllers()
 
