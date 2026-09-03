@@ -16,6 +16,7 @@ services:
       - ./html:/usr/local/etc/uhppoted/httpd/html
       - ./system:/usr/local/etc/uhppoted/httpd/system
       - ./grules:/usr/local/etc/uhppoted/httpd/grules
+      - /DATA/AppData/uhppoted-httpd:/data
     network_mode: "bridge"
     ports:
       - "8080:8080"
