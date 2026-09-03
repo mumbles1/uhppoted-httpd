@@ -64,6 +64,36 @@ function openHelp(event) {
   if (window.location.hash === '#help') history.replaceState(null, '', window.location.pathname)
 }
 
+function returnToGateControl() {
+  const configuredURL = `${config.gateControlURL || ''}`.trim()
+  if (configuredURL) {
+    try {
+      window.location.assign(new URL(configuredURL).href)
+    } catch {
+      showNotice('GATE_CONTROL_URL is not a valid complete URL.', true)
+    }
+    return
+  }
+
+  if (document.referrer) {
+    try {
+      const previous = new URL(document.referrer)
+      if (previous.origin !== window.location.origin) {
+        window.location.assign(previous.href)
+        return
+      }
+    } catch {
+      // Fall through to browser history when the referrer is not a valid URL.
+    }
+  }
+
+  if (window.history.length > 1) {
+    window.history.back()
+  } else {
+    showNotice('Gate Control address is not configured. Set GATE_CONTROL_URL on the container.', true)
+  }
+}
+
 function records(source) {
   return [...source.values()].filter((record) => alive(record))
 }
@@ -1835,6 +1865,7 @@ document.getElementById('user-editor-delete').addEventListener('click', deleteUs
 document.getElementById('backup-create').addEventListener('click', createBackup)
 document.getElementById('backup-file').addEventListener('change', importBackup)
 document.getElementById('controller-import-apply').addEventListener('click', applyControllerImport)
+document.getElementById('gate-control-button').addEventListener('click', returnToGateControl)
 document.getElementById('help-button').addEventListener('click', openHelp)
 document.getElementById('help-menu-button').addEventListener('click', openHelp)
 document.getElementById('menu-button').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'))
