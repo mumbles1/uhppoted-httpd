@@ -23,12 +23,23 @@ const backupDialog = document.getElementById('backup-dialog')
 const controllerImportDialog = document.getElementById('controller-import-dialog')
 const userDialog = document.getElementById('user-dialog')
 const userForm = document.getElementById('user-form')
+const helpDialog = document.getElementById('help-dialog')
 const routes = ['overview', 'controllers', 'doors', 'cards', 'groups', 'events', 'logs', 'users']
 const accessWeekdays = [
   ['monday', 'Mon'], ['tuesday', 'Tue'], ['wednesday', 'Wed'], ['thursday', 'Thu'],
   ['friday', 'Fri'], ['saturday', 'Sat'], ['sunday', 'Sun'],
 ]
 const permanentAccessLevels = new Set(['0.5.254', '0.5.255'])
+const helpTopics = {
+  overview: ['Overview', 'Use the summary cards to jump to the corresponding page. Back up or restore persistent data here, or safely preview credentials before importing them from a controller.'],
+  controllers: ['Controllers', 'Discovery finds controllers on the LAN. Configure a controller to set its address, clock, interlock, anti-passback and physical channel assignments. Host networking is required for reliable UDP broadcast discovery in Docker.'],
+  doors: ['Relays', 'Each row represents a physical relay channel. Open and Close set a persistent mode; Controlled returns it to normal credential-controlled operation. Live status depends on a responding controller.'],
+  cards: ['Credentials', 'Search by person, folder, label, credential ID or FC/CD. Edit a credential to change its owner, dates, PIN and access levels. Every credential requires an access level; No Access cannot be combined with another level.'],
+  groups: ['Access Levels', 'An access level combines relay permissions with an optional controller-enforced schedule. Level 0 (No Access) and Level 1 (24/7) are permanent defaults.'],
+  events: ['Events', 'Filter by Card, RF Remote or Keypad Code, and search by credential number, FC/CD, controller ID or person. Selecting a recognized credential opens its configuration.'],
+  logs: ['Audit log', 'Review application and synchronization activity here. A successful local save is not the same as controller synchronization; pay attention to warning and error messages.'],
+  users: ['Login Accounts', 'Administrators can add, edit, unlock and delete application sign-in accounts. Passwords are stored as salted hashes in the persistent /data/system/users.json file.'],
+}
 
 let loading = false
 let emptyCardRetries = 0
@@ -42,6 +53,15 @@ let relayStatus = {}
 function currentRoute() {
   const name = window.location.pathname.split('/').pop()?.replace('.html', '') || 'overview'
   return routes.includes(name) ? name : 'overview'
+}
+
+function openHelp(event) {
+  event?.preventDefault()
+  const [title, tip] = helpTopics[currentRoute()] || helpTopics.overview
+  document.getElementById('context-help').innerHTML = `<p class="eyebrow">TIPS FOR THIS PAGE</p><h3>${escapeHTML(title)}</h3><p>${escapeHTML(tip)}</p>`
+  helpDialog.showModal()
+  document.getElementById('sidebar').classList.remove('open')
+  if (window.location.hash === '#help') history.replaceState(null, '', window.location.pathname)
 }
 
 function records(source) {
@@ -1815,6 +1835,8 @@ document.getElementById('user-editor-delete').addEventListener('click', deleteUs
 document.getElementById('backup-create').addEventListener('click', createBackup)
 document.getElementById('backup-file').addEventListener('change', importBackup)
 document.getElementById('controller-import-apply').addEventListener('click', applyControllerImport)
+document.getElementById('help-button').addEventListener('click', openHelp)
+document.getElementById('help-menu-button').addEventListener('click', openHelp)
 document.getElementById('menu-button').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'))
 document.getElementById('signout-button').addEventListener('click', async () => {
   await fetch('/logout', { method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}' })
@@ -1822,4 +1844,5 @@ document.getElementById('signout-button').addEventListener('click', async () => 
 })
 
 load()
+if (window.location.hash === '#help') openHelp()
 setInterval(load, 15000)
