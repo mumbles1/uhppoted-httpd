@@ -73,7 +73,6 @@ func (d *dispatcher) getNoAuth(w http.ResponseWriter, r *http.Request) {
 		"Mode":          d.mode,
 		"WithPIN":       d.options.WithPIN,
 		"WithFirstCard": d.options.WithFirstCard,
-		"CanManageUsers": d.authorised(uid, role, "/users"),
 	}
 
 	// ... normalise path
@@ -130,6 +129,7 @@ func (d *dispatcher) getJS(w http.ResponseWriter, r *http.Request) {
 	context := map[string]any{
 		"WithPIN":       d.options.WithPIN,
 		"WithFirstCard": d.options.WithFirstCard,
+		"CanManageUsers": d.authorised(uid, role, "/users"),
 	}
 
 	t, err := text.New(name).Funcs(functions).ParseFS(d.fs, filepath)
