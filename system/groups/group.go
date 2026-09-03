@@ -42,6 +42,11 @@ type kv = struct {
 	value any
 }
 
+const (
+	NoAccessOID     schema.OID = "0.5.254"
+	AlwaysAccessOID schema.OID = "0.5.255"
+)
+
 const BLANK = "'blank'"
 
 var created = types.TimestampNow()
@@ -88,6 +93,24 @@ func (g Group) validate() error {
 
 func (g Group) IsDeleted() bool {
 	return !g.deleted.IsZero()
+}
+
+func (g Group) IsBuiltin() bool {
+	return g.OID == NoAccessOID || g.OID == AlwaysAccessOID
+}
+
+// AccessDoors resolves the permanent 24/7 level dynamically so newly added
+// relays are automatically included without editing the built-in level.
+func (g Group) AccessDoors() map[schema.OID]bool {
+	if g.OID != AlwaysAccessOID {
+		return g.Doors
+	}
+
+	doors := map[schema.OID]bool{}
+	for _, oid := range catalog.GetDoors() {
+		doors[oid] = true
+	}
+	return doors
 }
 
 func (g *Group) AsObjects(a *auth.Authorizator) []schema.Object {
@@ -172,6 +195,9 @@ func (g *Group) set(a *auth.Authorizator, oid schema.OID, value string, dbc db.D
 
 	if g.IsDeleted() {
 		return g.toObjects([]kv{{GroupDeleted, g.deleted}}, a), fmt.Errorf("Group has been deleted")
+	}
+	if g.IsBuiltin() {
+		return nil, fmt.Errorf("access level %v is permanent and cannot be changed", g.Name)
 	}
 
 	uid := auth.UID(a)
@@ -443,3 +469,4 @@ func (g Group) TimeProfile() (*core.TimeProfile, error) {
 func (g *Group) log(dbc db.DBC, uid, op string, field string, before, after any, format string, fields ...any) {
 	dbc.Log(uid, op, g.OID, "group", "", g.Name, field, before, after, format, fields...)
 }
+	
