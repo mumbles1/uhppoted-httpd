@@ -65,6 +65,8 @@
           <label><span>Device ID</span><input name="deviceID" type="number" min="1" required></label>
           <label class="wide"><span>Controller address</span><input name="address" type="text" placeholder="192.168.1.100:60000" required></label>
           <label><span>Protocol</span><select name="protocol"><option value="udp">UDP</option><option value="tcp">TCP</option></select></label>
+          <label><span>Controller date and time</span><input name="datetime" type="datetime-local" step="1"></label>
+          <div class="controller-time-action"><button type="button" class="secondary" id="controller-time-now">Use current time</button><button type="button" class="primary" id="controller-time-set">Set controller time</button></div>
           <label><span>Interlock</span><select name="interlock"><option value="0">Disabled</option><option value="1">Doors 1 &amp; 2</option><option value="2">Doors 3 &amp; 4</option><option value="3">1 &amp; 2, 3 &amp; 4</option><option value="4">Doors 1, 2 &amp; 3</option><option value="8">All four doors</option></select></label>
           <label><span>Anti-passback</span><select name="antipassback"><option value="0">Disabled</option><option value="1">(1:2); (3:4)</option><option value="2">(1,3): (2,4)</option><option value="3">1: (2,3)</option><option value="4">1: (2,3,4)</option></select></label>
         </div>
