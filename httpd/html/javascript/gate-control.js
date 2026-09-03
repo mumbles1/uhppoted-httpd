@@ -15,6 +15,10 @@ const cardForm = document.getElementById('card-form')
 const groupDialog = document.getElementById('group-dialog')
 const groupForm = document.getElementById('group-form')
 const routes = ['overview', 'controllers', 'doors', 'cards', 'groups', 'events', 'logs']
+const accessWeekdays = [
+  ['monday', 'Mon'], ['tuesday', 'Tue'], ['wednesday', 'Wed'], ['thursday', 'Thu'],
+  ['friday', 'Fri'], ['saturday', 'Sat'], ['sunday', 'Sun'],
+]
 
 let loading = false
 let emptyCardRetries = 0
@@ -66,7 +70,7 @@ function showNotice(message, error = false) {
 function updateNavigation() {
   const route = currentRoute()
   document.querySelectorAll('[data-route]').forEach((link) => link.classList.toggle('active', link.dataset.route === route))
-  document.getElementById('page-title').textContent = route === 'overview' ? 'Overview' : route === 'logs' ? 'Audit log' : route === 'doors' ? 'Relays' : route === 'cards' ? 'Credentials' : route[0].toUpperCase() + route.slice(1)
+  document.getElementById('page-title').textContent = route === 'overview' ? 'Overview' : route === 'logs' ? 'Audit log' : route === 'doors' ? 'Relays' : route === 'cards' ? 'Credentials' : route === 'groups' ? 'Access Levels' : route[0].toUpperCase() + route.slice(1)
 
   const counts = {
     overview: records(DB.controllers).length + controllerDoors().length,
@@ -182,8 +186,14 @@ function cardRows(list = records(DB.cards)) {
 function groupRows(list = records(DB.groups)) {
   return list.map((group) => {
     const permitted = [...(group.doors?.values?.() || [])].filter((door) => door.allowed).length
-    return `<tr><td class="name-cell"><strong>${display(group.name, 'Unnamed group')}</strong><small>${display(group.OID)}</small></td><td>${permitted}</td><td>${group.firstcard ? 'Yes' : 'No'}</td><td>${statusBadge(group.status)}</td><td><button class="secondary" data-edit-group="${escapeHTML(group.OID)}" ${config.mode === 'monitor' ? 'disabled' : ''}>Configure</button></td></tr>`
+    return `<tr><td class="name-cell"><strong>${display(group.name, 'Unnamed access level')}</strong><small>${display(group.OID)}</small></td><td>${permitted}</td><td>${displayAccessSchedule(group.schedule)}</td><td>${group.firstcard ? 'Yes' : 'No'}</td><td>${statusBadge(group.status)}</td><td><button class="secondary" data-edit-group="${escapeHTML(group.OID)}" ${config.mode === 'monitor' ? 'disabled' : ''}>Configure</button></td></tr>`
   })
+}
+
+function displayAccessSchedule(schedule) {
+  if (!schedule?.enabled) return 'Any time'
+  const days = accessWeekdays.filter(([key]) => schedule.weekdays?.[key]).map(([, label]) => label).join(', ')
+  return `<span class="name-cell"><strong>${escapeHTML(`${schedule.start}–${schedule.end}`)}</strong><small>${escapeHTML(days)}</small></span>`
 }
 
 function filterGroups(event) {
@@ -192,14 +202,24 @@ function filterGroups(event) {
   const groups = records(DB.groups).filter((group) => !query || `${group.name} ${group.OID}`.toLowerCase().includes(query))
   const body = app.querySelector('tbody')
   if (!body) return
-  body.innerHTML = groups.length ? groupRows(groups).join('') : '<tr><td colspan="5">No groups match your search.</td></tr>'
+  body.innerHTML = groups.length ? groupRows(groups).join('') : '<tr><td colspan="6">No access levels match your search.</td></tr>'
   body.querySelectorAll('[data-edit-group]').forEach((button) => button.addEventListener('click', editGroup))
 }
 
 function eventRows(list = records(DB.events())) {
-  return list.sort((a, b) => `${b.timestamp}`.localeCompare(`${a.timestamp}`)).map((event) => `<tr>
+  return list.sort((a, b) => `${b.timestamp}`.localeCompare(`${a.timestamp}`)).map((event) => {
+    const credential = credentialForEvent(event)
+    const selectable = credential ? ` class="selectable-row" data-edit-event-card="${escapeHTML(credential.OID)}" title="Open credential configuration"` : ''
+    return `<tr${selectable}>
     <td>${display(event.index)}</td><td>${display(formatEventTime(event.timestamp))}</td><td>${display(event.deviceName, event.deviceID)}</td><td>${eventDoor(event)}</td><td>${eventCard(event)}</td><td>${display(eventCredentialType(event))}</td><td>${event.granted === 'true' ? '<span class="badge">Granted</span>' : '<span class="badge warn">Denied</span>'}</td><td>${display(event.reason, event.eventType)}</td>
-  </tr>`)
+  </tr>`
+  })
+}
+
+function bindEventCredentialRows(root = document) {
+  root.querySelectorAll('[data-edit-event-card]').forEach((row) => row.addEventListener('click', (event) => {
+    editCard({ currentTarget: { dataset: { editCard: event.currentTarget.dataset.editEventCard } } })
+  }))
 }
 
 function credentialTypeLabel(kind) {
@@ -233,6 +253,7 @@ function refreshEventRows() {
   if (!body) return
   const events = filteredEvents()
   body.innerHTML = events.length ? eventRows(events).join('') : '<tr><td colspan="8">No events match your search and filter.</td></tr>'
+  bindEventCredentialRows(body)
 }
 
 function eventDoor(event) {
@@ -303,10 +324,10 @@ function overview() {
   const cards = records(DB.cards)
   const groups = records(DB.groups)
   return `<div class="stats">
-    <div class="stat"><span>Controllers</span><strong>${controllers.length}</strong></div>
-    <div class="stat"><span>Relays</span><strong>${doors.length}</strong></div>
-    <div class="stat"><span>Active credentials</span><strong>${cards.length}</strong></div>
-    <div class="stat"><span>Access groups</span><strong>${groups.length}</strong></div>
+    <a class="stat" href="/sys/controllers.html"><span>Controllers</span><strong>${controllers.length}</strong></a>
+    <a class="stat" href="/sys/doors.html"><span>Relays</span><strong>${doors.length}</strong></a>
+    <a class="stat" href="/sys/cards.html"><span>Active credentials</span><strong>${cards.length}</strong></a>
+    <a class="stat" href="/sys/groups.html"><span>Access levels</span><strong>${groups.length}</strong></a>
   </div>
   <div class="two-column">
     ${panel('Controllers', 'Connected access-control hardware', ['Controller', 'ID', 'Protocol', 'Credentials', 'Events', 'Status', ''], controllerRows(controllers))}
@@ -319,8 +340,8 @@ function render() {
   switch (currentRoute()) {
     case 'controllers': app.innerHTML = panel('Controllers', 'Controller health and configuration', ['Controller', 'ID', 'Protocol', 'Credentials', 'Events', 'Status', ''], controllerRows()); break
     case 'doors': app.innerHTML = panel('Relays', config.mode === 'monitor' ? 'Monitor mode — controls are disabled' : 'Live relay state and controls', ['Relay / door', 'Mode', 'Delay', 'Keypad', 'Status', 'Controls'], doorRows()); break
-    case 'cards': app.innerHTML = panel('Credentials', 'Cards, RF remotes, and keypad codes', ['Name', 'Credential number', 'Valid from', 'Valid to', 'Groups', 'Status', ''], cardRows()); break
-    case 'groups': app.innerHTML = panel('Groups', 'Relay access assignments', ['Group', 'Relays', 'First-card', 'Status', ''], groupRows()); break
+    case 'cards': app.innerHTML = panel('Credentials', 'Cards, RF remotes, and keypad codes', ['Name', 'Credential number', 'Valid from', 'Valid to', 'Access levels', 'Status', ''], cardRows()); break
+    case 'groups': app.innerHTML = panel('Access Levels', 'Controller-native relay access assignments', ['Access level', 'Relays', 'Time restriction', 'First-card', 'Status', ''], groupRows()); break
     case 'events': app.innerHTML = panel('Events', 'Recent controller events', ['Event #', 'Time', 'Controller', 'Door', 'Credential', 'Type', 'Access', 'Reason'], eventRows()); break
     case 'logs': app.innerHTML = panel('Audit log', 'Recent configuration changes', ['Time', 'User', 'Item', 'Details'], logRows()); break
     default: app.innerHTML = overview()
@@ -330,7 +351,7 @@ function render() {
     app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<div class="panel-tools"><a class="secondary button-link" href="/api/v1/credentials.csv" download>Download CSV</a><button class="secondary" data-export-credentials>Save CSV</button><button class="primary" data-add-card ${config.mode === 'monitor' ? 'disabled' : ''}>Add credential</button></div>`)
   }
   if (currentRoute() === 'groups') {
-    app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<div class="panel-tools"><input class="panel-search" data-group-search type="search" placeholder="Search groups" aria-label="Search groups" value="${escapeHTML(groupSearch)}"><button class="primary" data-add-group ${config.mode === 'monitor' ? 'disabled' : ''}>Add access group</button></div>`)
+    app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<div class="panel-tools"><input class="panel-search" data-group-search type="search" placeholder="Search access levels" aria-label="Search access levels" value="${escapeHTML(groupSearch)}"><button class="primary" data-add-group ${config.mode === 'monitor' ? 'disabled' : ''}>Add access level</button></div>`)
   }
   if (currentRoute() === 'events') {
     app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<div class="panel-tools"><input class="panel-search" data-event-search type="search" placeholder="Search events" aria-label="Search events" value="${escapeHTML(eventSearch)}"><select class="panel-search" data-event-type-filter aria-label="Filter credential type"><option value="all">All credential types</option><option value="rf-remote">RF Remote</option><option value="card">Card</option><option value="keypad-code">Keypad Code</option><option value="unknown">Unknown</option></select></div>`)
@@ -343,6 +364,7 @@ function render() {
   document.querySelectorAll('[data-add-door], [data-edit-door]').forEach((button) => button.addEventListener('click', editDoor))
   document.querySelectorAll('[data-add-card], [data-edit-card]').forEach((button) => button.addEventListener('click', editCard))
   document.querySelectorAll('[data-add-group], [data-edit-group]').forEach((button) => button.addEventListener('click', editGroup))
+  bindEventCredentialRows(app)
   document.querySelector('[data-group-search]')?.addEventListener('input', filterGroups)
   document.querySelector('[data-event-search]')?.addEventListener('input', (event) => { eventSearch = event.currentTarget.value; refreshEventRows() })
   document.querySelector('[data-event-type-filter]')?.addEventListener('change', (event) => { eventTypeFilter = event.currentTarget.value; refreshEventRows() })
@@ -543,9 +565,9 @@ function renderCardGroups(card, selected = null) {
   document.getElementById('card-group-fields').innerHTML = groups.length
     ? groups.map((group) => {
       const checked = selected ? selected.has(group.OID) : cardInGroup(card, group)
-      return `<label class="choice"><input type="checkbox" data-card-group="${escapeHTML(group.OID)}" ${checked ? 'checked' : ''}><span>${display(group.name, `Group ${group.OID}`)}</span></label>`
+      return `<label class="choice"><input type="checkbox" data-card-group="${escapeHTML(group.OID)}" ${checked ? 'checked' : ''}><span>${display(group.name, `Access level ${group.OID}`)}</span></label>`
     }).join('')
-    : empty('No access groups are available. Add one here, then assign it to this credential.')
+    : empty('No access levels are available. Add one here, then assign it to this credential.')
 }
 
 function defaultCardDates() {
@@ -614,7 +636,34 @@ function renderGroupDoors(group) {
   const doors = records(DB.doors)
   document.getElementById('group-door-fields').innerHTML = doors.length
     ? doors.map((door) => `<label class="choice"><input type="checkbox" data-group-door="${escapeHTML(door.OID)}" ${groupAllowsDoor(group, door.OID) ? 'checked' : ''}><span>${display(door.name, `Relay ${door.OID}`)}</span></label>`).join('')
-    : empty('No configured relays are available yet. You can save the group and assign relays later.')
+    : empty('No configured relays are available yet. You can save the access level and assign relays later.')
+}
+
+function renderGroupSchedule(group) {
+  const schedule = group?.schedule || { enabled: false, start: '08:00', end: '17:00', weekdays: {} }
+  groupForm.elements.scheduleEnabled.checked = Boolean(schedule.enabled)
+  groupForm.elements.scheduleStart.value = schedule.start || '08:00'
+  groupForm.elements.scheduleEnd.value = schedule.end || '17:00'
+  document.getElementById('group-schedule-weekdays').innerHTML = accessWeekdays.map(([key, label]) => {
+    const defaultDay = !group && !['saturday', 'sunday'].includes(key)
+    const checked = schedule.weekdays?.[key] ?? defaultDay
+    return `<label class="choice"><input type="checkbox" data-schedule-day="${key}" ${checked ? 'checked' : ''}><span>${label}</span></label>`
+  }).join('')
+  document.getElementById('group-schedule-fields').classList.toggle('hidden', !schedule.enabled)
+}
+
+function selectedGroupSchedule() {
+  const enabled = groupForm.elements.scheduleEnabled.checked
+  const weekdays = Object.fromEntries(accessWeekdays.map(([key]) => [key, Boolean(document.querySelector(`[data-schedule-day="${key}"]`)?.checked)]))
+  const schedule = {
+    enabled,
+    start: groupForm.elements.scheduleStart.value || '08:00',
+    end: groupForm.elements.scheduleEnd.value || '17:00',
+    weekdays,
+  }
+  if (enabled && !Object.values(weekdays).some(Boolean)) throw new Error('Select at least one access weekday.')
+  if (enabled && schedule.end <= schedule.start) throw new Error('Access ends must be after Access starts.')
+  return schedule
 }
 
 function editGroup(event) {
@@ -626,14 +675,15 @@ function editGroup(event) {
   if (groupDialog.dataset.returnCard) groupDialog.dataset.cardSelections = JSON.stringify([...selectedCardGroups()])
   else delete groupDialog.dataset.cardSelections
   renderGroupDoors(group)
-  document.getElementById('group-editor-title').textContent = group ? (group.name || 'Configure access group') : 'Add access group'
+  renderGroupSchedule(group)
+  document.getElementById('group-editor-title').textContent = group ? (group.name || 'Configure access level') : 'Add access level'
   document.getElementById('group-editor-delete').classList.toggle('hidden', !group)
   groupDialog.showModal()
 }
 
 async function refreshGroupData() {
   const response = await fetch('/api/v1/snapshot', { credentials: 'same-origin', cache: 'no-store' })
-  if (!response.ok) throw new Error((await response.text()) || `Unable to refresh groups (${response.status})`)
+  if (!response.ok) throw new Error((await response.text()) || `Unable to refresh access levels (${response.status})`)
   const snapshot = await response.json()
   DB.replace('groups', snapshot.groups || [])
 }
@@ -647,13 +697,14 @@ async function saveGroup(event) {
 
   try {
     const name = groupForm.elements.name.value.trim()
+    const schedule = selectedGroupSchedule()
     if (records(DB.groups).some((group) => group.OID !== oid && `${group.name}`.trim().toLowerCase() === name.toLowerCase())) {
-      throw new Error('An access group with that name already exists.')
+      throw new Error('An access level with that name already exists.')
     }
     if (!oid) {
       const created = await postConfiguration('/groups', { created: [{ oid: '<new>', value: '' }], updated: [], deleted: [] })
       oid = created.groups?.find((item) => item.value === 'new')?.OID
-      if (!oid) throw new Error('The server did not return the new group ID.')
+      if (!oid) throw new Error('The server did not return the new access level ID.')
     }
 
     const updates = []
@@ -662,12 +713,16 @@ async function saveGroup(event) {
     }
     changed(schema.groups.name, name, existing?.name)
     changed(schema.groups.firstcard, `${groupForm.elements.firstcard.checked}`, `${Boolean(existing?.firstcard)}`)
+    changed(schema.groups.schedule, JSON.stringify(schedule), JSON.stringify(existing?.schedule || {}))
     for (const door of records(DB.doors)) {
       const permissionOID = groupDoorOID(oid, door.OID)
       const selected = Boolean(document.querySelector(`[data-group-door="${door.OID}"]`)?.checked)
       if (permissionOID && (!existing || selected !== groupAllowsDoor(existing, door.OID))) updates.push({ oid: permissionOID, value: `${selected}` })
     }
-    if (updates.length) await postConfiguration('/groups', { created: [], updated: updates, deleted: [] })
+    if (updates.length) {
+      await postConfiguration('/groups', { created: [], updated: updates, deleted: [] })
+      await synchronizeHardware('/synchronize/ACL', 'Access level')
+    }
     await refreshGroupData()
 
     const returnCard = groupDialog.dataset.returnCard === 'true'
@@ -677,13 +732,13 @@ async function saveGroup(event) {
     if (returnCard && cardDialog.open) {
       const card = cardForm.dataset.oid ? DB.cards.get(cardForm.dataset.oid) : null
       renderCardGroups(card, selections)
-      showNotice('Access group created and selected. Save the credential to apply its access.')
+      showNotice('Access level created and selected. Save the credential to apply its access.')
     } else {
-      showNotice(existing ? 'Access group saved. Save or update credentials to apply membership changes.' : 'Access group added.')
+      showNotice(existing ? 'Access level saved. Save or update credentials to apply membership changes.' : 'Access level added.')
       render()
     }
   } catch (error) {
-    showNotice(error.message || 'Access group configuration failed.', true)
+    showNotice(error.message || 'Access level configuration failed.', true)
   } finally {
     saveButton.disabled = false
   }
@@ -693,8 +748,8 @@ async function deleteGroup() {
   const oid = groupForm.dataset.oid
   const group = oid ? DB.groups.get(oid) : null
   if (!group) return
-  const name = group.name || `Group ${oid}`
-  if (!window.confirm(`Delete ${name}? Credentials assigned only to this group will lose access.`)) return
+  const name = group.name || `Access level ${oid}`
+  if (!window.confirm(`Delete ${name}? Credentials assigned only to this access level will lose access.`)) return
 
   const deleteButton = document.getElementById('group-editor-delete')
   const saveButton = document.getElementById('group-editor-save')
@@ -712,7 +767,7 @@ async function deleteGroup() {
     showNotice(`${name} deleted and credential access synchronized.`)
     await load()
   } catch (error) {
-    showNotice(error.message || 'Access group deletion failed.', true)
+    showNotice(error.message || 'Access level deletion failed.', true)
   } finally {
     deleteButton.disabled = false
     saveButton.disabled = false
@@ -747,8 +802,16 @@ async function saveCard(event) {
   const existing = oid ? DB.cards.get(oid) : null
 
   try {
+    const name = cardForm.elements.name.value.trim()
+    const number = cardForm.elements.number.value.trim()
     if (!cardForm.elements.from.value || !cardForm.elements.to.value || cardForm.elements.to.value < cardForm.elements.from.value) {
       throw new Error('Valid until must be on or after Valid from.')
+    }
+    if (records(DB.cards).some((card) => card.OID !== existing?.OID && `${card.name}`.trim().toLowerCase() === name.toLowerCase())) {
+      throw new Error('A credential with that name already exists.')
+    }
+    if (records(DB.cards).some((card) => card.OID !== existing?.OID && `${card.number}`.trim() === number)) {
+      throw new Error('A credential with that number already exists.')
     }
     if (existing) oid = await currentCardOID(existing)
     if (!oid) {
@@ -761,9 +824,9 @@ async function saveCard(event) {
     const changed = (suffix, value, original) => {
       if (!existing || `${value ?? ''}` !== `${original ?? ''}`) updates.push({ oid: `${oid}${suffix}`, value: `${value ?? ''}` })
     }
-    changed(schema.cards.name, cardForm.elements.name.value.trim(), existing?.name)
+    changed(schema.cards.name, name, existing?.name)
     changed(schema.cards.kind, cardForm.elements.kind.value, existing?.kind || 'card')
-    changed(schema.cards.card, cardForm.elements.number.value.trim(), existing?.number)
+    changed(schema.cards.card, number, existing?.number)
     if (schema.cards.PIN) changed(schema.cards.PIN, cardForm.elements.PIN.value.trim(), existing?.PIN)
     changed(schema.cards.from, cardForm.elements.from.value, existing?.from)
     changed(schema.cards.to, cardForm.elements.to.value, existing?.to)
@@ -797,7 +860,7 @@ async function deleteCard() {
   const card = oid ? DB.cards.get(oid) : null
   if (!card) return
   const name = card.name || `Credential ${card.number || oid}`
-  if (!window.confirm(`Delete ${name}? This revokes all group access and cannot be undone.`)) return
+  if (!window.confirm(`Delete ${name}? This revokes all access-level assignments and cannot be undone.`)) return
 
   const deleteButton = document.getElementById('card-editor-delete')
   const saveButton = document.getElementById('card-editor-save')
@@ -1048,6 +1111,9 @@ cardForm.elements.to.addEventListener('change', () => {
   updateValidUntil()
 })
 groupForm.addEventListener('submit', saveGroup)
+groupForm.elements.scheduleEnabled.addEventListener('change', () => {
+  document.getElementById('group-schedule-fields').classList.toggle('hidden', !groupForm.elements.scheduleEnabled.checked)
+})
 doorForm.elements.controller.addEventListener('change', () => refreshDoorChannels())
 document.getElementById('controller-editor-close').addEventListener('click', () => controllerDialog.close())
 document.getElementById('controller-editor-cancel').addEventListener('click', () => controllerDialog.close())
