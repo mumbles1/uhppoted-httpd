@@ -67,6 +67,7 @@ func (d *dispatcher) api(w http.ResponseWriter, r *http.Request) {
 				"groups":      system.Groups(uid, role),
 				"events":      system.Events(uid, role, 0, 50),
 				"logs":        system.Logs(uid, role, 0, 50),
+				"relayStatus": system.RelayStatus(),
 			}, nil
 		})
 
