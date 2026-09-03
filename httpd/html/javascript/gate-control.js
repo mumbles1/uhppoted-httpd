@@ -861,7 +861,7 @@ document.getElementById('door-editor-delete').addEventListener('click', deleteDo
 document.getElementById('card-editor-close').addEventListener('click', () => cardDialog.close())
 document.getElementById('card-editor-cancel').addEventListener('click', () => cardDialog.close())
 document.getElementById('card-editor-delete').addEventListener('click', deleteCard)
-document.getElementById('card-group-add').addEventListener('click', (event) => editGroup({ currentTarget: { dataset: { fromCard: 'true' } } }))
+document.getElementById('card-group-add').addEventListener('click', () => editGroup({ currentTarget: { dataset: { fromCard: 'true' } } }))
 document.getElementById('group-editor-close').addEventListener('click', () => groupDialog.close())
 document.getElementById('group-editor-cancel').addEventListener('click', () => groupDialog.close())
 document.getElementById('group-editor-delete').addEventListener('click', deleteGroup)
