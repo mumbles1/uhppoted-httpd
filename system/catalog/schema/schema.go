@@ -100,6 +100,10 @@ type Doors struct {
 	} `json:"control"`
 	Keypad    Suffix `json:"keypad"`
 	Passcodes Suffix `json:"passcodes"`
+	Readers   struct {
+		Entry Suffix `json:"entry"`
+		Exit  Suffix `json:"exit"`
+	} `json:"readers"`
 	FirstCard struct {
 		StartTime    Suffix `json:"start-time"`
 		EndTime      Suffix `json:"end-time"`
@@ -332,6 +336,13 @@ var schema = Schema{
 		},
 		Keypad:    DoorKeypad,
 		Passcodes: DoorPasscodes,
+		Readers: struct {
+			Entry Suffix `json:"entry"`
+			Exit  Suffix `json:"exit"`
+		}{
+			Entry: DoorReaderEntry,
+			Exit:  DoorReaderExit,
+		},
 		FirstCard: struct {
 			StartTime    Suffix `json:"start-time"`
 			EndTime      Suffix `json:"end-time"`
@@ -533,6 +544,8 @@ const DoorFirstCardThursday Suffix = ".6.5.4"
 const DoorFirstCardFriday Suffix = ".6.5.5"
 const DoorFirstCardSaturday Suffix = ".6.5.6"
 const DoorFirstCardSunday Suffix = ".6.5.7"
+const DoorReaderEntry Suffix = ".7.1"
+const DoorReaderExit Suffix = ".7.2"
 
 const CardName Suffix = ".1"
 const CardNumber Suffix = ".2"
