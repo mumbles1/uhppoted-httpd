@@ -66,6 +66,9 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .stat:hover, .stat:focus-visible { border-color: var(--blue); transform: translateY(-1px); }
 .stat span { color: var(--muted); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; }
 .stat strong { display: block; margin-top: 10px; font-size: 29px; }
+.credential-stat small { display: flex; flex-wrap: wrap; gap: 4px 7px; margin-top: 7px; color: var(--muted); font-size: 12px; }
+.credential-stat small b { color: #dcecff; }
+.credential-stat small i { color: #42617d; font-style: normal; }
 .selectable-row { cursor: pointer; }
 .selectable-row:hover td { background: #13243a; }
 .schedule-editor { padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: #081321; }
