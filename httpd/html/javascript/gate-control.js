@@ -500,19 +500,52 @@ async function previewControllerImport() {
     const response = await fetch('/api/v1/controllers/import', { credentials: 'same-origin', cache: 'no-store' })
     if (!response.ok) throw new Error((await response.text()) || `Controller read failed (${response.status})`)
     const result = await response.json()
-    preview.innerHTML = `<div class="import-summary"><strong>${result.supported} ready to import</strong><span>${result.skipped} skipped for safety &middot; ${result.controllers} controller(s)</span></div>${(result.warnings || []).map((warning) => `<p class="import-warning">${display(warning)}</p>`).join('')}<div class="import-records">${(result.credentials || []).map((credential) => `<div class="import-record ${credential.supported ? '' : 'unsupported'}"><span><strong>Credential ${display(credential.cardNumber)}</strong><small>${display(credential.from)} to ${display(credential.to)} &middot; ${credential.relays.length} relay(s)</small></span><span>${credential.supported ? '<span class="badge">Ready</span>' : `<span class="badge warn">Skipped</span><small>${display(credential.warning)}</small>`}</span></div>`).join('') || empty('No credentials were returned by the controller.')}</div>`
-    apply.disabled = result.supported < 1
+    const eligible = Number(result.supported || 0) + Number(result.resolvable || 0)
+    preview.innerHTML = `<div class="import-summary"><strong>${eligible} available to import</strong><span>${result.resolvable || 0} need a choice &middot; ${result.skipped} blocked for safety &middot; ${result.controllers} controller(s)</span></div>${(result.warnings || []).map((warning) => `<p class="import-warning">${display(warning)}</p>`).join('')}<div class="import-records">${(result.credentials || []).map(renderControllerImportRecord).join('') || empty('No credentials were returned by the controller.')}</div>`
+    apply.disabled = eligible < 1
   } catch (error) {
     preview.innerHTML = `<div class="dialog-notice error">${display(error.message || 'Controller read failed.')}</div>`
   }
 }
 
+function renderControllerImportRecord(credential) {
+  const eligible = credential.supported || credential.resolvable
+  const cardNumber = escapeHTML(credential.cardNumber)
+  const localChoice = credential.localMatch ? `<label class="import-choice">Existing local match<select data-import-mode><option value="merge">Merge: keep local dates and PIN</option><option value="override">Override: use controller dates and PIN</option></select></label>` : ''
+  const controllerChoice = credential.resolvable ? `<label class="import-choice">Controller values<select data-import-controller required><option value="">Select controller</option>${credential.controllers.map((id) => `<option value="${escapeHTML(id)}">Controller ${display(id)}</option>`).join('')}</select></label>` : ''
+  const controls = eligible ? `<div class="import-record-controls"><label class="import-toggle"><input type="checkbox" data-import-enabled checked> Import this credential</label>${localChoice}${controllerChoice}</div>` : ''
+  const status = credential.supported ? '<span class="badge">Ready</span>' : credential.resolvable ? `<span class="badge warn">Choice required</span><small>${display(credential.warning)}</small>` : `<span class="badge warn">Blocked</span><small>${display(credential.warning)}</small>`
+  return `<div class="import-record ${eligible ? '' : 'unsupported'}" data-import-card="${cardNumber}" data-import-resolvable="${credential.resolvable ? 'true' : 'false'}"><span><strong>Credential ${display(credential.cardNumber)}${credential.localMatch ? ' · Local match' : ''}</strong><small>${display(credential.from)} to ${display(credential.to)} &middot; ${credential.relays.length} relay(s)</small></span><span class="import-record-status">${status}</span>${controls}</div>`
+}
+
+function controllerImportResolutions() {
+  const resolutions = {}
+  document.querySelectorAll('[data-import-card]').forEach((record) => {
+    const enabled = record.querySelector('[data-import-enabled]')
+    if (!enabled) return
+    const mode = enabled.checked ? (record.querySelector('[data-import-mode]')?.value || 'override') : 'skip'
+    const controller = Number(record.querySelector('[data-import-controller]')?.value || 0)
+    if (enabled.checked && record.dataset.importResolvable === 'true' && !controller) {
+      throw new Error(`Select a source controller for credential ${record.dataset.importCard}.`)
+    }
+    resolutions[record.dataset.importCard] = { mode, controller }
+  })
+  return resolutions
+}
+
 async function applyControllerImport() {
-  if (!window.confirm('Apply the supported controller credentials to the local database? This will not write to or delete anything from the controller.')) return
+  let resolutions
+  try {
+    resolutions = controllerImportResolutions()
+  } catch (error) {
+    showNotice(error.message, true)
+    return
+  }
+  if (!window.confirm('Apply the selected merge and override choices to the local database? This will not write to or delete anything from the controller.')) return
   const button = document.getElementById('controller-import-apply')
   button.disabled = true
   try {
-    const result = await postConfiguration('/api/v1/controllers/import', { confirmed: true })
+    const result = await postConfiguration('/api/v1/controllers/import', { confirmed: true, resolutions })
     controllerImportDialog.close()
     await load()
     showNotice(`Controller import complete: ${result.added} added, ${result.updated} updated, ${result.skipped} skipped. Safety backup: ${result.safetyBackup.name}.`)
