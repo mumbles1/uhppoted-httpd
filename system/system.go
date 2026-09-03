@@ -343,8 +343,11 @@ func SynchronizeACL() error {
 }
 
 func SynchronizeDateTime() error {
+	return SynchronizeDateTimeAt(time.Now())
+}
+
+func SynchronizeDateTimeAt(now time.Time) error {
 	controllers := sys.controllers.AsIControllers()
-	now := time.Now()
 
 	for _, c := range controllers {
 		controller := c
