@@ -86,6 +86,8 @@ export const schema = {
     mode: '.3',
     keypad: '.4',
     passcodes: '.5',
+    readerEntry: '.7.1',
+    readerExit: '.7.2',
 
     regex: /^(0\.3\.([1-9][0-9]*)).*$/,
   },
