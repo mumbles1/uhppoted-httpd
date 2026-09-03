@@ -432,7 +432,11 @@ func (g Group) TimeProfile() (*core.TimeProfile, error) {
 		From:     core.MustParseDate("2020-01-01"),
 		To:       core.MustParseDate("2099-12-31"),
 		Weekdays: days,
-		Segments: core.Segments{1: {Start: *start, End: *end}},
+		Segments: core.Segments{
+			1: {Start: *start, End: *end},
+			2: {Start: core.MustParseHHmm("00:00"), End: core.MustParseHHmm("00:00")},
+			3: {Start: core.MustParseHHmm("00:00"), End: core.MustParseHHmm("00:00")},
+		},
 	}, nil
 }
 

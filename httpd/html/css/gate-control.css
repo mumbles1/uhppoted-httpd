@@ -55,6 +55,8 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 #app { padding: 28px; }
 .notice { margin: 18px 28px 0; padding: 13px 16px; border: 1px solid #735228; border-radius: 9px; color: #ffd699; background: #372612; }
 .notice.error { border-color: #71323d; color: #ffc0c7; background: #35171d; }
+.dialog-notice { margin: 0 0 18px; padding: 13px 16px; border: 1px solid #735228; border-radius: 9px; color: #ffd699; background: #372612; }
+.dialog-notice.error { border-color: #9c4351; color: #ffd0d5; background: #461d25; }
 .hidden { display: none !important; }
 .loading-card, .empty { min-height: 180px; display: grid; place-items: center; color: var(--muted); border: 1px dashed var(--line); border-radius: 12px; background: var(--panel); }
 .spinner { width: 22px; height: 22px; border: 3px solid #23415f; border-top-color: var(--blue); border-radius: 50%; animation: spin .8s linear infinite; }

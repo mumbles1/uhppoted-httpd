@@ -65,7 +65,23 @@ function setConnection(online, message) {
 function showNotice(message, error = false) {
   notice.textContent = message || ''
   notice.className = message ? `notice${error ? ' error' : ''}` : 'notice hidden'
+
+  const dialog = document.querySelector('dialog[open]')
+  if (dialog && message) {
+    const container = dialog.querySelector('form') || dialog
+    let dialogNotice = dialog.querySelector('.dialog-notice')
+    if (!dialogNotice) {
+      dialogNotice = document.createElement('div')
+      dialogNotice.className = 'dialog-notice'
+      container.prepend(dialogNotice)
+    }
+    dialogNotice.textContent = message
+    dialogNotice.className = `dialog-notice${error ? ' error' : ''}`
+    dialogNotice.setAttribute('role', error ? 'alert' : 'status')
+  }
 }
+
+document.querySelectorAll('dialog').forEach((dialog) => dialog.addEventListener('close', () => dialog.querySelector('.dialog-notice')?.remove()))
 
 function updateNavigation() {
   const route = currentRoute()
