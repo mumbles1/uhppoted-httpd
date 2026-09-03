@@ -20,6 +20,8 @@ import (
 type Door struct {
 	catalog.CatalogDoor
 	name string
+	readerEntry string
+	readerExit  string
 
 	delay     uint8
 	mode      core.ControlState
@@ -201,6 +203,8 @@ func (d *Door) AsObjects(a *auth.Authorizator) []schema.Object {
 		list = append(list, kv{DoorControlError, control.err})
 		list = append(list, kv{DoorKeypad, d.keypad})
 		list = append(list, kv{DoorPasscodes, passcodes})
+		list = append(list, kv{DoorReaderEntry, d.readerEntry})
+		list = append(list, kv{DoorReaderExit, d.readerExit})
 
 		list = append(list, kv{DoorFirstCardStartTime, fmt.Sprintf("%v", d.firstcard.StartTime)})
 		list = append(list, kv{DoorFirstCardEndTime, fmt.Sprintf("%v", d.firstcard.EndTime)})
@@ -353,6 +357,24 @@ func (d *Door) set(a *auth.Authorizator, oid schema.OID, value string, dbc db.DB
 
 			list = append(list, kv{DoorPasscodes, passcodes_})
 		}
+
+	case d.OID.Append(DoorReaderEntry):
+		if err := CanUpdate(a, d, "readers.entry", value); err != nil {
+			return nil, err
+		}
+		d.log(dbc, uid, "update", "reader-entry", d.readerEntry, value, "Updated entry reader from %v to %v", d.readerEntry, value)
+		d.readerEntry = strings.TrimSpace(value)
+		d.modified = types.TimestampNow()
+		list = append(list, kv{DoorReaderEntry, d.readerEntry})
+
+	case d.OID.Append(DoorReaderExit):
+		if err := CanUpdate(a, d, "readers.exit", value); err != nil {
+			return nil, err
+		}
+		d.log(dbc, uid, "update", "reader-exit", d.readerExit, value, "Updated exit reader from %v to %v", d.readerExit, value)
+		d.readerExit = strings.TrimSpace(value)
+		d.modified = types.TimestampNow()
+		list = append(list, kv{DoorReaderExit, d.readerExit})
 
 	case d.OID.Append(DoorFirstCardStartTime):
 		if err := CanUpdate(a, d, "firstcard.start-time", value); err != nil {
@@ -598,6 +620,8 @@ func (d Door) serialize() ([]byte, error) {
 		Delay     uint8             `json:"delay,omitempty"`
 		Mode      core.ControlState `json:"mode,omitempty"`
 		Keypad    bool              `json:"keypad,omitempty"`
+		ReaderEntry string          `json:"reader-entry,omitempty"`
+		ReaderExit  string          `json:"reader-exit,omitempty"`
 		FirstCard *core.FirstCard   `json:"firstcard,omitempty"`
 		Created   types.Timestamp   `json:"created"`
 		Modified  types.Timestamp   `json:"modified"`
@@ -607,6 +631,8 @@ func (d Door) serialize() ([]byte, error) {
 		Delay:    d.delay,
 		Mode:     d.mode,
 		Keypad:   d.keypad,
+		ReaderEntry: d.readerEntry,
+		ReaderExit: d.readerExit,
 		Created:  d.created.UTC(),
 		Modified: d.modified.UTC(),
 	}
@@ -627,6 +653,8 @@ func (d *Door) deserialize(bytes []byte) error {
 		Delay     uint8             `json:"delay,omitempty"`
 		Mode      core.ControlState `json:"mode,omitempty"`
 		Keypad    bool              `json:"keypad,omitempty"`
+		ReaderEntry string          `json:"reader-entry,omitempty"`
+		ReaderExit  string          `json:"reader-exit,omitempty"`
 		FirstCard struct {
 			StartTime core.HHmm     `json:"start-time"`
 			EndTime   core.HHmm     `json:"end-time"`
@@ -661,6 +689,8 @@ func (d *Door) deserialize(bytes []byte) error {
 	d.delay = record.Delay
 	d.mode = record.Mode
 	d.keypad = record.Keypad
+	d.readerEntry = record.ReaderEntry
+	d.readerExit = record.ReaderExit
 	d.passcodes = []uint32{}
 
 	d.firstcard = core.FirstCard{
@@ -701,6 +731,8 @@ func (d *Door) clone() Door {
 			OID: d.OID,
 		},
 		name:      d.name,
+		readerEntry: d.readerEntry,
+		readerExit:  d.readerExit,
 		delay:     d.delay,
 		mode:      d.mode,
 		keypad:    d.keypad,
