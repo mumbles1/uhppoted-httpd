@@ -98,6 +98,14 @@ func TestGroupTimeProfile(t *testing.T) {
 	if profile.Segments[1].Start.String() != "08:30" || profile.Segments[1].End.String() != "17:00" {
 		t.Fatalf("Incorrect profile segment: %#v", profile.Segments[1])
 	}
+	if len(profile.Segments) != 3 {
+		t.Fatalf("Expected all three controller time-profile segments, got %#v", profile.Segments)
+	}
+	for _, segment := range []uint8{2, 3} {
+		if profile.Segments[segment].Start.String() != "00:00" || profile.Segments[segment].End.String() != "00:00" {
+			t.Fatalf("Expected inactive segment %v to be 00:00-00:00, got %#v", segment, profile.Segments[segment])
+		}
+	}
 }
 
 func TestGroupAsObjects(t *testing.T) {
