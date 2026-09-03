@@ -270,8 +270,18 @@ function filteredEvents() {
     const kind = credentialRecord?.kind || 'unknown'
     if (eventTypeFilter !== 'all' && kind !== eventTypeFilter) return false
     if (!query) return true
-    const decoded = formatCredential(event.card)
-    return [event.index, event.timestamp, formatEventTime(event.timestamp), event.deviceID, event.deviceName, event.door, event.doorName, event.direction, event.card, event.cardName, credentialRecord?.name, decoded?.facilityCode, decoded?.cardNumber, credentialTypeLabel(kind), event.reason, event.eventType]
+    const credentialNumber = credentialRecord?.number || event.card
+    const decoded = formatCredential(credentialNumber)
+    return [
+      event.index, event.timestamp, formatEventTime(event.timestamp),
+      event.deviceID, `controller ${event.deviceID}`, `controller id ${event.deviceID}`, event.deviceName,
+      event.door, event.doorName, event.direction,
+      credentialNumber, `credential ${credentialNumber}`, event.cardName, credentialRecord?.name,
+      decoded?.facilityCode, decoded?.cardNumber,
+      decoded ? `fc ${decoded.facilityCode} cd ${decoded.cardNumber}` : '',
+      decoded ? `${decoded.facilityCode}-${decoded.cardNumber}` : '',
+      credentialTypeLabel(kind), event.reason, event.eventType,
+    ]
       .some((value) => `${value ?? ''}`.toLowerCase().includes(query))
   })
 }
@@ -382,7 +392,7 @@ function render() {
     app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<div class="panel-tools"><input class="panel-search" data-group-search type="search" placeholder="Search access levels" aria-label="Search access levels" value="${escapeHTML(groupSearch)}"><button class="primary" data-add-group ${config.mode === 'monitor' ? 'disabled' : ''}>Add access level</button></div>`)
   }
   if (currentRoute() === 'events') {
-    app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<div class="panel-tools"><input class="panel-search" data-event-search type="search" placeholder="Search events" aria-label="Search events" value="${escapeHTML(eventSearch)}"><select class="panel-search" data-event-type-filter aria-label="Filter credential type"><option value="all">All credential types</option><option value="rf-remote">RF Remote</option><option value="card">Card</option><option value="keypad-code">Keypad Code</option><option value="unknown">Unknown</option></select></div>`)
+    app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<div class="panel-tools"><input class="panel-search" data-event-search type="search" placeholder="Credential or controller ID" aria-label="Search events by credential number or controller ID" value="${escapeHTML(eventSearch)}"><select class="panel-search" data-event-type-filter aria-label="Filter credential type"><option value="all">All credential types</option><option value="rf-remote">RF Remote</option><option value="card">Card</option><option value="keypad-code">Keypad Code</option><option value="unknown">Unknown</option></select></div>`)
     const filter = document.querySelector('[data-event-type-filter]')
     if (filter) filter.value = eventTypeFilter
   }
