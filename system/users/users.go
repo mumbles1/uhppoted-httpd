@@ -28,7 +28,7 @@ func NewUsers() Users {
 
 func (uu Users) HasAdmin(role string) bool {
 	for _, v := range uu.users {
-		if strings.EqualFold(strings.TrimSpace(v.role), role) {
+		if !v.IsDeleted() && strings.EqualFold(strings.TrimSpace(v.role), strings.TrimSpace(role)) {
 			return true
 		}
 	}
@@ -317,12 +317,13 @@ func (uu Users) Validate() error {
 			}
 		}
 
-		if _, ok := users[u.uid]; ok {
+		normalizedUID := strings.ToLower(strings.TrimSpace(u.uid))
+		if _, ok := users[normalizedUID]; ok {
 			return fmt.Errorf("duplicate UID (%v)", u.uid)
 		}
 
-		if u.uid != "" {
-			users[u.uid] = u.OID
+		if normalizedUID != "" {
+			users[normalizedUID] = u.OID
 		}
 	}
 
