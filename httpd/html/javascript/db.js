@@ -52,6 +52,37 @@ class DBC {
     }
   }
 
+  replace(tag, recordset) {
+    switch (tag) {
+      case 'interfaces':
+        this.interfaces.clear()
+        break
+      case 'controllers':
+        this.controllers.clear()
+        break
+      case 'doors':
+        this.doors.clear()
+        break
+      case 'cards':
+        this.cards.clear()
+        break
+      case 'groups':
+        this.groups.clear()
+        break
+      case 'events':
+        this.tables.events.events.clear()
+        break
+      case 'logs':
+        this.tables.logs.logs.clear()
+        break
+      case 'users':
+        this.tables.users.users.clear()
+        break
+    }
+
+    this.updated(tag, recordset)
+  }
+
   get(oid) {
     // ... system.cards
     if (`${oid}`.startsWith(`${schema.system.base}${schema.system.cards.base}`)) {
