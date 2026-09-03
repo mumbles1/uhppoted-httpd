@@ -175,6 +175,56 @@ func (gg *Groups) List() []Group {
 	return list
 }
 
+// EnsureImported returns an unrestricted access level for the exact relay set,
+// creating one when necessary. It operates on a shadow copy owned by the caller.
+func (gg *Groups) EnsureImported(a *auth.Authorizator, name string, relayOIDs []schema.OID, dbc db.DBC) (schema.OID, error) {
+	wanted := map[schema.OID]bool{}
+	for _, oid := range relayOIDs {
+		wanted[oid] = true
+	}
+	for _, existing := range gg.groups {
+		if existing.IsDeleted() || existing.Schedule.Enabled || existing.FirstCard || len(existing.Doors) != len(wanted) {
+			continue
+		}
+		match := true
+		for oid := range wanted {
+			if !existing.Doors[oid] {
+				match = false
+				break
+			}
+		}
+		if match {
+			return existing.OID, nil
+		}
+	}
+
+	base := strings.TrimSpace(name)
+	if base == "" {
+		base = "Imported controller access"
+	}
+	candidate := base
+	for suffix := 2; ; suffix++ {
+		duplicate := false
+		for _, existing := range gg.groups {
+			if !existing.IsDeleted() && strings.EqualFold(strings.TrimSpace(existing.Name), candidate) {
+				duplicate = true
+				break
+			}
+		}
+		if !duplicate {
+			break
+		}
+		candidate = fmt.Sprintf("%s %d", base, suffix)
+	}
+
+	group, err := gg.add(a, Group{Name: candidate, Doors: wanted, Schedule: Schedule{Weekdays: map[string]bool{}}})
+	if err != nil {
+		return "", err
+	}
+	group.log(dbc, auth.UID(a), "import", "group", "", candidate, "Imported controller access level %v", candidate)
+	return group.OID, nil
+}
+
 func (gg Groups) Print() {
 	serializable := []json.RawMessage{}
 	for _, g := range gg.groups {
@@ -272,3 +322,4 @@ func (gg *Groups) add(a auth.OpAuth, g Group) (*Group, error) {
 
 	return &group, nil
 }
+	
