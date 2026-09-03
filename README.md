@@ -54,11 +54,14 @@ services:
     environment:
       TZ: America/Chicago
       UHPPOTED_CREDENTIALS_CSV: /data/credentials.csv
+      GATE_CONTROL_URL: ""
     volumes:
       - /DATA/AppData/uhppoted-httpd:/data
 ```
 
 Open `http://<casaos-ip>:8080`. The container also exposes 8443 when HTTPS is configured. With `network_mode: host`, do not add Docker port mappings; the service binds directly to the CasaOS host ports.
+
+Replace the blank `GATE_CONTROL_URL` value with the complete URL of the separate Gate Control app. The header's **← Gate Control** button uses that address after configuration work. If it remains blank, the button falls back to the external referring page or browser Back history.
 
 In CasaOS, `/DATA/AppData/uhppoted-httpd` belongs under **Volumes**, not **Devices**. Mapping it as a device produces the Docker error “not a device node.”
 
