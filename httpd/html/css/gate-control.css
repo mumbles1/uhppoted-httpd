@@ -141,6 +141,7 @@ tbody tr:hover td { background: #10233a; }
 .tree-summary-main strong, .tree-summary-main small { display: block; overflow-wrap: anywhere; }
 .tree-summary-main small { margin-top: 3px; color: var(--muted); font-size: 12px; }
 .tree-manage { flex: 0 0 auto; }
+.tree-actions { display: flex; flex: 0 0 auto; gap: 8px; }
 .credential-tree-people, .credential-tree-leaves { display: grid; gap: 9px; padding: 10px; border-top: 1px solid var(--line); }
 .credential-tree-leaves { background: #07111d; }
 .credential-leaf { display: flex; align-items: center; gap: 14px; padding: 12px; border: 1px solid #1b3049; border-radius: 9px; background: #0c1b2d; }
@@ -221,7 +222,8 @@ tbody tr:hover td { background: #10233a; }
   .panel-tools { flex-direction: column; align-items: stretch; }
   .credential-tree { padding: 10px; }
   .credential-tree summary, .credential-leaf { align-items: stretch; flex-direction: column; }
-  .tree-manage, .credential-leaf > button { width: 100%; }
+  .tree-actions { width: 100%; flex-direction: column; }
+  .tree-manage, .tree-actions button, .credential-leaf > button { width: 100%; }
   .management-group-row { grid-template-columns: 1fr 1fr; }
   .management-group-field { grid-column: 1 / -1; }
   .table-wrap { overflow-x: visible; }
