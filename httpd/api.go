@@ -71,6 +71,30 @@ func (d *dispatcher) api(w http.ResponseWriter, r *http.Request) {
 			}, nil
 		})
 
+	case r.URL.Path == "/api/v1/credentials.csv" && r.Method == http.MethodGet:
+		if !d.apiAuthorised(w, uid, role, "/cards") {
+			return
+		}
+		data, err := system.CredentialsCSV()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+		w.Header().Set("Content-Disposition", `attachment; filename="credentials.csv"`)
+		w.Write(data)
+
+	case r.URL.Path == "/api/v1/credentials/export" && r.Method == http.MethodPost:
+		if !d.apiAuthorised(w, uid, role, "/cards") {
+			return
+		}
+		path, err := system.ExportCredentialsCSV()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		writeJSON(w, parseHeader(r), map[string]any{"ok": true, "path": path})
+
 	case r.URL.Path == "/api/v1/controllers/time" && r.Method == http.MethodPost:
 		if !d.apiAuthorised(w, uid, role, "/controllers") {
 			return
