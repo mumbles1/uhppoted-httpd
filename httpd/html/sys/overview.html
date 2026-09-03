@@ -116,7 +116,9 @@
           <button type="button" class="icon-button" id="card-editor-close" aria-label="Close">&times;</button>
         </div>
         <div class="form-grid">
-          <label class="wide"><span>Name / description</span><input name="name" type="text" placeholder="Jane Smith or Gate remote 12" required></label>
+          <label class="wide"><span>Management group / folder</span><input name="managementGroup" type="text" placeholder="Smith Household A or Contractors"></label>
+          <label class="wide"><span>Full name</span><input name="name" type="text" placeholder="Jane Smith" required></label>
+          <label class="wide"><span>Credential label (optional)</span><input name="label" type="text" placeholder="Front gate card or Remote 2"></label>
           <label><span>Credential type</span><select name="kind"><option value="card">Card</option><option value="rf-remote">RF Remote</option><option value="keypad-code">Keypad Code</option></select></label>
           <label><span>Controller decimal ID</span><input name="number" type="text" inputmode="numeric" pattern="[1-9][0-9]*" placeholder="12345678" required></label>
           <div class="field-pair">
@@ -138,6 +140,25 @@
           <button type="button" class="danger delete-action hidden" id="card-editor-delete">Delete credential</button>
           <button type="button" class="secondary" id="card-editor-cancel">Cancel</button>
           <button type="submit" class="primary" id="card-editor-save">Save credential</button>
+        </div>
+      </form>
+    </dialog>
+
+    <dialog id="credential-bulk-dialog" class="editor-dialog">
+      <form id="credential-bulk-form">
+        <div class="dialog-heading">
+          <div><p class="eyebrow">GROUP CREDENTIAL MANAGEMENT</p><h2 id="credential-bulk-title">Manage access</h2></div>
+          <button type="button" class="icon-button" id="credential-bulk-close" aria-label="Close">&times;</button>
+        </div>
+        <p class="field-help" id="credential-bulk-summary"></p>
+        <div class="form-grid">
+          <label class="wide"><span>Change</span><select name="mode"><option value="add">Add selected access levels</option><option value="remove">Remove selected access levels</option><option value="replace">Replace all access levels with selection</option></select></label>
+        </div>
+        <div class="door-mapping-heading"><h3>Access levels</h3><p>The change is applied to every credential in this selected branch.</p></div>
+        <div class="choice-grid" id="credential-bulk-levels"></div>
+        <div class="dialog-actions">
+          <button type="button" class="secondary" id="credential-bulk-cancel">Cancel</button>
+          <button type="submit" class="primary" id="credential-bulk-save">Apply changes</button>
         </div>
       </form>
     </dialog>
@@ -211,4 +232,3 @@
     <script type="module" src="/javascript/gate-control.js"></script>
   </body>
 </html>
-  
