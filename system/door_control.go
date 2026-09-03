@@ -12,6 +12,17 @@ import (
 	"codeberg.org/uhppoted/uhppoted-httpd/types"
 )
 
+func RelayStatus() map[uint32]map[uint8]struct {
+	DoorOpen    bool `json:"door-open"`
+	RelayActive bool `json:"relay-active"`
+} {
+	sys.RLock()
+	controllers := sys.controllers.AsIControllers()
+	sys.RUnlock()
+
+	return sys.interfaces.RelayStatus(controllers)
+}
+
 // ControlControllerDoor applies a door control mode to a physical controller
 // channel. It is used for discovered controllers that have not yet had logical
 // door records assigned to their channels.
