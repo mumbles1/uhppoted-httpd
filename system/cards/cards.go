@@ -31,7 +31,7 @@ func (cc *Cards) CSV() ([]byte, error) {
 
 	var buffer bytes.Buffer
 	w := csv.NewWriter(&buffer)
-	if err := w.Write([]string{"type", "name", "facility_code", "credential_decimal", "controller_id", "valid_from", "valid_until", "access_groups"}); err != nil {
+	if err := w.Write([]string{"management_group", "full_name", "credential_label", "type", "facility_code", "credential_decimal", "controller_id", "valid_from", "valid_until", "access_groups"}); err != nil {
 		return nil, err
 	}
 	for _, card := range list {
@@ -50,7 +50,7 @@ func (cc *Cards) CSV() ([]byte, error) {
 			fc = fmt.Sprintf("%d", card.CardID/100000)
 			cd = fmt.Sprintf("%d", card.CardID%100000)
 		}
-		if err := w.Write([]string{card.Kind(), card.Name(), fc, cd, fmt.Sprintf("%d", card.CardID), fmt.Sprintf("%v", card.From()), fmt.Sprintf("%v", card.To()), strings.Join(groups, "; ")}); err != nil {
+		if err := w.Write([]string{card.ManagementGroup(), card.Name(), card.Label(), card.Kind(), fc, cd, fmt.Sprintf("%d", card.CardID), fmt.Sprintf("%v", card.From()), fmt.Sprintf("%v", card.To()), strings.Join(groups, "; ")}); err != nil {
 			return nil, err
 		}
 	}
@@ -382,6 +382,8 @@ func (cc *Cards) Load(blob json.RawMessage) error {
 		catalog.PutT(c.CatalogCard)
 		catalog.PutV(c.OID, CardNumber, c.CardID)
 		catalog.PutV(c.OID, CardName, c.name)
+		catalog.PutV(c.OID, CardManagementGroup, c.managementGroup)
+		catalog.PutV(c.OID, CardLabel, c.label)
 	}
 
 	return nil
@@ -424,7 +426,6 @@ func (cc *Cards) Clone() Cards {
 
 func (cc Cards) Validate() error {
 	cards := map[uint32]string{}
-	names := map[string]string{}
 
 	for k, c := range cc.cards {
 		if c.IsDeleted() {
@@ -451,13 +452,6 @@ func (cc Cards) Validate() error {
 			cards[c.CardID] = string(c.OID)
 		}
 
-		if name := strings.ToLower(strings.TrimSpace(c.name)); name != "" {
-			if oid, ok := names[name]; ok {
-				return fmt.Errorf("duplicate credential name (%v)", oid)
-			}
-
-			names[name] = string(c.OID)
-		}
 	}
 
 	return nil
@@ -507,4 +501,3 @@ func (cc *Cards) add(a *auth.Authorizator, c Card) (*Card, error) {
 
 	return card, nil
 }
-	
