@@ -553,6 +553,7 @@ const CardFrom Suffix = ".3"
 const CardTo Suffix = ".4"
 const CardGroups Suffix = ".5"
 const CardPIN Suffix = ".6"
+const CardKind Suffix = ".7"
 
 const GroupName Suffix = ".1"
 const GroupDoors Suffix = ".2"
