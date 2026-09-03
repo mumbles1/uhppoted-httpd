@@ -1,6 +1,8 @@
 package system
 
 import (
+	"fmt"
+
 	"codeberg.org/uhppoted/uhppoted-httpd/auth"
 	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog/schema"
 	"codeberg.org/uhppoted/uhppoted-httpd/system/db"
@@ -51,6 +53,13 @@ func UpdateUsers(uid, role string, m map[string]any) (any, error) {
 		} else {
 			dbc.Stash(objects)
 		}
+	}
+
+	// The caller's role is the configured administrator role for this
+	// operation. Never allow account maintenance to leave the installation
+	// without an administrator who can log back in.
+	if !shadow.HasAdmin(role) {
+		return nil, fmt.Errorf("at least one administrator account is required")
 	}
 
 	if err := shadow.Validate(); err != nil {
