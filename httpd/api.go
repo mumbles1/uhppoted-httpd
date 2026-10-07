@@ -37,6 +37,15 @@ func (d *dispatcher) api(w http.ResponseWriter, r *http.Request) {
 	}
 
 	switch {
+	case r.URL.Path == "/api/v1/controllers/discover" && r.Method == http.MethodPost:
+		if !d.apiAuthorised(w, uid, role, "/controllers") {
+			return
+		}
+		d.exec(w, r, func(_ map[string]any) (any, error) {
+			system.Refresh()
+			return map[string]any{"ok": true}, nil
+		})
+
 	case r.URL.Path == "/api/v1/controllers/import" && r.Method == http.MethodGet:
 		if !d.apiAuthorised(w, uid, role, "/controllers", "/doors", "/cards", "/groups") {
 			return

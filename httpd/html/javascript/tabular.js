@@ -388,6 +388,32 @@ export function onRefresh(tag, event) {
   }
 }
 
+export async function onDiscoverControllers(event) {
+  if (event) {
+    event.preventDefault()
+  }
+
+  dismiss()
+  busy()
+
+  try {
+    const response = await postAsJSON('/api/v1/controllers/discover', {})
+
+    if (response.redirected) {
+      window.location = response.url
+    } else if (response.status === 200) {
+      get(pages.controllers.get, pages.controllers.refreshed)
+    } else {
+      warning(await response.text())
+      unbusy()
+    }
+  } catch (err) {
+    console.error(err)
+    warning(err.message || 'Controller discovery failed')
+    unbusy()
+  }
+}
+
 export function mark(clazz, ...elements) {
   elements.forEach((e) => {
     if (e) {

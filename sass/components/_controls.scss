@@ -30,6 +30,34 @@
     cursor: pointer;
   }
 
+  .action-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 34px;
+    padding: 5px 10px;
+    border: var(--content-controls-border);
+    border-radius: 6px;
+    background: var(--content-table-background);
+    color: inherit;
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .action-button img {
+    width: 16px;
+    height: 16px;
+  }
+
+  .action-button:hover { filter: brightness(0.96); }
+
+  .action-button:focus-visible {
+    outline: 3px solid rgba(20, 99, 215, 0.32);
+    outline-offset: 2px;
+  }
+
   #commitall {  
     display: none;
     margin-right: 6px;
@@ -45,6 +73,12 @@
   #refresh {  
     margin-left: 6px;
   }
+}
+
+.controller-help {
+  margin: 0 0 8px;
+  color: var(--content-text-muted, #667085);
+  font-size: 0.8rem;
 }
 
 #controls.modified[data-modified^="multiple"] {

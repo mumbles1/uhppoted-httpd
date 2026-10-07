@@ -2657,6 +2657,32 @@ footer {
   transition:transform 120ms ease,box-shadow 120ms ease;
 }
 #controls img.button:hover { transform:translateY(-1px); box-shadow:0 3px 9px rgba(15,23,42,.16); }
+#controls .action-button {
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  min-height:34px;
+  padding:5px 10px;
+  border:var(--content-controls-border);
+  border-radius:6px;
+  background:var(--content-table-background);
+  color:inherit;
+  font:inherit;
+  font-size:.82rem;
+  font-weight:600;
+  cursor:pointer;
+}
+#controls .action-button img { width:16px; height:16px; }
+#controls .action-button:hover { filter:brightness(.96); }
+#controls .action-button:focus-visible {
+  outline:3px solid rgba(20,99,215,.32);
+  outline-offset:2px;
+}
+.controller-help {
+  margin:0 0 8px;
+  color:var(--content-text-muted,#667085);
+  font-size:.8rem;
+}
 button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible {
   outline:3px solid rgba(20,99,215,.32);
   outline-offset:2px;

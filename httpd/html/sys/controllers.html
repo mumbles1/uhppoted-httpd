@@ -61,9 +61,17 @@
             <img id="rollbackall" class='button' src="/images/{{$.context.Theme}}/times-solid.svg" onclick="onRollbackAll('controllers', event, 'controllers')" />
             {{template "message"   .}}
             {{template "windmill"  .}}
-            <img id="add" class='button' src="/images/{{$.context.Theme}}/plus-solid.svg" onclick="onNew('controller')" />
-            <img id="refresh" class='button' src="/images/{{$.context.Theme}}/sync-alt-solid.svg" onclick="onRefresh('controllers', event)" />
+            <button id="discover" class="action-button" type="button" onclick="onDiscoverControllers(event)">
+              <img src="/images/{{$.context.Theme}}/network-wired-solid.svg" alt="" />
+              <span>Discover</span>
+            </button>
+            <button id="add" class="action-button" type="button" onclick="onNew('controller', event)">
+              <img src="/images/{{$.context.Theme}}/plus-solid.svg" alt="" />
+              <span>Add controller</span>
+            </button>
+            <img id="refresh" class='button' src="/images/{{$.context.Theme}}/sync-alt-solid.svg" alt="Refresh controller list" title="Refresh controller list" onclick="onRefresh('controllers', event)" />
           </div>
+          <p class="controller-help">Add a controller manually, or discover controllers on the configured LAN. Discovery in CasaOS requires host networking.</p>
 
           <div id="controllers" class="tabular">
             <table>
