@@ -296,6 +296,15 @@ func Refresh() {
 	sys.compareACL()
 }
 
+// Discover performs only the LAN broadcast scan. A discovery action should
+// not wait for the full controller, event and ACL refresh cycle.
+func Discover() []uint32 {
+	controllers := sys.controllers.AsIControllers()
+	found := sys.interfaces.Search(controllers)
+	sys.controllers.Discovered(found)
+	return found
+}
+
 func (s *system) synchronize() {
 	infof("system", "checking system synchronization")
 	controllers := sys.controllers.AsIControllers()

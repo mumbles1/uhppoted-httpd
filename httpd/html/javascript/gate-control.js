@@ -1680,8 +1680,9 @@ async function discoverControllers(event) {
       method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}',
     })
     if (!response.ok) throw new Error((await response.text()) || `LAN discovery failed (${response.status})`)
+    const result = await response.json()
     await load()
-    const count = records(DB.controllers).length
+    const count = result.found?.length || 0
     showNotice(count ? `LAN discovery complete. ${count} controller${count === 1 ? '' : 's'} available.` : 'LAN discovery complete. No controllers responded; check host networking and the controller LAN.')
   } catch (error) {
     showNotice(error.message || 'LAN discovery failed.', true)

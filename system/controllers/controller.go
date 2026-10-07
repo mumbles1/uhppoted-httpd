@@ -161,7 +161,12 @@ func (c *Controller) AsObjects(a *auth.Authorizator) []schema.Object {
 				// ... get IP address field from cached value
 				if cached.address.IsValid() {
 					address.address = fmt.Sprintf("%v", cached.address)
+					age := time.Since(cached.touched)
 					switch {
+					case age >= windows.deviceUncertain:
+						address.status = types.StatusUnknown
+					case age >= windows.deviceOk:
+						address.status = types.StatusUncertain
 					case !c.IP.IsValid() || (c.IP.IsValid() && cached.address.Equal(c.IP)):
 						address.status = types.StatusOk
 

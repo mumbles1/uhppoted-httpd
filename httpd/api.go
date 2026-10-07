@@ -42,8 +42,8 @@ func (d *dispatcher) api(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		d.exec(w, r, func(_ map[string]any) (any, error) {
-			system.Refresh()
-			return map[string]any{"ok": true}, nil
+			found := system.Discover()
+			return map[string]any{"ok": true, "found": found}, nil
 		})
 
 	case r.URL.Path == "/api/v1/controllers/import" && r.Method == http.MethodGet:

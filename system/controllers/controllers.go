@@ -228,6 +228,34 @@ loop:
 	}
 }
 
+// Discovered records the latest broadcast scan result. Controllers missing
+// from an explicit scan are marked stale immediately so their cached address
+// does not continue to appear healthy after they have gone offline.
+func (cc *Controllers) Discovered(found []uint32) {
+	if cc == nil {
+		return
+	}
+
+	cc.Found(found)
+	seen := make(map[uint32]struct{}, len(found))
+	for _, id := range found {
+		seen[id] = struct{}{}
+	}
+
+	now := time.Now()
+	for _, c := range cc.controllers {
+		if c == nil || c.IsDeleted() || c.DeviceID == 0 {
+			continue
+		}
+
+		if _, ok := seen[c.DeviceID]; ok {
+			catalog.PutV(c.OID, ControllerTouched, now)
+		} else {
+			catalog.PutV(c.OID, ControllerTouched, now.Add(-windows.deviceUncertain))
+		}
+	}
+}
+
 // NTS: 'added' is specifically not cloned - it has a lifetime for the duration of
 //
 //	the 'shadow' copy only
