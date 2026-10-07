@@ -1663,6 +1663,9 @@ function editController(event) {
   controllerForm.elements.antipassback.value = controller?.antipassback?.antipassback || '0'
   document.getElementById('controller-editor-title').textContent = controller?.name || (controller ? `Controller ${controller.deviceID}` : 'Add controller')
   controllerForm.querySelector('[name="datetime"]').closest('label').classList.toggle('hidden', isNew)
+  const deleteButton = document.getElementById('controller-editor-delete')
+  deleteButton.classList.toggle('hidden', isNew || config.mode === 'monitor')
+  deleteButton.disabled = false
   updateControllerAddressMode()
   document.querySelector('.controller-time-action').classList.toggle('hidden', isNew)
   document.querySelector('.door-mapping-heading').classList.toggle('hidden', isNew)
@@ -1788,6 +1791,40 @@ async function saveController(event) {
   }
 }
 
+async function deleteController() {
+  const oid = controllerForm.dataset.oid
+  const controller = oid ? DB.controllers.get(oid) : null
+  if (!controller) return
+
+  const name = controller.name || `Controller ${controller.deviceID}`
+  const assignments = Object.values(controller.doors || {}).filter(Boolean).length
+  const detail = assignments
+    ? ` This also removes ${assignments} door assignment${assignments === 1 ? '' : 's'}.`
+    : ''
+  if (!window.confirm(`Delete ${name}?${detail} This removes it from the app; it does not reset the controller hardware.`)) return
+
+  const deleteButton = document.getElementById('controller-editor-delete')
+  const saveButton = document.getElementById('controller-editor-save')
+  deleteButton.disabled = true
+  saveButton.disabled = true
+  try {
+    const assignmentUpdates = Object.keys(controller.doors || {})
+      .map((channel) => ({ oid: `${oid}${schema.controllers[`door${channel}`]}`, value: '' }))
+    if (assignmentUpdates.length) {
+      await postConfiguration('/controllers', { created: [], updated: assignmentUpdates, deleted: [] })
+    }
+    await postConfiguration('/controllers', { created: [], updated: [], deleted: [oid] })
+    controllerDialog.close()
+    await load()
+    showNotice(`${name} deleted from the app.`)
+  } catch (error) {
+    showNotice(error.message || 'Controller deletion failed.', true)
+  } finally {
+    deleteButton.disabled = false
+    saveButton.disabled = false
+  }
+}
+
 async function load() {
   if (loading) return
   loading = true
@@ -1900,6 +1937,7 @@ document.getElementById('controller-editor-close').addEventListener('click', () 
 document.getElementById('controller-editor-cancel').addEventListener('click', () => controllerDialog.close())
 document.getElementById('controller-time-now').addEventListener('click', () => { controllerForm.elements.datetime.value = localDateTimeValue() })
 document.getElementById('controller-time-set').addEventListener('click', setControllerTime)
+document.getElementById('controller-editor-delete').addEventListener('click', deleteController)
 document.getElementById('door-editor-close').addEventListener('click', () => {
   doorDialog.close()
   delete doorDialog.dataset.returnController
