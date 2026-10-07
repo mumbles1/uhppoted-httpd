@@ -1655,19 +1655,29 @@ function editController(event) {
   controllerForm.dataset.oid = controller?.OID || ''
   controllerForm.elements.name.value = controller?.name || ''
   controllerForm.elements.deviceID.value = controller?.deviceID || ''
-  controllerForm.elements.address.value = controller?.address?.configured || controller?.address?.address || ''
+  controllerForm.elements.dhcp.checked = !controller?.address?.configured
+  controllerForm.elements.address.value = controller?.address?.configured || ''
   controllerForm.elements.protocol.value = controller?.protocol === 'tcp' ? 'tcp' : 'udp'
   controllerForm.elements.datetime.value = controllerDateTimeValue(controller?.datetime?.datetime)
   controllerForm.elements.interlock.value = controller?.interlock || '0'
   controllerForm.elements.antipassback.value = controller?.antipassback?.antipassback || '0'
   document.getElementById('controller-editor-title').textContent = controller?.name || (controller ? `Controller ${controller.deviceID}` : 'Add controller')
   controllerForm.querySelector('[name="datetime"]').closest('label').classList.toggle('hidden', isNew)
+  updateControllerAddressMode()
   document.querySelector('.controller-time-action').classList.toggle('hidden', isNew)
   document.querySelector('.door-mapping-heading').classList.toggle('hidden', isNew)
   document.getElementById('controller-door-fields').classList.toggle('hidden', isNew)
   renderControllerDoors(controller)
 
   controllerDialog.showModal()
+}
+
+function updateControllerAddressMode() {
+  const dynamic = controllerForm.elements.dhcp.checked
+  const address = controllerForm.elements.address
+  address.disabled = dynamic
+  address.required = !dynamic
+  if (dynamic) address.value = ''
 }
 
 async function discoverControllers(event) {
@@ -1747,7 +1757,8 @@ async function saveController(event) {
 
     changed(schema.controllers.name, controllerForm.elements.name.value.trim(), controller?.name)
     changed(schema.controllers.deviceID, controllerForm.elements.deviceID.value.trim(), controller?.deviceID)
-    changed(schema.controllers.endpoint.address, controllerForm.elements.address.value.trim(), controller?.address?.configured)
+    const controllerAddress = controllerForm.elements.dhcp.checked ? '' : controllerForm.elements.address.value.trim()
+    changed(schema.controllers.endpoint.address, controllerAddress, controller?.address?.configured)
     changed(schema.controllers.endpoint.protocol, controllerForm.elements.protocol.value, controller?.protocol)
     changed(schema.controllers.interlock, controllerForm.elements.interlock.value, controller?.interlock)
     changed(schema.controllers.antipassback.antipassback, controllerForm.elements.antipassback.value, controller?.antipassback?.antipassback)
@@ -1859,6 +1870,7 @@ async function controlDoor(event) {
 }
 
 document.getElementById('refresh-button').addEventListener('click', manualRefresh)
+controllerForm.elements.dhcp.addEventListener('change', updateControllerAddressMode)
 controllerForm.addEventListener('submit', saveController)
 doorForm.addEventListener('submit', saveDoor)
 cardForm.addEventListener('submit', saveCard)

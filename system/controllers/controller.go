@@ -520,9 +520,15 @@ func (c *Controller) set(a *auth.Authorizator, oid schema.OID, value string, dbc
 		}
 
 	case c.OID.Append(ControllerEndpointAddress):
-		if addr, err := lib.ParseControllerAddr(value); err != nil {
-			return nil, err
-		} else if err := CanUpdate(a, c, "address", addr); err != nil {
+		addr := lib.ControllerAddr{}
+		if strings.TrimSpace(value) != "" {
+			parsed, err := lib.ParseControllerAddr(value)
+			if err != nil {
+				return nil, err
+			}
+			addr = parsed
+		}
+		if err := CanUpdate(a, c, "address", addr); err != nil {
 			return nil, err
 		} else {
 			c.IP = addr
