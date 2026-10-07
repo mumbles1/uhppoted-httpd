@@ -760,7 +760,7 @@ function render() {
     app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<div class="panel-tools"><input class="panel-search" data-credential-search type="search" placeholder="Search people, groups, or credentials" aria-label="Search credentials" value="${escapeHTML(credentialSearch)}"><button class="secondary" data-manage-groups ${config.mode === 'monitor' ? 'disabled' : ''}>Manage groups</button><a class="secondary button-link" href="/api/v1/credentials.csv" download>Download CSV</a><button class="secondary" data-export-credentials>Save CSV</button><button class="primary" data-add-card ${config.mode === 'monitor' ? 'disabled' : ''}>Add credential</button></div>`)
   }
   if (currentRoute() === 'controllers') {
-    app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<div class="panel-tools"><button class="secondary" data-open-backups>Backups</button><button class="primary" data-import-controller>Import from controller</button></div>`)
+    app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<div class="panel-tools"><button class="secondary" data-discover-controllers ${config.mode === 'monitor' ? 'disabled' : ''}>Discover on LAN</button><button class="primary" data-add-controller ${config.mode === 'monitor' ? 'disabled' : ''}>Add controller</button><button class="secondary" data-open-backups>Backups</button><button class="primary" data-import-controller>Import from controller</button></div>`)
   }
   if (currentRoute() === 'groups') {
     app.querySelector('.panel-heading')?.insertAdjacentHTML('beforeend', `<div class="panel-tools"><input class="panel-search" data-group-search type="search" placeholder="Search access levels" aria-label="Search access levels" value="${escapeHTML(groupSearch)}"><button class="primary" data-add-group ${config.mode === 'monitor' ? 'disabled' : ''}>Add access level</button></div>`)
@@ -776,6 +776,8 @@ function render() {
 
   document.querySelectorAll('[data-mode][data-door], [data-mode][data-controller][data-channel]').forEach((button) => button.addEventListener('click', controlDoor))
   document.querySelectorAll('[data-edit-controller]').forEach((button) => button.addEventListener('click', editController))
+  document.querySelector('[data-add-controller]')?.addEventListener('click', editController)
+  document.querySelector('[data-discover-controllers]')?.addEventListener('click', discoverControllers)
   document.querySelectorAll('[data-add-door], [data-edit-door]').forEach((button) => button.addEventListener('click', editDoor))
   document.querySelectorAll('[data-add-card], [data-edit-card]').forEach((button) => button.addEventListener('click', editCard))
   document.querySelectorAll('[data-edit-person]').forEach((button) => button.addEventListener('click', openPersonEditor))
@@ -1611,7 +1613,7 @@ function renderControllerDoors(controller) {
   const capacity = controllerCapacity(controller)
   document.getElementById('controller-door-fields').innerHTML = Array.from({ length: capacity }, (_, index) => {
     const channel = index + 1
-    const selected = controller.doors?.[channel] || ''
+    const selected = controller?.doors?.[channel] || ''
     const options = [`<option value="">Unassigned</option>`, ...logicalDoors.map((door) => `<option value="${escapeHTML(door.OID)}" ${door.OID === selected ? 'selected' : ''}>${display(door.name, `Door ${door.OID}`)}</option>`)]
     return `<div class="controller-door-field">
       <label><span>Physical door ${channel}</span><select name="door${channel}">${options.join('')}</select></label>
@@ -1642,24 +1644,51 @@ function editControllerDoor(event) {
 }
 
 function editController(event) {
-  const controller = DB.controllers.get(event.currentTarget.dataset.editController)
-  if (!controller) {
+  const isNew = event.currentTarget.hasAttribute('data-add-controller')
+  const controller = isNew ? null : DB.controllers.get(event.currentTarget.dataset.editController)
+  if (!controller && !isNew) {
     showNotice('Controller configuration could not be loaded.', true)
     return
   }
 
-  controllerForm.dataset.oid = controller.OID
-  controllerForm.elements.name.value = controller.name || ''
-  controllerForm.elements.deviceID.value = controller.deviceID || ''
-  controllerForm.elements.address.value = controller.address?.configured || controller.address?.address || ''
-  controllerForm.elements.protocol.value = controller.protocol === 'tcp' ? 'tcp' : 'udp'
-  controllerForm.elements.datetime.value = controllerDateTimeValue(controller.datetime?.datetime)
-  controllerForm.elements.interlock.value = controller.interlock || '0'
-  controllerForm.elements.antipassback.value = controller.antipassback?.antipassback || '0'
-  document.getElementById('controller-editor-title').textContent = controller.name || `Controller ${controller.deviceID}`
+  controllerForm.reset()
+  controllerForm.dataset.oid = controller?.OID || ''
+  controllerForm.elements.name.value = controller?.name || ''
+  controllerForm.elements.deviceID.value = controller?.deviceID || ''
+  controllerForm.elements.address.value = controller?.address?.configured || controller?.address?.address || ''
+  controllerForm.elements.protocol.value = controller?.protocol === 'tcp' ? 'tcp' : 'udp'
+  controllerForm.elements.datetime.value = controllerDateTimeValue(controller?.datetime?.datetime)
+  controllerForm.elements.interlock.value = controller?.interlock || '0'
+  controllerForm.elements.antipassback.value = controller?.antipassback?.antipassback || '0'
+  document.getElementById('controller-editor-title').textContent = controller?.name || (controller ? `Controller ${controller.deviceID}` : 'Add controller')
+  controllerForm.querySelector('[name="datetime"]').closest('label').classList.toggle('hidden', isNew)
+  document.querySelector('.controller-time-action').classList.toggle('hidden', isNew)
+  document.querySelector('.door-mapping-heading').classList.toggle('hidden', isNew)
+  document.getElementById('controller-door-fields').classList.toggle('hidden', isNew)
   renderControllerDoors(controller)
 
   controllerDialog.showModal()
+}
+
+async function discoverControllers(event) {
+  const button = event.currentTarget
+  button.disabled = true
+  button.textContent = 'Discovering…'
+  showNotice('Searching the local network for controllers…')
+  try {
+    const response = await fetch('/api/v1/controllers/discover', {
+      method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}',
+    })
+    if (!response.ok) throw new Error((await response.text()) || `LAN discovery failed (${response.status})`)
+    await load()
+    const count = records(DB.controllers).length
+    showNotice(count ? `LAN discovery complete. ${count} controller${count === 1 ? '' : 's'} available.` : 'LAN discovery complete. No controllers responded; check host networking and the controller LAN.')
+  } catch (error) {
+    showNotice(error.message || 'LAN discovery failed.', true)
+  } finally {
+    button.disabled = config.mode === 'monitor'
+    button.textContent = 'Discover on LAN'
+  }
 }
 
 function localDateTimeValue() {
@@ -1697,47 +1726,51 @@ async function setControllerTime() {
 
 async function saveController(event) {
   event.preventDefault()
-  const oid = controllerForm.dataset.oid
-  const controller = DB.controllers.get(oid)
-  if (!controller) return
-
-  const updates = []
-  const changed = (suffix, value, original) => {
-    if (`${value ?? ''}` !== `${original ?? ''}`) updates.push({ oid: `${oid}${suffix}`, value: `${value ?? ''}` })
-  }
-
-  changed(schema.controllers.name, controllerForm.elements.name.value.trim(), controller.name)
-  changed(schema.controllers.deviceID, controllerForm.elements.deviceID.value.trim(), controller.deviceID)
-  changed(schema.controllers.endpoint.address, controllerForm.elements.address.value.trim(), controller.address?.configured)
-  changed(schema.controllers.endpoint.protocol, controllerForm.elements.protocol.value, controller.protocol)
-  changed(schema.controllers.interlock, controllerForm.elements.interlock.value, controller.interlock)
-  changed(schema.controllers.antipassback.antipassback, controllerForm.elements.antipassback.value, controller.antipassback?.antipassback)
-
-  for (let channel = 1; channel <= 4; channel += 1) {
-    const field = controllerForm.elements[`door${channel}`]
-    if (field) changed(schema.controllers[`door${channel}`], field.value, controller.doors?.[channel])
-  }
-
-  if (!updates.length) {
-    controllerDialog.close()
-    return
-  }
-
+  const isNew = !controllerForm.dataset.oid
+  let oid = controllerForm.dataset.oid
+  let controller = oid ? DB.controllers.get(oid) : null
   const saveButton = document.getElementById('controller-editor-save')
   saveButton.disabled = true
+
   try {
-    const response = await fetch('/controllers', {
-      method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ created: [], updated: updates, deleted: [] }),
-    })
-    if (!response.ok) throw new Error((await response.text()) || `Controller update failed (${response.status})`)
-    await synchronizeHardware('/synchronize/doors', 'Relay')
-    await synchronizeHardware('/synchronize/ACL', 'Card')
+    if (isNew) {
+      const created = await postConfiguration('/controllers', { created: [{ oid: '<new>', value: '' }], updated: [], deleted: [] })
+      oid = created.controllers?.find((item) => item.value === 'new')?.OID
+      if (!oid) throw new Error('The server did not return the new controller ID.')
+    }
+
+    const updates = []
+    const changed = (suffix, value, original) => {
+      if (!controller || `${value ?? ''}` !== `${original ?? ''}`) updates.push({ oid: `${oid}${suffix}`, value: `${value ?? ''}` })
+    }
+
+    changed(schema.controllers.name, controllerForm.elements.name.value.trim(), controller?.name)
+    changed(schema.controllers.deviceID, controllerForm.elements.deviceID.value.trim(), controller?.deviceID)
+    changed(schema.controllers.endpoint.address, controllerForm.elements.address.value.trim(), controller?.address?.configured)
+    changed(schema.controllers.endpoint.protocol, controllerForm.elements.protocol.value, controller?.protocol)
+    changed(schema.controllers.interlock, controllerForm.elements.interlock.value, controller?.interlock)
+    changed(schema.controllers.antipassback.antipassback, controllerForm.elements.antipassback.value, controller?.antipassback?.antipassback)
+
+    if (!isNew) {
+      for (let channel = 1; channel <= 4; channel += 1) {
+        const field = controllerForm.elements[`door${channel}`]
+        if (field) changed(schema.controllers[`door${channel}`], field.value, controller?.doors?.[channel])
+      }
+    }
+
+    if (updates.length) await postConfiguration('/controllers', { created: [], updated: updates, deleted: [] })
     controllerDialog.close()
-    showNotice('Controller configuration saved and synchronized.')
     await load()
+    if (isNew) {
+      showNotice('Controller added. Use Configure to assign doors and controller settings.')
+    } else {
+      await synchronizeHardware('/synchronize/doors', 'Relay')
+      await synchronizeHardware('/synchronize/ACL', 'Card')
+      showNotice('Controller configuration saved and synchronized.')
+      await load()
+    }
   } catch (error) {
-    showNotice(error.message || 'Controller update failed.', true)
+    showNotice(error.message || (isNew ? 'Controller could not be added.' : 'Controller update failed.'), true)
   } finally {
     saveButton.disabled = false
   }
