@@ -1671,6 +1671,9 @@ function editController(event) {
   const deleteButton = document.getElementById('controller-editor-delete')
   deleteButton.classList.toggle('hidden', isNew || config.mode === 'monitor')
   deleteButton.disabled = false
+  const pushButton = document.getElementById('controller-editor-push')
+  pushButton.classList.toggle('hidden', isNew || config.mode === 'monitor')
+  pushButton.disabled = false
   updateControllerAddressMode()
   document.querySelector('.controller-time-action').classList.toggle('hidden', isNew)
   document.querySelector('.door-mapping-heading').classList.toggle('hidden', isNew)
@@ -1707,6 +1710,30 @@ async function discoverControllers(event) {
   } finally {
     button.disabled = config.mode === 'monitor'
     button.textContent = 'Discover on LAN'
+  }
+}
+
+async function pushControllerChanges(event) {
+  const button = event.currentTarget
+  button.disabled = true
+  button.textContent = 'Pushing…'
+  try {
+    for (const [path, label] of [['/synchronize/doors', 'Controller settings'], ['/synchronize/ACL', 'Credential access']]) {
+      const response = await fetch(path, {
+        method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}',
+      })
+      if (!response.ok) {
+        const details = (await response.text()).trim() || `request failed (${response.status})`
+        throw new Error(`${label} push failed: ${details}`)
+      }
+    }
+    await load()
+    showNotice('Saved controller settings and credential access pushed to all configured controllers.')
+  } catch (error) {
+    showNotice(error.message || 'Could not push saved changes to controllers.', true)
+  } finally {
+    button.disabled = false
+    button.textContent = 'Push to all controllers'
   }
 }
 
@@ -1945,6 +1972,7 @@ document.getElementById('controller-editor-cancel').addEventListener('click', ()
 document.getElementById('controller-time-now').addEventListener('click', () => { controllerForm.elements.datetime.value = localDateTimeValue() })
 document.getElementById('controller-time-set').addEventListener('click', setControllerTime)
 document.getElementById('controller-editor-delete').addEventListener('click', deleteController)
+document.getElementById('controller-editor-push').addEventListener('click', pushControllerChanges)
 document.getElementById('door-editor-close').addEventListener('click', () => {
   doorDialog.close()
   delete doorDialog.dataset.returnController
