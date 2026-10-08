@@ -1720,7 +1720,7 @@ async function pushControllerChanges(event) {
 }
 
 async function synchronizeController(oid) {
-  const response = await fetch(`/synchronize/doors?controller=${encodeURIComponent(oid)}`, {
+  const response = await fetch('/synchronize/doors?controller=' + encodeURIComponent(oid), {
     method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}',
   })
   if (!response.ok) {
