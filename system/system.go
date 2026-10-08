@@ -233,7 +233,7 @@ func (s *system) refresh() {
 	sys.taskQ.Add(Task{
 		f: func() {
 			found := s.interfaces.Search(controllers)
-			s.controllers.Found(found)
+			s.controllers.Discovered(found)
 		},
 	})
 
