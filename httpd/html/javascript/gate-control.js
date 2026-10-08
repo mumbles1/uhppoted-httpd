@@ -212,7 +212,7 @@ function controllerRows(list = records(DB.controllers)) {
     <td>${display(controller.cards?.cards, '0')}</td>
     <td>${display(controller.events?.last, '0')}</td>
     <td>${statusBadge(controller.address?.status || controller.status)}</td>
-    <td><button class="secondary" data-edit-controller="${escapeHTML(controller.OID)}" ${config.mode === 'monitor' ? 'disabled' : ''}>Configure</button></td>
+    <td><div class="door-actions"><button class="secondary" data-edit-controller="${escapeHTML(controller.OID)}" ${config.mode === 'monitor' ? 'disabled' : ''}>Configure</button><button class="danger" data-delete-controller="${escapeHTML(controller.OID)}" ${config.mode === 'monitor' ? 'disabled' : ''}>Delete</button></div></td>
   </tr>`)
 }
 
@@ -261,6 +261,7 @@ function doorRows(list = controllerDoors()) {
       <td>${door ? (door.keypad ? 'Enabled' : 'Disabled') : '—'}</td>
       <td>${relayStateBadge(live, controller)}</td>
       <td><div class="door-actions">
+        ${door ? `<button class="secondary" data-edit-door="${escapeHTML(door.OID)}" ${disabled}>Configure</button>` : ''}
         <button class="primary" ${target} data-mode="normally open" ${disabled}>Open</button>
         <button class="secondary" ${target} data-mode="controlled" ${disabled}>Controlled</button>
         <button class="danger" ${target} data-mode="normally closed" ${disabled}>Close</button>
@@ -776,6 +777,7 @@ function render() {
 
   document.querySelectorAll('[data-mode][data-door], [data-mode][data-controller][data-channel]').forEach((button) => button.addEventListener('click', controlDoor))
   document.querySelectorAll('[data-edit-controller]').forEach((button) => button.addEventListener('click', editController))
+  document.querySelectorAll('[data-delete-controller]').forEach((button) => button.addEventListener('click', deleteController))
   document.querySelector('[data-add-controller]')?.addEventListener('click', editController)
   document.querySelector('[data-discover-controllers]')?.addEventListener('click', discoverControllers)
   document.querySelectorAll('[data-add-door], [data-edit-door]').forEach((button) => button.addEventListener('click', editDoor))
@@ -1171,11 +1173,15 @@ async function deleteDoor() {
       await postConfiguration('/controllers', { created: [], updated: assignmentUpdates, deleted: [] })
     }
     await postConfiguration('/doors', { created: [], updated: [], deleted: [oid] })
-    await synchronizeHardware('/synchronize/ACL', 'Access rules')
-
+    for (const controller of records(DB.controllers)) {
+      for (const [channel, assigned] of Object.entries(controller.doors || {})) {
+        if (assigned === oid) controller.doors[channel] = ''
+      }
+    }
+    DB.doors.delete(oid)
     doorDialog.close()
-    showNotice(`${name} deleted and access rules synchronized.`)
-    await load()
+    render()
+    showNotice(`${name} deleted from the app. Its controller settings may remain until that controller is reachable.`)
     const returnController = DB.controllers.get(doorDialog.dataset.returnController)
     if (returnController && controllerDialog.open) renderControllerDoors(returnController)
     delete doorDialog.dataset.returnController
@@ -1791,8 +1797,8 @@ async function saveController(event) {
   }
 }
 
-async function deleteController() {
-  const oid = controllerForm.dataset.oid
+async function deleteController(event) {
+  const oid = event?.currentTarget?.dataset.deleteController || controllerForm.dataset.oid
   const controller = oid ? DB.controllers.get(oid) : null
   if (!controller) return
 
@@ -1803,7 +1809,9 @@ async function deleteController() {
     : ''
   if (!window.confirm(`Delete ${name}?${detail} This removes it from the app; it does not reset the controller hardware.`)) return
 
-  const deleteButton = document.getElementById('controller-editor-delete')
+  const deleteButton = event?.currentTarget?.dataset.deleteController
+    ? event.currentTarget
+    : document.getElementById('controller-editor-delete')
   const saveButton = document.getElementById('controller-editor-save')
   deleteButton.disabled = true
   saveButton.disabled = true
@@ -1814,8 +1822,10 @@ async function deleteController() {
       await postConfiguration('/controllers', { created: [], updated: assignmentUpdates, deleted: [] })
     }
     await postConfiguration('/controllers', { created: [], updated: [], deleted: [oid] })
-    controllerDialog.close()
-    await load()
+    for (const channel of Object.keys(controller.doors || {})) controller.doors[channel] = ''
+    DB.controllers.delete(oid)
+    if (controllerDialog.open) controllerDialog.close()
+    render()
     showNotice(`${name} deleted from the app.`)
   } catch (error) {
     showNotice(error.message || 'Controller deletion failed.', true)

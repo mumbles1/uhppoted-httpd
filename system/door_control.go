@@ -18,7 +18,17 @@ func RelayStatus() map[uint32]map[uint8]interfaces.RelayState {
 	controllers := sys.controllers.AsIControllers()
 	sys.RUnlock()
 
-	return sys.interfaces.RelayStatus(controllers)
+	// Snapshots are also used for local configuration. Do not make those
+	// requests wait on a controller that is offline; refresh tasks update this
+	// cache in the background and cachedRelayStatus marks older readings stale.
+	result := map[uint32]map[uint8]interfaces.RelayState{}
+	for _, controller := range controllers {
+		if states := interfaces.CachedRelayStatus(controller.ID()); states != nil {
+			result[controller.ID()] = states
+		}
+	}
+
+	return result
 }
 
 // ControlControllerDoor applies a door control mode to a physical controller

@@ -31,6 +31,7 @@ type RelayState struct {
 
 var guards = sync.Map{}
 var relayStates sync.Map
+var relayStateUpdated sync.Map
 var guard sync.RWMutex
 
 func NewInterfaces(ch chan types.EventsList) Interfaces {
@@ -313,6 +314,7 @@ func cacheRelayStatus(controller uint32, states map[uint8]RelayState) {
 		copy[door] = state
 	}
 	relayStates.Store(controller, copy)
+	relayStateUpdated.Store(controller, time.Now())
 }
 
 func cachedRelayStatus(controller uint32) map[uint8]RelayState {
@@ -325,11 +327,20 @@ func cachedRelayStatus(controller uint32) map[uint8]RelayState {
 		return nil
 	}
 	copy := map[uint8]RelayState{}
+	updatedAt, _ := relayStateUpdated.Load(controller)
+	updated, _ := updatedAt.(time.Time)
+	stale := updated.IsZero() || time.Since(updated) > time.Minute
 	for door, state := range states {
-		state.Stale = true
+		state.Stale = stale
 		copy[door] = state
 	}
 	return copy
+}
+
+// CachedRelayStatus returns the most recently observed relay states without
+// sending network requests. Older readings are marked stale.
+func CachedRelayStatus(controller uint32) map[uint8]RelayState {
+	return cachedRelayStatus(controller)
 }
 
 func (ii *Interfaces) SetDoor(controller types.IController, door uint8, mode lib.ControlState, delay uint8) error {
