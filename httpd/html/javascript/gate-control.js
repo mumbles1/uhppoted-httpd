@@ -64,36 +64,19 @@ function openHelp(event) {
   if (window.location.hash === '#help') history.replaceState(null, '', window.location.pathname)
 }
 
-function returnToGateControl() {
-  const configuredURL = normalizeGateControlURL(config.gateControlURL)
-  if (configuredURL) {
-    try {
-      const destination = new URL(configuredURL)
-      if (!['http:', 'https:'].includes(destination.protocol)) throw new Error('unsupported protocol')
-      window.location.assign(destination.href)
-    } catch {
-      showNotice('Gate Control address is invalid. Use an address like 192.168.0.208:PORT or http://192.168.0.208:PORT.', true)
-    }
-    return
-  }
+function navigateToSection(event) {
+  const link = event.target.closest('a[href]')
+  if (!link || link.target || link.hasAttribute('download')) return
 
-  if (document.referrer) {
-    try {
-      const previous = new URL(document.referrer)
-      if (previous.origin !== window.location.origin) {
-        window.location.assign(previous.href)
-        return
-      }
-    } catch {
-      // Fall through to browser history when the referrer is not a valid URL.
-    }
-  }
+  const destination = new URL(link.href, window.location.href)
+  if (destination.origin !== window.location.origin) return
+  const section = destination.pathname.split('/').pop()?.replace('.html', '')
+  if (!routes.includes(section)) return
 
-  if (window.history.length > 1) {
-    window.history.back()
-  } else {
-    showNotice('Gate Control address is not configured. Set GATE_CONTROL_URL on the container.', true)
-  }
+  event.preventDefault()
+  history.pushState(null, '', `${destination.pathname}${destination.search}${destination.hash}`)
+  render()
+  document.getElementById('sidebar').classList.remove('open')
 }
 
 function normalizeGateControlURL(value) {
@@ -2057,7 +2040,8 @@ document.getElementById('user-editor-delete').addEventListener('click', deleteUs
 document.getElementById('backup-create').addEventListener('click', createBackup)
 document.getElementById('backup-file').addEventListener('change', importBackup)
 document.getElementById('controller-import-apply').addEventListener('click', applyControllerImport)
-document.getElementById('gate-control-button').addEventListener('click', returnToGateControl)
+document.addEventListener('click', navigateToSection)
+window.addEventListener('popstate', render)
 document.getElementById('help-button').addEventListener('click', openHelp)
 document.getElementById('help-menu-button').addEventListener('click', openHelp)
 document.getElementById('menu-button').addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'))
