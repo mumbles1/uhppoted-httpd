@@ -212,7 +212,7 @@ function controllerRows(list = records(DB.controllers)) {
     <td>${display(controller.cards?.cards, '0')}</td>
     <td>${display(controller.events?.last, '0')}</td>
     <td>${statusBadge(controller.address?.status || controller.status)}</td>
-    <td><div class="door-actions"><button class="secondary" data-edit-controller="${escapeHTML(controller.OID)}" ${config.mode === 'monitor' ? 'disabled' : ''}>Configure</button><button class="danger" data-delete-controller="${escapeHTML(controller.OID)}" ${config.mode === 'monitor' ? 'disabled' : ''}>Delete</button></div></td>
+    <td><div class="door-actions"><button class="secondary" data-edit-controller="${escapeHTML(controller.OID)}" ${config.mode === 'monitor' ? 'disabled' : ''}>Configure</button></div></td>
   </tr>`)
 }
 
@@ -777,7 +777,6 @@ function render() {
 
   document.querySelectorAll('[data-mode][data-door], [data-mode][data-controller][data-channel]').forEach((button) => button.addEventListener('click', controlDoor))
   document.querySelectorAll('[data-edit-controller]').forEach((button) => button.addEventListener('click', editController))
-  document.querySelectorAll('[data-delete-controller]').forEach((button) => button.addEventListener('click', deleteController))
   document.querySelector('[data-add-controller]')?.addEventListener('click', editController)
   document.querySelector('[data-discover-controllers]')?.addEventListener('click', discoverControllers)
   document.querySelectorAll('[data-add-door], [data-edit-door]').forEach((button) => button.addEventListener('click', editDoor))
@@ -1669,6 +1668,9 @@ function editController(event) {
   controllerForm.elements.antipassback.value = controller?.antipassback?.antipassback || '0'
   document.getElementById('controller-editor-title').textContent = controller?.name || (controller ? `Controller ${controller.deviceID}` : 'Add controller')
   controllerForm.querySelector('[name="datetime"]').closest('label').classList.toggle('hidden', isNew)
+  const deleteButton = document.getElementById('controller-editor-delete')
+  deleteButton.classList.toggle('hidden', isNew || config.mode === 'monitor')
+  deleteButton.disabled = false
   updateControllerAddressMode()
   document.querySelector('.controller-time-action').classList.toggle('hidden', isNew)
   document.querySelector('.door-mapping-heading').classList.toggle('hidden', isNew)
@@ -1942,6 +1944,7 @@ document.getElementById('controller-editor-close').addEventListener('click', () 
 document.getElementById('controller-editor-cancel').addEventListener('click', () => controllerDialog.close())
 document.getElementById('controller-time-now').addEventListener('click', () => { controllerForm.elements.datetime.value = localDateTimeValue() })
 document.getElementById('controller-time-set').addEventListener('click', setControllerTime)
+document.getElementById('controller-editor-delete').addEventListener('click', deleteController)
 document.getElementById('door-editor-close').addEventListener('click', () => {
   doorDialog.close()
   delete doorDialog.dataset.returnController
