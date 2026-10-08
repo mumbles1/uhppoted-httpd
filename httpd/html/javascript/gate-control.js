@@ -1669,9 +1669,6 @@ function editController(event) {
   controllerForm.elements.antipassback.value = controller?.antipassback?.antipassback || '0'
   document.getElementById('controller-editor-title').textContent = controller?.name || (controller ? `Controller ${controller.deviceID}` : 'Add controller')
   controllerForm.querySelector('[name="datetime"]').closest('label').classList.toggle('hidden', isNew)
-  const deleteButton = document.getElementById('controller-editor-delete')
-  deleteButton.classList.toggle('hidden', isNew || config.mode === 'monitor')
-  deleteButton.disabled = false
   updateControllerAddressMode()
   document.querySelector('.controller-time-action').classList.toggle('hidden', isNew)
   document.querySelector('.door-mapping-heading').classList.toggle('hidden', isNew)
@@ -1809,9 +1806,7 @@ async function deleteController(event) {
     : ''
   if (!window.confirm(`Delete ${name}?${detail} This removes it from the app; it does not reset the controller hardware.`)) return
 
-  const deleteButton = event?.currentTarget?.dataset.deleteController
-    ? event.currentTarget
-    : document.getElementById('controller-editor-delete')
+  const deleteButton = event.currentTarget
   const saveButton = document.getElementById('controller-editor-save')
   deleteButton.disabled = true
   saveButton.disabled = true
@@ -1947,7 +1942,6 @@ document.getElementById('controller-editor-close').addEventListener('click', () 
 document.getElementById('controller-editor-cancel').addEventListener('click', () => controllerDialog.close())
 document.getElementById('controller-time-now').addEventListener('click', () => { controllerForm.elements.datetime.value = localDateTimeValue() })
 document.getElementById('controller-time-set').addEventListener('click', setControllerTime)
-document.getElementById('controller-editor-delete').addEventListener('click', deleteController)
 document.getElementById('door-editor-close').addEventListener('click', () => {
   doorDialog.close()
   delete doorDialog.dataset.returnController
