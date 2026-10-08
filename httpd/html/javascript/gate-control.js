@@ -51,8 +51,7 @@ let eventTypeFilter = 'all'
 let relayStatus = {}
 
 function currentRoute() {
-  const name = window.location.pathname.split('/').pop()?.replace('.html', '') || 'overview'
-  return routes.includes(name) ? name : 'overview'
+  return routes.find((route) => window.location.pathname.endsWith(`/${route}.html`)) || 'overview'
 }
 
 function openHelp(event) {
@@ -70,8 +69,8 @@ function navigateToSection(event) {
 
   const destination = new URL(link.href, window.location.href)
   if (destination.origin !== window.location.origin) return
-  const section = destination.pathname.split('/').pop()?.replace('.html', '')
-  if (!routes.includes(section)) return
+  const section = routes.find((route) => destination.pathname.endsWith(`/${route}.html`))
+  if (!section) return
 
   event.preventDefault()
   history.pushState(null, '', `${destination.pathname}${destination.search}${destination.hash}`)
