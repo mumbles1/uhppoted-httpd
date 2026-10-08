@@ -414,6 +414,10 @@ func SynchronizeDoors(withFirstCard bool) error {
 	if len(controllers) == 0 {
 		return fmt.Errorf("no configured controllers")
 	}
+	return synchronizeDoors(controllers, withFirstCard)
+}
+
+func synchronizeDoors(controllers []types.IController, withFirstCard bool) error {
 	var failures []error
 
 	for _, controller := range controllers {
@@ -441,6 +445,20 @@ func SynchronizeDoors(withFirstCard bool) error {
 	}
 
 	return errors.Join(failures...)
+}
+
+func SynchronizeController(oid schema.OID, withFirstCard bool) error {
+	for _, controller := range sys.controllers.AsIControllers() {
+		if controller.OID() == oid {
+			selected := []types.IController{controller}
+			if err := synchronizeDoors(selected, withFirstCard); err != nil {
+				return err
+			}
+			return sys.synchronizeACLForControllers(selected)
+		}
+	}
+
+	return fmt.Errorf("controller %v not found", oid)
 }
 
 func (s *system) Update(oid schema.OID, field schema.Suffix, value any) {

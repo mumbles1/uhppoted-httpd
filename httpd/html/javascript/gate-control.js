@@ -1715,25 +1715,32 @@ async function discoverControllers(event) {
 
 async function pushControllerChanges(event) {
   const button = event.currentTarget
+  const oid = controllerForm.dataset.oid
+  if (!oid) {
+    showNotice('Save the controller before pushing changes.', true)
+    return
+  }
   button.disabled = true
   button.textContent = 'Pushing…'
   try {
-    for (const [path, label] of [['/synchronize/doors', 'Controller settings'], ['/synchronize/ACL', 'Credential access']]) {
-      const response = await fetch(path, {
-        method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}',
-      })
-      if (!response.ok) {
-        const details = (await response.text()).trim() || `request failed (${response.status})`
-        throw new Error(`${label} push failed: ${details}`)
-      }
-    }
+    await synchronizeController(oid)
     await load()
-    showNotice('Saved controller settings and credential access pushed to all configured controllers.')
+    showNotice('Saved controller settings and credential access pushed to this controller.')
   } catch (error) {
     showNotice(error.message || 'Could not push saved changes to controllers.', true)
   } finally {
     button.disabled = false
-    button.textContent = 'Push to all controllers'
+    button.textContent = 'Push to this controller'
+  }
+}
+
+async function synchronizeController(oid) {
+  const response = await fetch(`/synchronize/doors?controller=${encodeURIComponent(oid)}`, {
+    method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: '{}',
+  })
+  if (!response.ok) {
+    const details = (await response.text()).trim() || `request failed (${response.status})`
+    throw new Error(`Controller push failed: ${details}`)
   }
 }
 
@@ -1811,8 +1818,7 @@ async function saveController(event) {
     if (isNew) {
       showNotice('Controller added. Use Configure to assign doors and controller settings.')
     } else {
-      await synchronizeHardware('/synchronize/doors', 'Relay')
-      await synchronizeHardware('/synchronize/ACL', 'Card')
+      await synchronizeController(oid)
       showNotice('Controller configuration saved and synchronized.')
       await load()
     }

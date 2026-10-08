@@ -18,6 +18,13 @@ func (s *system) synchronizeACL() error {
 	if len(controllers) == 0 {
 		return fmt.Errorf("no configured controllers")
 	}
+	return s.synchronizeACLForControllers(controllers)
+}
+
+func (s *system) synchronizeACLForControllers(controllers []types.IController) error {
+	if len(controllers) == 0 {
+		return fmt.Errorf("no configured controllers")
+	}
 	if err := s.synchronizeTimeProfiles(controllers); err != nil {
 		return err
 	}

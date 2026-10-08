@@ -3,11 +3,14 @@ package httpd
 import (
 	"context"
 	"net/http"
+	"strings"
+	"time"
 
 	"codeberg.org/uhppoted/uhppoted-httpd/httpd/cookies"
 	"codeberg.org/uhppoted/uhppoted-httpd/httpd/post"
 	"codeberg.org/uhppoted/uhppoted-httpd/httpd/users"
 	"codeberg.org/uhppoted/uhppoted-httpd/system"
+	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog/schema"
 	"codeberg.org/uhppoted/uhppoted-httpd/types"
 )
 
@@ -91,11 +94,15 @@ func (d *dispatcher) post(w http.ResponseWriter, r *http.Request) {
 		if d.mode == types.Monitor {
 			http.Error(w, "Synchronize doors disabled in 'monitor' mode", http.StatusBadRequest)
 		} else {
-			f := func() error {
-				return system.SynchronizeDoors(d.options.WithFirstCard)
+			if oid := strings.TrimSpace(r.URL.Query().Get("controller")); oid != "" {
+				d.synchronizeWithTimeout(w, r, 10*time.Minute, func() error {
+					return system.SynchronizeController(schema.OID(oid), d.options.WithFirstCard)
+				})
+			} else {
+				d.synchronize(w, r, func() error {
+					return system.SynchronizeDoors(d.options.WithFirstCard)
+				})
 			}
-
-			d.synchronize(w, r, f)
 		}
 
 	case "/password":
@@ -123,8 +130,12 @@ func (d *dispatcher) logout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *dispatcher) synchronize(w http.ResponseWriter, r *http.Request, f func() error) {
+	d.synchronizeWithTimeout(w, r, d.timeout, f)
+}
+
+func (d *dispatcher) synchronizeWithTimeout(w http.ResponseWriter, r *http.Request, timeout time.Duration, f func() error) {
 	ch := make(chan error, 1)
-	ctx, cancel := context.WithTimeout(d.context, d.timeout)
+	ctx, cancel := context.WithTimeout(d.context, timeout)
 
 	defer cancel()
 
