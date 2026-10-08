@@ -4,9 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"sync"
 	"time"
 
@@ -459,6 +462,60 @@ func SynchronizeController(oid schema.OID, withFirstCard bool) error {
 	}
 
 	return fmt.Errorf("controller %v not found", oid)
+}
+
+func SetControllerAddress(oid schema.OID, currentAddress, address, mask, gateway string) error {
+	controller, ok := findController(oid)
+	if !ok {
+		return fmt.Errorf("controller %v not found", oid)
+	}
+
+	current := controller.EndPoint()
+	if value := strings.TrimSpace(currentAddress); value != "" {
+		if endpoint, err := netip.ParseAddrPort(value); err == nil {
+			current = lib.ControllerAddrFrom(endpoint.Addr(), endpoint.Port())
+		} else if addr, err := netip.ParseAddr(value); err == nil {
+			current = lib.ControllerAddrFrom(addr, 60000)
+		} else {
+			return fmt.Errorf("invalid current controller address (%v)", value)
+		}
+	}
+
+	parseIPv4 := func(name, value string, optional bool) (net.IP, error) {
+		value = strings.TrimSpace(value)
+		if optional && value == "" {
+			return nil, nil
+		}
+		parsed := net.ParseIP(value)
+		if parsed == nil || parsed.To4() == nil {
+			return nil, fmt.Errorf("%s must be a valid IPv4 address", name)
+		}
+		return parsed.To4(), nil
+	}
+
+	newAddress, err := parseIPv4("new IP address", address, false)
+	if err != nil {
+		return err
+	}
+	newMask, err := parseIPv4("subnet mask", mask, true)
+	if err != nil {
+		return err
+	}
+	newGateway, err := parseIPv4("gateway", gateway, true)
+	if err != nil {
+		return err
+	}
+
+	return sys.interfaces.SetControllerAddress(controller, current, newAddress, newMask, newGateway)
+}
+
+func findController(oid schema.OID) (types.IController, bool) {
+	for _, controller := range sys.controllers.AsIControllers() {
+		if controller.OID() == oid {
+			return controller, true
+		}
+	}
+	return nil, false
 }
 
 func (s *system) Update(oid schema.OID, field schema.Suffix, value any) {

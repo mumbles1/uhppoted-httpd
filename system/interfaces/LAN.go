@@ -3,6 +3,7 @@ package interfaces
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"strings"
 	"time"
 
@@ -421,6 +422,54 @@ func (l *LAN) setTime(c types.IController, t time.Time) error {
 	}
 
 	return nil
+}
+
+func (l *LAN) setAddress(c types.IController, current lib.ControllerAddr, address, mask, gateway net.IP) error {
+	lock(c.ID())
+	defer unlock(c.ID())
+
+	target := controllerEndpoint{IController: c, endpoint: current}
+	api := l.api([]types.IController{target})
+	deviceID := c.ID()
+
+	if mask == nil || gateway == nil {
+		device, err := api.UHPPOTE.GetDevice(deviceID)
+		if err != nil {
+			return fmt.Errorf("could not read current network settings: %w", err)
+		}
+		if device == nil {
+			return fmt.Errorf("no response reading current network settings for controller %v", deviceID)
+		}
+		if mask == nil {
+			mask = device.SubnetMask
+		}
+		if gateway == nil {
+			gateway = device.Gateway
+		}
+	}
+
+	response, err := api.UHPPOTE.SetAddress(deviceID, address, mask, gateway)
+	if err != nil {
+		return err
+	}
+	if response == nil {
+		return fmt.Errorf("no response setting network address for controller %v", deviceID)
+	}
+	if !response.Succeeded {
+		return fmt.Errorf("controller %v rejected network address change", deviceID)
+	}
+
+	log.Infof("%v set network address to %v (mask %v, gateway %v)", deviceID, address, mask, gateway)
+	return nil
+}
+
+type controllerEndpoint struct {
+	types.IController
+	endpoint lib.ControllerAddr
+}
+
+func (c controllerEndpoint) EndPoint() lib.ControllerAddr {
+	return c.endpoint
 }
 
 func (l *LAN) relayStatus(c types.IController) (map[uint8]RelayState, error) {

@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"codeberg.org/uhppoted/uhppoted-httpd/auth"
 	"codeberg.org/uhppoted/uhppoted-httpd/system"
 	"codeberg.org/uhppoted/uhppoted-httpd/system/catalog/schema"
 	"codeberg.org/uhppoted/uhppoted-httpd/types"
@@ -242,6 +243,47 @@ func (d *dispatcher) api(w http.ResponseWriter, r *http.Request) {
 				return nil, err
 			}
 			return map[string]any{"ok": true, "controller": controller, "datetime": datetime}, nil
+		})
+
+	case r.URL.Path == "/api/v1/controllers/address" && r.Method == http.MethodPost:
+		if d.mode == types.Monitor {
+			http.Error(w, "Controller network configuration is disabled in monitor-only mode", http.StatusForbidden)
+			return
+		}
+		if !d.apiAuthorised(w, uid, role, "/controllers") {
+			return
+		}
+		d.exec(w, r, func(body map[string]any) (any, error) {
+			controller, ok := body["controller"].(string)
+			if !ok || strings.TrimSpace(controller) == "" {
+				return nil, fmt.Errorf("controller is required")
+			}
+			currentAddress, _ := body["currentAddress"].(string)
+			address, ok := body["address"].(string)
+			if !ok || strings.TrimSpace(address) == "" {
+				return nil, fmt.Errorf("new controller IP address is required")
+			}
+			mask, _ := body["mask"].(string)
+			gateway, _ := body["gateway"].(string)
+
+			oid := schema.OID(controller)
+			if err := system.SetControllerAddress(oid, currentAddress, address, mask, gateway); err != nil {
+				return nil, err
+			}
+
+			updates := map[string]any{
+				"created": []any{},
+				"updated": []any{map[string]any{
+					"oid":   string(oid) + string(schema.ControllerEndpointAddress),
+					"value": strings.TrimSpace(address) + ":60000",
+				}},
+				"deleted": []any{},
+			}
+			result, err := system.UpdateControllers(updates, auth.NewAuthorizator(uid, role))
+			if err != nil {
+				return nil, fmt.Errorf("controller address changed but app configuration could not be saved: %w", err)
+			}
+			return map[string]any{"ok": true, "controller": controller, "address": strings.TrimSpace(address), "controllers": result}, nil
 		})
 
 	case r.URL.Path == "/api/v1/doors/control" && r.Method == http.MethodPost:

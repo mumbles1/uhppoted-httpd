@@ -69,9 +69,11 @@
         <div class="form-grid">
           <label><span>Name</span><input name="name" type="text" placeholder="Front gate controller"></label>
           <label><span>Device ID</span><input name="deviceID" type="number" min="1" required></label>
-          <label class="wide"><span>Controller address</span><input name="address" type="text" placeholder="192.168.1.100:60000"></label>
-          <label class="checkbox-field wide"><input name="dhcp" type="checkbox"><span>Use DHCP / dynamic address</span></label>
-          <p class="field-help wide" id="controller-address-help">The controller must already be set to DHCP. This uses LAN discovery by Device ID instead of saving a fixed address.</p>
+          <label class="wide" id="controller-current-address-field"><span>Current controller IP</span><input name="currentAddress" type="text" readonly></label>
+          <p class="field-help wide" id="controller-address-help">Set the controller's network address directly. Leave subnet mask and gateway blank to keep the current values. The app updates its saved address after the controller accepts the change.</p>
+          <label id="controller-new-address-field"><span>New IP address</span><input name="address" type="text" inputmode="decimal" placeholder="192.168.1.100"></label>
+          <label id="controller-mask-field"><span>Subnet mask</span><input name="mask" type="text" inputmode="decimal" placeholder="Keep current"></label>
+          <label class="wide" id="controller-gateway-field"><span>Gateway</span><input name="gateway" type="text" inputmode="decimal" placeholder="Keep current"></label>
           <label><span>Protocol</span><select name="protocol"><option value="udp">UDP</option><option value="tcp">TCP</option></select></label>
           <label><span>Controller date and time</span><input name="datetime" type="datetime-local" step="1"></label>
           <div class="controller-time-action"><button type="button" class="secondary" id="controller-time-now">Use current time</button><button type="button" class="primary" id="controller-time-set">Set controller time</button></div>
@@ -82,6 +84,7 @@
         <div class="form-grid" id="controller-door-fields"></div>
         <div class="dialog-actions">
           <button type="button" class="danger delete-action hidden" id="controller-editor-delete">Delete controller</button>
+          <button type="button" class="secondary hidden" id="controller-editor-address">Change controller IP</button>
           <button type="button" class="secondary hidden" id="controller-editor-push">Push to this controller</button>
           <button type="button" class="secondary" id="controller-editor-cancel">Cancel</button>
           <button type="submit" class="primary" id="controller-editor-save">Save controller</button>

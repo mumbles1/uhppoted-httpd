@@ -3,6 +3,7 @@ package interfaces
 import (
 	"encoding/json"
 	"fmt"
+	"net"
 	"strings"
 	"sync"
 	"time"
@@ -335,6 +336,14 @@ func cachedRelayStatus(controller uint32) map[uint8]RelayState {
 		copy[door] = state
 	}
 	return copy
+}
+
+func (ii *Interfaces) SetControllerAddress(controller types.IController, current lib.ControllerAddr, address, mask, gateway net.IP) error {
+	lan, ok := ii.LAN()
+	if !ok {
+		return fmt.Errorf("no LAN interface configured")
+	}
+	return lan.setAddress(controller, current, address, mask, gateway)
 }
 
 // CachedRelayStatus returns the most recently observed relay states without

@@ -1660,8 +1660,17 @@ function editController(event) {
   controllerForm.dataset.oid = controller?.OID || ''
   controllerForm.elements.name.value = controller?.name || ''
   controllerForm.elements.deviceID.value = controller?.deviceID || ''
-  controllerForm.elements.dhcp.checked = !controller?.address?.configured
-  controllerForm.elements.address.value = controller?.address?.configured || ''
+  controllerForm.elements.currentAddress.value = controller?.address?.address || controller?.address?.configured || ''
+  controllerForm.elements.address.value = ''
+  controllerForm.elements.mask.value = ''
+  controllerForm.elements.gateway.value = ''
+  document.getElementById('controller-current-address-field').classList.toggle('hidden', isNew)
+  document.querySelector('#controller-new-address-field span').textContent = isNew ? 'Controller IP address' : 'New IP address'
+  document.getElementById('controller-mask-field').classList.toggle('hidden', isNew)
+  document.getElementById('controller-gateway-field').classList.toggle('hidden', isNew)
+  document.getElementById('controller-address-help').textContent = isNew
+    ? 'Enter the controller’s current IP address to add it. Use Configure after adding it to change its network address.'
+    : 'Set the controller’s network address directly. Leave subnet mask and gateway blank to keep their current values.'
   controllerForm.elements.protocol.value = controller?.protocol === 'tcp' ? 'tcp' : 'udp'
   controllerForm.elements.datetime.value = controllerDateTimeValue(controller?.datetime?.datetime)
   controllerForm.elements.interlock.value = controller?.interlock || '0'
@@ -1671,24 +1680,18 @@ function editController(event) {
   const deleteButton = document.getElementById('controller-editor-delete')
   deleteButton.classList.toggle('hidden', isNew || config.mode === 'monitor')
   deleteButton.disabled = false
+  const addressButton = document.getElementById('controller-editor-address')
+  addressButton.classList.toggle('hidden', isNew || config.mode === 'monitor')
+  addressButton.disabled = false
   const pushButton = document.getElementById('controller-editor-push')
   pushButton.classList.toggle('hidden', isNew || config.mode === 'monitor')
   pushButton.disabled = false
-  updateControllerAddressMode()
   document.querySelector('.controller-time-action').classList.toggle('hidden', isNew)
   document.querySelector('.door-mapping-heading').classList.toggle('hidden', isNew)
   document.getElementById('controller-door-fields').classList.toggle('hidden', isNew)
   renderControllerDoors(controller)
 
   controllerDialog.showModal()
-}
-
-function updateControllerAddressMode() {
-  const dynamic = controllerForm.elements.dhcp.checked
-  const address = controllerForm.elements.address
-  address.disabled = dynamic
-  address.required = !dynamic
-  if (dynamic) address.value = ''
 }
 
 async function discoverControllers(event) {
@@ -1777,9 +1780,57 @@ async function setControllerTime() {
   }
 }
 
+async function changeControllerAddress(event) {
+  const button = event.currentTarget
+  const oid = controllerForm.dataset.oid
+  const controller = oid ? DB.controllers.get(oid) : null
+  const currentAddress = controllerForm.elements.currentAddress.value.trim()
+  const address = controllerForm.elements.address.value.trim()
+  if (!controller || !currentAddress || !address) {
+    showNotice('Enter the new IP address for a configured controller.', true)
+    return
+  }
+  if (!window.confirm(`Change ${controller.name || `controller ${controller.deviceID}`} from ${currentAddress} to ${address}? The controller may briefly be unavailable while its network address changes.`)) return
+
+  const saveButton = document.getElementById('controller-editor-save')
+  button.disabled = true
+  saveButton.disabled = true
+  button.textContent = 'Changing IP…'
+  try {
+    const response = await fetch('/api/v1/controllers/address', {
+      method: 'POST', credentials: 'same-origin', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        controller: oid,
+        currentAddress,
+        address,
+        mask: controllerForm.elements.mask.value.trim(),
+        gateway: controllerForm.elements.gateway.value.trim(),
+      }),
+    })
+    if (!response.ok) throw new Error((await response.text()) || `Controller IP change failed (${response.status})`)
+    const result = await response.json()
+    await load()
+    controllerForm.elements.currentAddress.value = result.address
+    controllerForm.elements.address.value = ''
+    controllerForm.elements.mask.value = ''
+    controllerForm.elements.gateway.value = ''
+    showNotice(`Controller IP changed to ${result.address}.`)
+  } catch (error) {
+    showNotice(error.message || 'Controller IP change failed.', true)
+  } finally {
+    button.disabled = false
+    button.textContent = 'Change controller IP'
+    saveButton.disabled = false
+  }
+}
+
 async function saveController(event) {
   event.preventDefault()
   const isNew = !controllerForm.dataset.oid
+  if (!isNew && controllerForm.elements.address.value.trim()) {
+    showNotice('Use Change controller IP to apply the new network address.', true)
+    return
+  }
   let oid = controllerForm.dataset.oid
   let controller = oid ? DB.controllers.get(oid) : null
   const saveButton = document.getElementById('controller-editor-save')
@@ -1799,8 +1850,9 @@ async function saveController(event) {
 
     changed(schema.controllers.name, controllerForm.elements.name.value.trim(), controller?.name)
     changed(schema.controllers.deviceID, controllerForm.elements.deviceID.value.trim(), controller?.deviceID)
-    const controllerAddress = controllerForm.elements.dhcp.checked ? '' : controllerForm.elements.address.value.trim()
-    changed(schema.controllers.endpoint.address, controllerAddress, controller?.address?.configured)
+    if (isNew && controllerForm.elements.address.value.trim()) {
+      changed(schema.controllers.endpoint.address, `${controllerForm.elements.address.value.trim()}:60000`, '')
+    }
     changed(schema.controllers.endpoint.protocol, controllerForm.elements.protocol.value, controller?.protocol)
     changed(schema.controllers.interlock, controllerForm.elements.interlock.value, controller?.interlock)
     changed(schema.controllers.antipassback.antipassback, controllerForm.elements.antipassback.value, controller?.antipassback?.antipassback)
@@ -1947,7 +1999,6 @@ async function controlDoor(event) {
 }
 
 document.getElementById('refresh-button').addEventListener('click', manualRefresh)
-controllerForm.elements.dhcp.addEventListener('change', updateControllerAddressMode)
 controllerForm.addEventListener('submit', saveController)
 doorForm.addEventListener('submit', saveDoor)
 cardForm.addEventListener('submit', saveCard)
@@ -1978,6 +2029,7 @@ document.getElementById('controller-editor-cancel').addEventListener('click', ()
 document.getElementById('controller-time-now').addEventListener('click', () => { controllerForm.elements.datetime.value = localDateTimeValue() })
 document.getElementById('controller-time-set').addEventListener('click', setControllerTime)
 document.getElementById('controller-editor-delete').addEventListener('click', deleteController)
+document.getElementById('controller-editor-address').addEventListener('click', changeControllerAddress)
 document.getElementById('controller-editor-push').addEventListener('click', pushControllerChanges)
 document.getElementById('door-editor-close').addEventListener('click', () => {
   doorDialog.close()
